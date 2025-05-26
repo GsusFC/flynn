@@ -1,0 +1,7 @@
+// Función simplificada - Sistema de animaciones modular directo
+const createModularAnimationProps = (
+  animationId: string, 
+  props: Record<string, unknown>
+): Record<string, unknown> => {
+  return { ...props };
+};
