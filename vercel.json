@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd flynn-app && npm run build",
+  "devCommand": "cd flynn-app && npm run dev", 
+  "installCommand": "cd flynn-app && npm install",
+  "framework": "nextjs",
+  "outputDirectory": "flynn-app/.next"
+}
