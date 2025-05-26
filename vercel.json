@@ -1,7 +1,17 @@
 {
-  "buildCommand": "cd flynn-app && npm run build",
-  "devCommand": "cd flynn-app && npm run dev", 
-  "installCommand": "cd flynn-app && npm install",
-  "framework": "nextjs",
-  "outputDirectory": "flynn-app/.next"
+  "builds": [
+    {
+      "src": "flynn-app/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "flynn-app/$1"
+    }
+  ]
 }
