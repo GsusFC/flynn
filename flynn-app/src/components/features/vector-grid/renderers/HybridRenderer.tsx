@@ -302,16 +302,20 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
 
   // Memoizar datos de vectores para Canvas
   const canvasVectors = useMemo((): CanvasVectorData[] => {
-    return vectors.map(vector => ({
-      x: vector.x,
-      y: vector.y,
-      angle: vector.angle,
-      length: vector.dynamicLength || vector.length,
-      width: vector.dynamicWidth || vector.width,
-      color: vector.color,
-      opacity: vector.opacity || 1,
-      shape: baseVectorShape
-    }));
+    return vectors.map(vector => {
+      // Tratamos el vector como SimpleVector para acceder a dynamicLength
+      const simpleVector = vector as any;
+      return {
+        x: vector.x,
+        y: vector.y,
+        angle: vector.angle,
+        length: simpleVector.dynamicLength || vector.length,
+        width: simpleVector.dynamicWidth || vector.width,
+        color: vector.color,
+        opacity: vector.opacity || 1,
+        shape: baseVectorShape
+      };
+    });
   }, [vectors, baseVectorShape]);
 
   // Función para renderizar en Canvas

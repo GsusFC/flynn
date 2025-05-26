@@ -412,9 +412,9 @@ export const useSimpleVectorGrid = ({
     
     const currentVectors = state.vectors;
     return generateStaticSVG(currentVectors, {
-      width,
-      height,
-      ...config
+      width: config.width || width,
+      height: config.height || height,
+      precision: config.precision
     });
   }, [state.vectors, width, height, isClient]);
 
@@ -449,9 +449,10 @@ export const useSimpleVectorGrid = ({
       }
       
       const svgContent = generateAnimatedSVG(vectorFrames, cycle, {
-        width,
-        height,
-        ...config
+        width: config.width || width,
+        height: config.height || height,
+        loop: config.loop,
+        precision: config.precision
       });
       
       return svgContent;
@@ -473,9 +474,12 @@ export const useSimpleVectorGrid = ({
         getVectorsAtTime,
         cycle,
         {
-          width,
-          height,
-          ...config
+          width: config.width || width,
+          height: config.height || height,
+          quality: config.quality || 'medium',
+          duration: config.duration || cycle.duration,
+          fps: config.fps || 30,
+          loop: config.loop !== false
         },
         (progress) => {
           setState(prev => ({ ...prev, exportProgress: progress }));
