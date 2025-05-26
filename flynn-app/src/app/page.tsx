@@ -56,17 +56,22 @@ export default function VectorGridLab() {
     return getDefaultProps('smoothWaves');
   });
   const [isPaused, setIsPaused] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // Temporalmente activado para debug
   
-  // Estado para configuración dinámica
-  const [dynamicConfig] = useState<DynamicVectorConfig>({
-    enableDynamicLength: false,
+  // Estado para configuración dinámica (ahora reactiva)
+  const [dynamicConfig, setDynamicConfig] = useState<DynamicVectorConfig>({
+    enableDynamicLength: true,
     enableDynamicWidth: false,
     lengthMultiplier: 1.5,
     widthMultiplier: 1.2,
     responsiveness: 0.8,
     smoothing: 0.8
   });
+
+  // Debug log cuando cambia dynamicConfig
+  useEffect(() => {
+    console.log('🎛️ [App] dynamicConfig cambió:', dynamicConfig);
+  }, [dynamicConfig]);
   
   // Dimensiones del canvas - responsivo
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 1200, height: 800 });
@@ -489,22 +494,90 @@ export default function VectorGridLab() {
 
                 {/* Control de Punto de Rotación */}
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-sidebar-foreground">
-                    Punto de Rotación
-                  </label>
-                  <select 
-                    value={vectorConfig.rotationOrigin} 
-                    onChange={(e) => setVectorConfig(prev => ({ ...prev, rotationOrigin: e.target.value as RotationOrigin }))}
-                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
-                  >
-                    <option value="center">🎯 Centro</option>
-                    <option value="start">⬅️ Inicio (Cola)</option>
-                    <option value="end">➡️ Final (Punta)</option>
-                  </select>
-                  <p className="text-xs text-sidebar-foreground/60 mt-1">
-                    Punto alrededor del cual rota el vector
-                  </p>
+                <label className="block text-xs font-medium mb-1 text-sidebar-foreground">
+                Punto de Rotación
+                </label>
+                <select 
+                value={vectorConfig.rotationOrigin} 
+                onChange={(e) => setVectorConfig(prev => ({ ...prev, rotationOrigin: e.target.value as RotationOrigin }))}
+                className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                >
+                <option value="center">🎯 Centro</option>
+                <option value="start">⬅️ Inicio (Cola)</option>
+                <option value="end">➡️ Final (Punta)</option>
+                </select>
+                <p className="text-xs text-sidebar-foreground/60 mt-1">
+                Punto alrededor del cual rota el vector
+                </p>
                 </div>
+
+                 {/* Controles de Longitud Dinámica */}
+                 <div className="border-t border-sidebar-border pt-3">
+                   <div className="flex items-center justify-between mb-2">
+                     <label className="text-xs font-medium text-sidebar-foreground">
+                       🔄 Longitud Dinámica
+                     </label>
+                     <input 
+                       type="checkbox" 
+                       checked={dynamicConfig.enableDynamicLength}
+                       onChange={(e) => setDynamicConfig(prev => ({ ...prev, enableDynamicLength: e.target.checked }))}
+                       className="rounded"
+                     />
+                   </div>
+                   
+                   {dynamicConfig.enableDynamicLength && (
+                     <div className="space-y-2 ml-2">
+                       <div>
+                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
+                           Intensidad: {dynamicConfig.lengthMultiplier.toFixed(1)}x
+                         </label>
+                         <input 
+                           type="range" 
+                           min="1.0" 
+                           max="3.0" 
+                           step="0.1"
+                           value={dynamicConfig.lengthMultiplier}
+                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, lengthMultiplier: parseFloat(e.target.value) }))}
+                           className="w-full"
+                         />
+                       </div>
+                       
+                       <div>
+                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
+                           Reactividad: {(dynamicConfig.responsiveness * 100).toFixed(0)}%
+                         </label>
+                         <input 
+                           type="range" 
+                           min="0.1" 
+                           max="1.0" 
+                           step="0.1"
+                           value={dynamicConfig.responsiveness}
+                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, responsiveness: parseFloat(e.target.value) }))}
+                           className="w-full"
+                         />
+                       </div>
+                       
+                       <div>
+                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
+                           Suavizado: {(dynamicConfig.smoothing * 100).toFixed(0)}%
+                         </label>
+                         <input 
+                           type="range" 
+                           min="0.1" 
+                           max="1.0" 
+                           step="0.1"
+                           value={dynamicConfig.smoothing}
+                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, smoothing: parseFloat(e.target.value) }))}
+                           className="w-full"
+                         />
+                       </div>
+                     </div>
+                   )}
+                   
+                   <p className="text-xs text-sidebar-foreground/60 mt-1">
+                     Los vectores se alargan según la intensidad de la animación
+                   </p>
+                 </div>
               </div>
             </div>
           </div>

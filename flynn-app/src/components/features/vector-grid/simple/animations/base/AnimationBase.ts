@@ -163,9 +163,8 @@ export abstract class AnimationBase<T = Record<string, unknown>> implements Anim
 
   // Método helper para normalizar ángulos
   protected normalizeAngle(angle: number): number {
-    while (angle < 0) angle += 360;
-    while (angle >= 360) angle -= 360;
-    return angle;
+    if (isNaN(angle) || !isFinite(angle)) return 0;
+    return ((angle % 360) + 360) % 360;
   }
 
   // Método helper para calcular distancia

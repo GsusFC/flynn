@@ -189,9 +189,23 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = width;
+
+    // Convertir ángulo a radianes para canvas
+    const angleRad = (angle * Math.PI) / 180;
     
     ctx.translate(x, y);
-    ctx.rotate(angle);
+    ctx.rotate(angleRad);
+
+    // Ajustar para origen de rotación (corregido)
+    let offsetX = 0;
+    if (baseRotationOrigin === 'start' || baseRotationOrigin === 'tail') {
+      offsetX = -vector.length / 2; // Línea se dibuja desde el punto de rotación hacia adelante
+    } else if (baseRotationOrigin === 'end') {
+      offsetX = vector.length / 2; // Línea se dibuja desde el punto de rotación hacia atrás
+    }
+    if (offsetX !== 0) {
+      ctx.translate(offsetX, 0);
+    }
     
     switch (shape) {
       case 'arrow':
@@ -214,25 +228,40 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     }
     
     ctx.restore();
-  }, [renderArrow, renderLine, renderCurve, renderCircle, renderDot]);
+  }, [renderArrow, renderLine, renderCircle, renderDot, renderCurve, baseRotationOrigin]);
 
   // Añadir vector a Path2D
   const addVectorToPath = useCallback((path: Path2D, vector: CanvasVectorData) => {
-    const { x, y, angle, length } = vector;
-    const halfLength = length / 2;
-    
-    // Calcular puntos del vector
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    
-    const startX = x - halfLength * cos;
-    const startY = y - halfLength * sin;
-    const endX = x + halfLength * cos;
-    const endY = y + halfLength * sin;
-    
-    path.moveTo(startX, startY);
-    path.lineTo(endX, endY);
-  }, []);
+    const { x: anchorX, y: anchorY, angle, length } = vector;
+
+    let localStartX = 0;
+    let localEndX = 0;
+
+    if (baseRotationOrigin === 'start' || baseRotationOrigin === 'tail') {
+      localStartX = 0;
+      localEndX = length;
+    } else if (baseRotationOrigin === 'end') {
+      localStartX = -length;
+      localEndX = 0;
+    } else { // 'center'
+      localStartX = -length / 2;
+      localEndX = length / 2;
+    }
+
+    const cosAngle = Math.cos(angle);
+    const sinAngle = Math.sin(angle);
+
+    // Rotar y trasladar el punto de inicio relativo al punto de anclaje
+    const finalStartX = anchorX + (localStartX * cosAngle); // Asumiendo que el vector se dibuja a lo largo del eje X local antes de rotar
+    const finalStartY = anchorY + (localStartX * sinAngle);
+
+    // Rotar y trasladar el punto de fin relativo al punto de anclaje
+    const finalEndX = anchorX + (localEndX * cosAngle);
+    const finalEndY = anchorY + (localEndX * sinAngle);
+
+    path.moveTo(finalStartX, finalStartY);
+    path.lineTo(finalEndX, finalEndY);
+  }, [baseRotationOrigin]);
 
   // Renderizado directo (más simple, mejor para pocos vectores)
   const renderDirect = useCallback((ctx: CanvasRenderingContext2D, vectors: CanvasVectorData[], settings: QualitySettings) => {
@@ -267,10 +296,9 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
       groupVectors.forEach(vector => {
         addVectorToPath(path, vector);
       });
-      
       ctx.stroke(path);
     });
-  }, [addVectorToPath]);
+  }, [addVectorToPath, baseRotationOrigin]);
 
   // Memoizar datos de vectores para Canvas
   const canvasVectors = useMemo((): CanvasVectorData[] => {
@@ -278,8 +306,8 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
       x: vector.x,
       y: vector.y,
       angle: vector.angle,
-      length: vector.length,
-      width: vector.width,
+      length: vector.dynamicLength || vector.length,
+      width: vector.dynamicWidth || vector.width,
       color: vector.color,
       opacity: vector.opacity || 1,
       shape: baseVectorShape
@@ -304,7 +332,7 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     } else {
       renderDirect(ctx, vectors, qualitySettings);
     }
-  }, [width, height, baseStrokeLinecap, getQualitySettings, renderWithPath2D, renderDirect]);
+  }, [width, height, baseStrokeLinecap, getQualitySettings, renderWithPath2D, renderDirect, baseRotationOrigin]);
 
   // Efecto para monitorear rendimiento y cambiar modo
   useEffect(() => {
@@ -407,7 +435,7 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
         baseVectorWidth={baseVectorWidth}
         baseStrokeLinecap={baseStrokeLinecap}
         baseVectorShape={baseVectorShape}
-
+        baseRotationOrigin={baseRotationOrigin} // Pass to SVG renderer
         interactionEnabled={interactionEnabled}
         debugMode={false} // Evitar debug duplicado
         frameInfo={frameInfo}

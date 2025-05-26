@@ -40,8 +40,9 @@ export function calculateInfluenceWeight(
  */
 export function normalizeAngleDifference(angle1: number, angle2: number): number {
   let diff = angle2 - angle1;
-  while (diff <= -180) diff += 360;
-  while (diff > 180) diff -= 360;
+  if (isNaN(diff) || !isFinite(diff)) return 0;
+  diff = ((diff + 180) % 360) - 180;
+  if (diff <= -180) diff += 360;
   return diff;
 }
 

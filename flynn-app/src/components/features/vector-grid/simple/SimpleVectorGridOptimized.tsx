@@ -51,6 +51,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
     vectorConfig,
     animationType,
     animationProps,
+    dynamicVectorConfig,
     width,
     height,
     backgroundColor = '#000000',
@@ -81,6 +82,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
       vectorConfig,
       animationType,
       animationProps: animationProps as any,
+      dynamicVectorConfig,
       width,
       height,
       isPaused,
@@ -206,7 +208,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
             baseVectorWidth={vectorConfig.width}
             baseStrokeLinecap="round"
             baseVectorShape={vectorConfig.shape === "curve" ? "circle-wave" : vectorConfig.shape}
-            baseRotationOrigin="center"
+            baseRotationOrigin={vectorConfig.rotationOrigin}
             interactionEnabled={!isPaused}
             debugMode={debugMode}
             frameInfo={{ frameCount: 0, timestamp: performance.now(), deltaTime: 0 }}

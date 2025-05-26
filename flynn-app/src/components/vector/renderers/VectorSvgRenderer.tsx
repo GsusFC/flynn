@@ -5,6 +5,7 @@ import type {
   VectorRenderProps, // Asumiendo que este tipo existe para customRenderer
   VectorShape,
   StrokeLinecap,
+  RotationOrigin, // Added import for RotationOrigin
   FrameInfo,
 } from '../../features/vector-grid/core/types'; // RUTA TENTATIVA, AJÚSTALA!
 import { RenderedVector } from '../../features/vector-grid/RenderedVector'; // RUTA TENTATIVA, AJÚSTALA!
@@ -24,6 +25,7 @@ export interface VectorSvgRendererProps {
   
   baseStrokeLinecap?: StrokeLinecap;
   baseVectorShape: VectorShape;
+  baseRotationOrigin?: RotationOrigin; // Added baseRotationOrigin prop
  
   
   customRenderer?: (renderProps: VectorRenderProps) => React.ReactNode;
@@ -59,6 +61,7 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
   baseVectorWidth,
   baseStrokeLinecap,
   baseVectorShape,
+  baseRotationOrigin = 'center', // Destructure baseRotationOrigin with default
   
   customRenderer,
   userSvgString,
@@ -91,8 +94,15 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
         ? baseVectorColor(item, frameInfo)
         : baseVectorColor;
 
-      const actualLength = resolvedBaseLength * (item.lengthFactor ?? 1);
-      const actualWidth = resolvedBaseWidth * (item.widthFactor ?? 1);
+      // Support both lengthFactor (AnimatedVectorItem) and dynamicLength (SimpleVector)
+      const itemAny = item as any;
+      const lengthMultiplier = itemAny.lengthFactor ?? 
+                              (itemAny.dynamicLength ? (itemAny.dynamicLength / resolvedBaseLength) : 1);
+      const widthMultiplier = itemAny.widthFactor ?? 
+                             (itemAny.dynamicWidth ? (itemAny.dynamicWidth / resolvedBaseWidth) : 1);
+      
+      const actualLength = resolvedBaseLength * lengthMultiplier;
+      const actualWidth = resolvedBaseWidth * widthMultiplier;
 
       // Procesar color (puede ser string, HSL o degradado)
       let finalColor: string;
@@ -161,7 +171,7 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
                 color={finalColor}
                 shape={baseVectorShape} 
                 strokeLinecap={baseStrokeLinecap}
-                rotationOrigin="center"
+                rotationOrigin={baseRotationOrigin} // Use passed baseRotationOrigin
             />
         </g>
       );
@@ -174,7 +184,7 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
   }, [
     vectors, baseVectorLength, baseVectorWidth, baseVectorColor, baseVectorShape,
     baseStrokeLinecap, frameInfo, customRenderer, userSvgString, interactionEnabled, 
-    onVectorClick, onVectorHover, 
+    onVectorClick, onVectorHover, baseRotationOrigin, // Added baseRotationOrigin to useMemo dependencies
   ]);
 
   return (

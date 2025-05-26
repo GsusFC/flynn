@@ -224,12 +224,40 @@ export const useSimpleVectorGrid = ({
       // Aplicar vectores dinámicos si están habilitados
       if (validatedDynamicConfig.enableDynamicLength || validatedDynamicConfig.enableDynamicWidth) {
         const globalIntensity = calculateGlobalAnimationIntensity(animatedVectors, prev.previousVectors);
+        
+        if (debugMode) {
+          console.log('🔄 [useSimpleVectorGrid] Aplicando dinámicas:', {
+            enableDynamicLength: validatedDynamicConfig.enableDynamicLength,
+            enableDynamicWidth: validatedDynamicConfig.enableDynamicWidth,
+            lengthMultiplier: validatedDynamicConfig.lengthMultiplier,
+            globalIntensity,
+            vectorCount: animatedVectors.length,
+            sampleVector: animatedVectors[0] ? {
+              originalLength: animatedVectors[0].length,
+              angle: animatedVectors[0].angle
+            } : null
+          });
+        }
+        
+        const vectorLengthBefore = animatedVectors[0]?.length;
+        const dynamicLengthBefore = animatedVectors[0]?.dynamicLength;
+        
         animatedVectors = updateVectorsWithDynamics(
           animatedVectors,
           prev.previousVectors,
           validatedDynamicConfig,
           globalIntensity
         );
+        
+        if (debugMode && animatedVectors[0]) {
+          console.log('🔄 [useSimpleVectorGrid] Dinámicas aplicadas:', {
+            lengthBefore: vectorLengthBefore,
+            dynamicLengthBefore: dynamicLengthBefore,
+            lengthAfter: animatedVectors[0].length,
+            dynamicLengthAfter: animatedVectors[0].dynamicLength,
+            hasChanged: dynamicLengthBefore !== animatedVectors[0].dynamicLength
+          });
+        }
       }
       
       // Limpiar pulso si ha expirado

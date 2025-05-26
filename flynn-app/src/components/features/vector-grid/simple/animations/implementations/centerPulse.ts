@@ -142,8 +142,8 @@ const animateCenterPulse = (
     let finalAngleDegrees = (radialAngle * radToDeg) + pulseEffect;
     
     // Normalizar ángulo
-    while (finalAngleDegrees < 0) finalAngleDegrees += 360;
-    while (finalAngleDegrees >= 360) finalAngleDegrees -= 360;
+    if (isNaN(finalAngleDegrees) || !isFinite(finalAngleDegrees)) finalAngleDegrees = 0;
+    else finalAngleDegrees = ((finalAngleDegrees % 360) + 360) % 360;
     
     return {
       ...vector,

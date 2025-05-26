@@ -28,7 +28,15 @@ export const calculateDynamicLength = (
   config: DynamicVectorConfig,
   animationIntensity: number = 0
 ): number => {
+  console.log('📏 calculateDynamicLength called:', {
+    enableDynamicLength: config.enableDynamicLength,
+    baseLength: vector.length,
+    animationIntensity,
+    lengthMultiplier: config.lengthMultiplier
+  });
+
   if (!config.enableDynamicLength) {
+    console.log('📏 Early exit: dynamic length disabled');
     return vector.length;
   }
 
@@ -220,7 +228,7 @@ export const DEFAULT_DYNAMIC_CONFIG: DynamicVectorConfig = {
  * Valida y normaliza la configuración de vectores dinámicos
  */
 export const validateDynamicConfig = (config: Partial<DynamicVectorConfig>): DynamicVectorConfig => {
-  return {
+  const validated = {
     enableDynamicLength: config.enableDynamicLength ?? DEFAULT_DYNAMIC_CONFIG.enableDynamicLength,
     enableDynamicWidth: config.enableDynamicWidth ?? DEFAULT_DYNAMIC_CONFIG.enableDynamicWidth,
     lengthMultiplier: Math.max(0.1, Math.min(3.0, config.lengthMultiplier ?? DEFAULT_DYNAMIC_CONFIG.lengthMultiplier)),
@@ -228,4 +236,11 @@ export const validateDynamicConfig = (config: Partial<DynamicVectorConfig>): Dyn
     responsiveness: Math.max(0.0, Math.min(1.0, config.responsiveness ?? DEFAULT_DYNAMIC_CONFIG.responsiveness)),
     smoothing: Math.max(0.0, Math.min(1.0, config.smoothing ?? DEFAULT_DYNAMIC_CONFIG.smoothing))
   };
+
+  console.log('🔧 validateDynamicConfig:', {
+    input: config,
+    output: validated
+  });
+
+  return validated;
 };

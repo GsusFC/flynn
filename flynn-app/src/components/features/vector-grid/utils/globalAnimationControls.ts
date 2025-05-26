@@ -117,16 +117,19 @@ export function smoothAngleTransition(
 ): number {
   // Normalizar diferencia angular
   let angleDiff = targetAngle - currentAngle;
-  while (angleDiff > 180) angleDiff -= 360;
-  while (angleDiff < -180) angleDiff += 360;
+  if (isNaN(angleDiff) || !isFinite(angleDiff)) angleDiff = 0;
+  else {
+    angleDiff = ((angleDiff + 180) % 360) - 180;
+    if (angleDiff <= -180) angleDiff += 360;
+  }
   
   // Aplicar elasticidad
   const smoothedDiff = applyElasticity(0, angleDiff, deltaTime, globalControls);
   
   // Retornar ángulo suavizado
   let result = currentAngle + smoothedDiff;
-  while (result < 0) result += 360;
-  while (result >= 360) result -= 360;
+  if (isNaN(result) || !isFinite(result)) result = 0;
+  else result = ((result % 360) + 360) % 360;
   
   return result;
 }

@@ -117,16 +117,12 @@ export interface RenderVectorItem {
  * Convierte un vector del nuevo formato al formato que espera el renderer
  */
 export function convertToRenderVector(animatedVector: AnimatedVectorItem): RenderVectorItem {
-  // Verificación para depuración - eliminar antes de producción
-  if (typeof animatedVector.baseX !== 'number' || typeof animatedVector.baseY !== 'number') {
-    console.error('Error crítico: coordenadas no válidas para el vector', animatedVector.id, {
-      baseX: animatedVector.baseX,
-      baseY: animatedVector.baseY,
-      tipo: typeof animatedVector.baseX
-    });
-    // Proporcionar valores por defecto en caso de error para evitar problemas de renderizado
-    animatedVector.baseX = animatedVector.baseX || 0;
-    animatedVector.baseY = animatedVector.baseY || 0;
+  // Validación silenciosa y corrección automática para mejor rendimiento
+  if (typeof animatedVector.baseX !== 'number' || isNaN(animatedVector.baseX)) {
+    animatedVector.baseX = 0;
+  }
+  if (typeof animatedVector.baseY !== 'number' || isNaN(animatedVector.baseY)) {
+    animatedVector.baseY = 0;
   }
   
   // Asegurar que las coordenadas son números enteros para evitar problemas de renderizado

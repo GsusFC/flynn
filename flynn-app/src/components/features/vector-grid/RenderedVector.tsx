@@ -43,10 +43,10 @@ export const RenderedVector: React.FC<RenderedVectorProps> = React.memo(({
   switch (rotationOrigin) {
     case 'start':
     case 'tail': // Alias para 'start'
-      rotationOffsetX = -halfLength; // Rotar desde el inicio (cola)
+      rotationOffsetX = halfLength; // Rotar desde el inicio (cola) - línea va hacia adelante
       break;
     case 'end':
-      rotationOffsetX = halfLength; // Rotar desde el final (punta)
+      rotationOffsetX = -halfLength; // Rotar desde el final (punta) - línea va hacia atrás
       break;
     case 'center':
     default:
@@ -54,8 +54,8 @@ export const RenderedVector: React.FC<RenderedVectorProps> = React.memo(({
       break;
   }
   
-  // La transformación incluye el offset de rotación
-  const transformValue = `translate(${baseX}, ${baseY}) rotate(${currentAngle}) translate(${-rotationOffsetX}, 0)`;
+  // La transformación: trasladar al punto base, rotar, luego trasladar al punto de rotación
+  const transformValue = `translate(${baseX}, ${baseY}) rotate(${currentAngle}) translate(${rotationOffsetX}, 0)`;
 
   switch (shape) {
     case 'line':

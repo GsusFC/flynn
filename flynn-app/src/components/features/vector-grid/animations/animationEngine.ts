@@ -23,8 +23,7 @@ export function updateVectorsWithAnimation(
     // Ejecutar la actualización de vectores con la implementación específica
     return animation.update(vectors, params, animationProps || animation.defaultProps);
   } catch (error) {
-    console.error(`Error al aplicar animación "${animationType}":`, error);
-    
+    // Fallar silenciosamente en producción para mejor rendimiento
     // En caso de error, devolver los vectores sin cambios
     return vectors;
   }
