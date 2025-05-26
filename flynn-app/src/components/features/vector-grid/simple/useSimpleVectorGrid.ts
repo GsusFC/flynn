@@ -75,6 +75,9 @@ export const useSimpleVectorGrid = ({
   const timeRef = useRef<number>(0);
   const [isClient, setIsClient] = useState(false);
 
+  // Ref para almacenar el último frame renderizado exacto
+  const lastRenderedFrameRef = useRef<SimpleVector[]>([]);
+
   // Configuración de vectores dinámicos validada
   const validatedDynamicConfig = useMemo(() => {
     return validateDynamicConfig(dynamicVectorConfig || {});
@@ -290,6 +293,9 @@ export const useSimpleVectorGrid = ({
         }
       }
       
+      // Capturar el frame exacto que se está renderizando
+      lastRenderedFrameRef.current = animatedVectors;
+
       return {
         ...prev,
         vectors: animatedVectors,
@@ -311,10 +317,9 @@ export const useSimpleVectorGrid = ({
       return;
     }
 
-    const loop = () => {
-      if (typeof window !== 'undefined') {
-        timeRef.current = Date.now();
-      }
+    const loop = (timestamp: number) => {
+      // Usar timestamp de requestAnimationFrame para consistencia
+      timeRef.current = timestamp || Date.now();
       animate();
       animationFrameRef.current = requestAnimationFrame(loop);
     };
@@ -524,14 +529,26 @@ export const useSimpleVectorGrid = ({
 
   // Función para obtener vectores actuales con animación aplicada
   const getCurrentVectors = useCallback((): SimpleVector[] => {
-    // Si está pausado, devolver el estado actual (que mantiene la última posición animada)
-    if (isPaused) {
-      return state.vectors;
+    // Si tenemos un frame capturado (más preciso), usarlo
+    if (lastRenderedFrameRef.current.length > 0) {
+      if (debugMode) {
+        console.log('📸 [getCurrentVectors] Usando frame capturado:', {
+          vectorCount: lastRenderedFrameRef.current.length,
+          firstVectorAngle: lastRenderedFrameRef.current[0]?.angle,
+          timestamp: Date.now()
+        });
+      }
+      return lastRenderedFrameRef.current;
     }
-    // Si está animando, calcular vectores en tiempo actual
-    const currentTime = performance.now();
-    return getVectorsAtTime(currentTime);
-  }, [isPaused, state.vectors, getVectorsAtTime]);
+    // Fallback al estado actual
+    if (debugMode) {
+      console.log('📸 [getCurrentVectors] Usando estado actual:', {
+        vectorCount: state.vectors.length,
+        firstVectorAngle: state.vectors[0]?.angle
+      });
+    }
+    return state.vectors;
+  }, [state.vectors, debugMode]);
 
   // Crear ref object para compatibilidad con forwardRef
   const gridRef: SimpleVectorGridRef = useMemo(() => ({
