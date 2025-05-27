@@ -14,11 +14,27 @@ export interface GradientConfig {
   radius?: number; // 0-1, relativo al tamaño del vector
 }
 
-export type ExtendedVectorColorValue = string | { h: number; s: number; l: number; a?: number } | GradientConfig;
+export interface HSLColor {
+  h: number;
+  s: number;
+  l: number;
+  a?: number;
+}
+
+export type ExtendedVectorColorValue = string | HSLColor | GradientConfig;
 
 // Función para verificar si un color es un degradado
 export function isGradientConfig(color: ExtendedVectorColorValue): color is GradientConfig {
   return typeof color === 'object' && color !== null && 'type' in color && 'colors' in color;
+}
+
+export function isHSLColor(color: ExtendedVectorColorValue): color is HSLColor {
+  return typeof color === 'object' && 
+         color !== null && 
+         !isGradientConfig(color) && // Asegurarse de que no es un GradientConfig
+         'h' in color && 
+         's' in color && 
+         'l' in color;
 }
 
 // Función para generar un ID único para degradados
