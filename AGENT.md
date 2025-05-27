@@ -37,6 +37,16 @@
 **Objetivo**: Separar sistema de animaciones (movimiento) del sistema de colores
 **Beneficios**: HSL picker unificado, gradientes personalizables, mejor UX
 
+### ⚠️ Problema Crítico - Loop de Animación Roto (Enero 2025)
+**Síntoma**: Los vectores se ven pero no se mueven automáticamente con el tiempo
+**Estado**: Detectado, no resuelto
+**Causa**: Loop de animación no funciona correctamente
+- requestAnimationFrame se ejecuta
+- isPaused = false
+- Botón pause/play responde pero animaciones no corren
+- Vectores sí responden a cambios manuales de controles
+**Nota**: Revisar useSimpleVectorGridOptimized.ts líneas 270-285
+
 ## Configuración del Usuario
 - Prefiere 50x50 vectores (2500 vectores) para pruebas de alta densidad
 - Utiliza modo debug activado (`debugMode = true` en page.tsx línea 48)

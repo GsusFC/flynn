@@ -3,8 +3,10 @@
 import React, { forwardRef, useImperativeHandle, useCallback, useRef, useState } from 'react';
 import { throttle } from 'lodash';
 import { useSimpleVectorGrid } from './useSimpleVectorGrid';
+import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized';
 import { HybridRenderer } from '../renderers/HybridRenderer';
-import { RenderMode } from '../performance/PerformanceMonitor';
+// Performance monitor removed - using simplified type
+type RenderMode = 'svg' | 'canvas' | 'hybrid';
 import type { 
   SimpleVectorGridProps, 
   SimpleVectorGridRef,

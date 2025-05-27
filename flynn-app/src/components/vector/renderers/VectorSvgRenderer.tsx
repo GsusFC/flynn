@@ -7,8 +7,8 @@ import type {
   StrokeLinecap,
   RotationOrigin, // Added import for RotationOrigin
   FrameInfo,
-} from '../../features/vector-grid/core/types'; // RUTA TENTATIVA, AJÚSTALA!
-import { RenderedVector } from '../../features/vector-grid/RenderedVector'; // RUTA TENTATIVA, AJÚSTALA!
+} from '../../features/vector-grid/simple/simpleTypes';
+// RenderedVector component removed - using inline SVG
 import { GradientDefs } from '../../features/vector-grid/components/GradientDefs';
 import type { GradientConfig, ExtendedVectorColorValue } from '../../features/vector-grid/types/gradientTypes';
 import { isGradientConfig, generateGradientId } from '../../features/vector-grid/types/gradientTypes';
@@ -161,17 +161,14 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
 
       return (
         <g key={item.id} {...(interactionEnabled ? commonEventHandlers : {})}>
-            <RenderedVector
-                id={item.id} 
-                baseX={item.baseX}
-                baseY={item.baseY}
-                currentAngle={item.currentAngle}
-                length={actualLength}
-                width={actualWidth}
-                color={finalColor}
-                shape={baseVectorShape} 
+            <line
+                x1={item.baseX}
+                y1={item.baseY}
+                x2={item.baseX + Math.cos(item.currentAngle * Math.PI / 180) * actualLength}
+                y2={item.baseY + Math.sin(item.currentAngle * Math.PI / 180) * actualLength}
+                stroke={finalColor}
+                strokeWidth={actualWidth}
                 strokeLinecap={baseStrokeLinecap}
-                rotationOrigin={baseRotationOrigin} // Use passed baseRotationOrigin
             />
         </g>
       );

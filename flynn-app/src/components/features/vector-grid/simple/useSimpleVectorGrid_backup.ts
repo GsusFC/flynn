@@ -413,8 +413,14 @@ export const useSimpleVectorGrid = ({
     return detectAnimationCycle(animationType as AnimationType);
   }, [animationType]);
 
-  // Export functions (simplified)
-  const exportSVG = useCallback(async (): Promise<string> => generateStaticSVG().data, []);
+  // Función para exportar SVG estático
+  const exportSVG = useCallback(async (config: Partial<ExportConfig> = {}): Promise<string> => {
+    if (!isClient) throw new Error('Export only available on client side');
+    
+    const currentVectors = state.vectors;
+    const result = generateStaticSVG();
+    return result.data;
+  }, [state.vectors, width, height, isClient]);
 
   // Función para exportar SVG animado (simplificada)
   const exportAnimatedSVG = useCallback(async (): Promise<string> => {
