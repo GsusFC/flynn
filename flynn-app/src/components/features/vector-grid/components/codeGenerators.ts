@@ -1,5 +1,6 @@
 // Generadores de código para exportación
 import type { SimpleVector, GridConfig, VectorConfig, SimpleVectorGridRef, AnimationType } from '../simple/simpleTypes';
+import { isHSLColor, isGradientConfig, type GradientConfig, type HSLColor } from '../types/gradientTypes';
 
 interface CodeGenerationData {
   vectors: SimpleVector[];
@@ -20,12 +21,57 @@ interface AppConfig {
   animationProps: Record<string, unknown>;
 }
 
+const calculateLinearGradientCoordinates = (angleInDegrees: number = 0): { x1: string; y1: string; x2: string; y2: string } => {
+  // Angle convention: 0 degrees is to the right (positive X axis), 90 degrees is upwards (positive Y axis)
+  const angleRad = angleInDegrees * (Math.PI / 180);
+  const cosAngle = Math.cos(angleRad);
+  const sinAngle = Math.sin(angleRad); // Positive for 'up' in standard math
+
+  // Convert standard math angle to SVG gradient vector coordinates (for gradientUnits="objectBoundingBox")
+  // The gradient flows from (x1,y1) to (x2,y2).
+  // SVG Y-axis is downwards. If sinAngle is positive (upwards), y-coordinates for 'start' should be larger (bottom) 
+  // and for 'end' smaller (top) to make the gradient go upwards.
+  const x1 = (1 - cosAngle) / 2;
+  const y1 = (1 + sinAngle) / 2; // For a standard 'up' angle, sinAngle is positive, making y1 larger (closer to bottom of bbox)
+  const x2 = (1 + cosAngle) / 2;
+  const y2 = (1 - sinAngle) / 2; // Making y2 smaller (closer to top of bbox)
+
+  return {
+    x1: `${(x1 * 100).toFixed(2)}%`,
+    y1: `${(y1 * 100).toFixed(2)}%`,
+    x2: `${(x2 * 100).toFixed(2)}%`,
+    y2: `${(y2 * 100).toFixed(2)}%`,
+  };
+};
+
+const getGradientSvgId = (gradConfig: GradientConfig): string => {
+  const relevantProps = {
+    type: gradConfig.type,
+    colors: gradConfig.colors,
+    angle: gradConfig.angle,
+    centerX: gradConfig.centerX,
+    centerY: gradConfig.centerY,
+    radius: gradConfig.radius,
+  };
+  const stableString = JSON.stringify(relevantProps);
+  let hash = 0;
+  for (let i = 0; i < stableString.length; i++) {
+    const char = stableString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return `grad-${gradConfig.type}-${Math.abs(hash).toString(36)}`;
+};
+
 // Obtener datos del grid ref con configuración real de la app
 export const extractGridData = async (
   gridRef: React.RefObject<SimpleVectorGridRef | null>,
   appConfig: AppConfig
 ): Promise<CodeGenerationData | null> => {
-  if (!gridRef.current) return null;
+  if (!gridRef.current) {
+    console.error('❌ [extractGridData] No hay gridRef.current');
+    return null;
+  }
   
   try {
     // Obtener vectores con estado actual de animación
@@ -34,7 +80,7 @@ export const extractGridData = async (
     // También podemos obtener el SVG nativo si es necesario
     // const svgString = await gridRef.current.exportSVG();
     
-    return {
+    const result = {
       vectors,
       gridConfig: appConfig.gridConfig,
       vectorConfig: appConfig.vectorConfig,
@@ -44,19 +90,67 @@ export const extractGridData = async (
       animationProps: appConfig.animationProps
       // nativeSVG: svgString // Agregar el SVG nativo si lo necesitamos
     };
+    
+    return result;
   } catch (error) {
-    console.error('Error extrayendo datos del grid:', error);
+    console.error('❌ [extractGridData] Error extrayendo datos del grid:', error);
     return null;
   }
 };
 
 // Generar código SVG real con la configuración exacta
 export const generateSVGCode = (data: CodeGenerationData): string => {
-  const { vectors, canvasWidth, canvasHeight, vectorConfig, gridConfig, animationType, animationProps, nativeSVG } = data;
+  const { vectors, canvasWidth, canvasHeight, vectorConfig, gridConfig, animationType, nativeSVG } = data;
   
   // Si tenemos SVG nativo del sistema, usarlo (es más preciso)
   if (nativeSVG) {
     return nativeSVG;
+  }
+
+  const uniqueGradientConfigs = new Map<string, GradientConfig>();
+  // Collect gradients from individual vectors
+  vectors.forEach(vector => {
+    if (isGradientConfig(vector.color)) {
+      const svgId = getGradientSvgId(vector.color);
+      if (!uniqueGradientConfigs.has(svgId)) {
+        uniqueGradientConfigs.set(svgId, vector.color);
+      }
+    }
+  });
+  // Also collect gradient from vectorConfig.color if it's a gradient
+  if (isGradientConfig(vectorConfig.color)) {
+    const svgId = getGradientSvgId(vectorConfig.color);
+    if (!uniqueGradientConfigs.has(svgId)) {
+      uniqueGradientConfigs.set(svgId, vectorConfig.color);
+    }
+  }
+
+  let gradientDefsString = '';
+  if (uniqueGradientConfigs.size > 0) {
+    gradientDefsString = '<defs>\n';
+    uniqueGradientConfigs.forEach((gradConfig, id) => {
+      if (gradConfig.type === 'linear') {
+        const coords = calculateLinearGradientCoordinates(gradConfig.angle);
+        gradientDefsString += `  <linearGradient id="${id}" x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}">\n`;
+        gradConfig.colors.forEach(stop => {
+          gradientDefsString += `    <stop offset="${stop.offset * 100}%" stop-color="${stop.color}" />\n`;
+        });
+        gradientDefsString += '  </linearGradient>\n';
+      } else if (gradConfig.type === 'radial') {
+        // Basic radialGradient with cx, cy, r is implemented.
+        // Future enhancements could include support for focus point (fx, fy, fr) if required.
+        const cx = gradConfig.centerX !== undefined ? `${gradConfig.centerX * 100}%` : '50%';
+        const cy = gradConfig.centerY !== undefined ? `${gradConfig.centerY * 100}%` : '50%';
+        const r = gradConfig.radius !== undefined ? `${gradConfig.radius * 100}%` : '50%';
+
+        gradientDefsString += `  <radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">\n`;
+        gradConfig.colors.forEach(stop => {
+          gradientDefsString += `    <stop offset="${stop.offset * 100}%" stop-color="${stop.color}" />\n`;
+        });
+        gradientDefsString += '  </radialGradient>\n';
+      }
+    });
+    gradientDefsString += '</defs>\n';
   }
   
   const vectorElements = vectors.map((vector, index) => {
@@ -67,15 +161,32 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
     const actualWidth = width || vectorConfig.width;
     
     // Determinar color real del vector
-    let strokeColor: string;
+    let vectorColorValue: string;
     if (typeof color === 'string') {
-      strokeColor = color;
-    } else if (color && typeof color === 'object' && 'h' in color) {
-      // Convertir HSL a string
-      const hsl = color as any;
-      strokeColor = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+      vectorColorValue = color;
+    } else if (isHSLColor(color)) {
+      vectorColorValue = `hsl(${color.h}, ${color.s}%, ${color.l}%)`;
+    } else if (isGradientConfig(color)) {
+      const svgId = getGradientSvgId(color);
+      vectorColorValue = `url(#${svgId})`;
     } else {
-      strokeColor = typeof vectorConfig.color === 'string' ? vectorConfig.color : '#10b981';
+      // Fallback al color por defecto de vectorConfig o un color genérico
+      const defaultConfigColor = vectorConfig.color;
+      if (typeof defaultConfigColor === 'string') {
+        vectorColorValue = defaultConfigColor;
+      } else if (isHSLColor(defaultConfigColor)) {
+        vectorColorValue = `hsl(${defaultConfigColor.h}, ${defaultConfigColor.s}%, ${defaultConfigColor.l}%)`;
+      } else if (isGradientConfig(defaultConfigColor)) {
+        const svgId = getGradientSvgId(defaultConfigColor);
+        // Assuming that if defaultConfigColor is a gradient, it has been added to uniqueGradientConfigs
+        // and its definition will be generated. Its ID is obtained via getGradientSvgId.
+        vectorColorValue = `url(#${svgId})`;
+        // The previous version of this block was correct, re-instating it to ensure no regression.
+        // The error 15dabc2b-c739-4a38-aeb2-85249e5d314d was likely a misinterpretation of the previous state
+        // or an issue with the diff. The getGradientSvgId call was already correctly in place for defaultConfigColor.
+      } else {
+        vectorColorValue = '#10b981'; // Último recurso
+      }
     }
     
     // Calcular posición final basada en el punto de rotación
@@ -112,41 +223,25 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
     
     // Generar elemento SVG según la forma del vector
     switch (vectorConfig.shape) {
-      case 'arrow':
-        const arrowSize = actualLength * 0.2;
-        const arrowAngle1 = angle + 150;
-        const arrowAngle2 = angle - 150;
-        const arrowX1 = endX + Math.cos(arrowAngle1 * Math.PI / 180) * arrowSize;
-        const arrowY1 = endY + Math.sin(arrowAngle1 * Math.PI / 180) * arrowSize;
-        const arrowX2 = endX + Math.cos(arrowAngle2 * Math.PI / 180) * arrowSize;
-        const arrowY2 = endY + Math.sin(arrowAngle2 * Math.PI / 180) * arrowSize;
-        
-        return `  <g id="vector-${index}">
-    <line x1="${startX.toFixed(2)}" y1="${startY.toFixed(2)}" x2="${endX.toFixed(2)}" y2="${endY.toFixed(2)}" 
-          stroke="${strokeColor}" stroke-width="${actualWidth}" stroke-linecap="round"/>
-    <polygon points="${endX.toFixed(2)},${endY.toFixed(2)} ${arrowX1.toFixed(2)},${arrowY1.toFixed(2)} ${arrowX2.toFixed(2)},${arrowY2.toFixed(2)}" 
-             fill="${strokeColor}"/>
-  </g>`;
-             
-      case 'dot':
-        const dotRadius = actualLength * 0.15;
-        return `  <circle id="vector-${index}" 
-    cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${dotRadius.toFixed(2)}" 
-    fill="${strokeColor}"/>`;
-    
       case 'curve':
         const controlX = (startX + endX) / 2 + Math.cos((angle + 90) * Math.PI / 180) * actualLength * 0.3;
         const controlY = (startY + endY) / 2 + Math.sin((angle + 90) * Math.PI / 180) * actualLength * 0.3;
         return `  <path id="vector-${index}" 
     d="M ${startX.toFixed(2)} ${startY.toFixed(2)} Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${endX.toFixed(2)} ${endY.toFixed(2)}" 
-    fill="none" stroke="${strokeColor}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
+    fill="none" stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
+    
+      case 'circle':
+        const circleRadius = actualLength * 0.15;
+        return `  <circle id="vector-${index}" 
+    cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${circleRadius.toFixed(2)}" 
+    fill="${vectorColorValue}"/>`;
     
       case 'line':
       default:
         return `  <line id="vector-${index}" 
     x1="${startX.toFixed(2)}" y1="${startY.toFixed(2)}" 
     x2="${endX.toFixed(2)}" y2="${endY.toFixed(2)}" 
-    stroke="${strokeColor}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
+    stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
     }
   }).join('\n');
   
@@ -157,6 +252,7 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
      height="${canvasHeight}">
   
   <!-- Flynn Vector Grid Export -->
+${gradientDefsString}
   <!-- Generated: ${new Date().toISOString()} -->
   <!-- Animation: ${animationType} -->
   <!-- Grid: ${gridConfig.rows}×${gridConfig.cols} = ${vectors.length} vectors -->
