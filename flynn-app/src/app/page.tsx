@@ -18,7 +18,6 @@ import type {
   VectorConfig, 
   SimpleVectorGridRef,
   AnimationType,
-  DynamicVectorConfig,
   RotationOrigin
 } from '@/components/features/vector-grid/simple/simpleTypes';
 
@@ -59,23 +58,10 @@ export default function VectorGridLab() {
   const [isPaused, setIsPaused] = useState(false);
   const [debugMode, setDebugMode] = useState(true); // Activado temporalmente para debug
   
-  // Estado para configuración dinámica (ahora reactiva)
-  const [dynamicConfig, setDynamicConfig] = useState<DynamicVectorConfig>({
-    enableDynamicLength: true,
-    enableDynamicWidth: false,
-    lengthMultiplier: 1.5,
-    widthMultiplier: 1.2,
-    responsiveness: 0.8,
-    smoothing: 0.8
-  });
-
-  // Debug log cuando cambia dynamicConfig
-  useEffect(() => {
-    console.log('🎛️ [App] dynamicConfig cambió:', dynamicConfig);
-  }, [dynamicConfig]);
+  // Estado para configuración dinámica removido para simplificar
   
   // 🚀 Dimensiones del canvas - lazy y responsivo  
-  const [canvasDimensions, setCanvasDimensions] = useState(() => ({ width: 1200, height: 800 }));
+  const [canvasDimensions, setCanvasDimensions] = useState(() => ({ width: 800, height: 600 }));
 
   // 🚀 Obtener animaciones con memoización
   const availableAnimations = useMemo(() => getAllAnimations(), []);
@@ -93,6 +79,8 @@ export default function VectorGridLab() {
     setIsPaused(prev => !prev);
   }, []);
 
+  // Función de inspección dinámica removida
+
   // Hook para controles de teclado
   useKeyboardControls({
     onTogglePause: handleTogglePause,
@@ -104,8 +92,15 @@ export default function VectorGridLab() {
   const updateCanvasDimensions = useCallback(() => {
     if (canvasContainerRef.current) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
-      const width = Math.max(800, rect.width - 32);
-      const height = Math.max(600, rect.height - 32);
+      
+      // ✅ Ampliar canvas - reducir espacio libre a la mitad (padding de 32px → 16px)
+      const rawWidth = rect.width - 16;
+      const rawHeight = rect.height - 16;
+      
+      // Aplicar mínimos y máximos razonables para evitar canvas gigantes
+      const width = Math.min(Math.max(400, rawWidth), 1800);
+      const height = Math.min(Math.max(300, rawHeight), 1200);
+      
       setCanvasDimensions(prev => {
         // Solo actualizar si hay cambio significativo (>10px)
         if (Math.abs(prev.width - width) > 10 || Math.abs(prev.height - height) > 10) {
@@ -321,22 +316,20 @@ export default function VectorGridLab() {
               gridConfig={gridConfig}
               vectorConfig={vectorConfig}
               animationType={currentAnimationId as AnimationType}
-              animationProps={{
-                type: currentAnimationId,
-                ...animationProps
-              } as any}
-              dynamicVectorConfig={dynamicConfig}
+              animationProps={animationProps as any}
               isPaused={isPaused}
               debugMode={debugMode}
             />
           </div>
           
-          {/* Botón Pause/Play Flotante */}
-          <button
-            onClick={handleTogglePause}
-            className="absolute bottom-4 right-4 w-12 h-12 bg-sidebar-accent/90 hover:bg-sidebar-accent border border-sidebar-border rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
-            title={isPaused ? 'Reanudar (Espacio)' : 'Pausar (Espacio)'}
-          >
+          {/* Botón debug dinámico removido */}
+           
+           {/* Botón Pause/Play Flotante */}
+           <button
+             onClick={handleTogglePause}
+             className="absolute bottom-4 right-4 w-12 h-12 bg-sidebar-accent/90 hover:bg-sidebar-accent border border-sidebar-border rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+             title={isPaused ? 'Reanudar (Espacio)' : 'Pausar (Espacio)'}
+           >
             {isPaused ? (
               <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
@@ -495,10 +488,8 @@ export default function VectorGridLab() {
                     className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                   >
                     <option value="line">📏 Línea</option>
-                    <option value="arrow">➡️ Flecha</option>
                     <option value="curve">🌊 Curva</option>
                     <option value="circle">⭕ Círculo</option>
-                    <option value="dot">⚫ Punto</option>
                   </select>
                 </div>
 
@@ -521,73 +512,7 @@ export default function VectorGridLab() {
                 </p>
                 </div>
 
-                 {/* Controles de Longitud Dinámica */}
-                 <div className="border-t border-sidebar-border pt-3">
-                   <div className="flex items-center justify-between mb-2">
-                     <label className="text-xs font-medium text-sidebar-foreground">
-                       🔄 Longitud Dinámica
-                     </label>
-                     <input 
-                       type="checkbox" 
-                       checked={dynamicConfig.enableDynamicLength}
-                       onChange={(e) => setDynamicConfig(prev => ({ ...prev, enableDynamicLength: e.target.checked }))}
-                       className="rounded"
-                     />
-                   </div>
-                   
-                   {dynamicConfig.enableDynamicLength && (
-                     <div className="space-y-2 ml-2">
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Intensidad: {dynamicConfig.lengthMultiplier.toFixed(1)}x
-                         </label>
-                         <input 
-                           type="range" 
-                           min="1.0" 
-                           max="3.0" 
-                           step="0.1"
-                           value={dynamicConfig.lengthMultiplier}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, lengthMultiplier: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                       
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Reactividad: {(dynamicConfig.responsiveness * 100).toFixed(0)}%
-                         </label>
-                         <input 
-                           type="range" 
-                           min="0.1" 
-                           max="1.0" 
-                           step="0.1"
-                           value={dynamicConfig.responsiveness}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, responsiveness: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                       
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Suavizado: {(dynamicConfig.smoothing * 100).toFixed(0)}%
-                         </label>
-                         <input 
-                           type="range" 
-                           min="0.1" 
-                           max="1.0" 
-                           step="0.1"
-                           value={dynamicConfig.smoothing}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, smoothing: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                     </div>
-                   )}
-                   
-                   <p className="text-xs text-sidebar-foreground/60 mt-1">
-                     Los vectores se alargan según la intensidad de la animación
-                   </p>
-                 </div>
+                 {/* Controles de longitud dinámica removidos */}
               </div>
             </div>
           </div>

@@ -21,12 +21,8 @@ const animateGeometricPattern = (
   props: GeometricPatternProps,
   context: AnimationContext
 ): SimpleVector[] => {
-  // DEBUG: Log para verificar que se está ejecutando
-  console.log('geometricPattern ejecutándose:', {
-    patternType: props.patternType,
-    rotationSpeed: props.rotationSpeed,
-    vectorCount: vectors.length
-  });
+
+  // Props ya validadas y limpias
 
   // Extraer controles globales
   const globalControls = extractGlobalControls(props as unknown as Record<string, unknown>);
@@ -34,13 +30,16 @@ const animateGeometricPattern = (
   const centerX = context.canvasWidth * 0.5;
   const centerY = context.canvasHeight * 0.5;
   
-  // Pre-calcular valores que no cambian por vector (algoritmo original optimizado)
-  const effectiveSpeed = applyGlobalSpeed(props.rotationSpeed, globalControls);
+  // Pre-calcular valores con fallbacks robustos
+  const rotationSpeed = props.rotationSpeed ?? 0.3;
+  const patternType = props.patternType ?? 'tangential';
+  const spiralIntensity = props.spiralIntensity ?? 0.01;
+  
+  const effectiveSpeed = applyGlobalSpeed(rotationSpeed, globalControls);
   const timeFactor = context.time * effectiveSpeed * 0.001;
   
   // Constantes optimizadas
   const piHalf = Math.PI * 0.5;
-  const spiralFactor = 0.01;
 
   return vectors.map(vector => {
     // Calcular posición relativa al centro
@@ -50,22 +49,21 @@ const animateGeometricPattern = (
     // ALGORITMO ORIGINAL: ángulo hacia el centro
     const angleToCenter = Math.atan2(dy, dx);
     
+    // Calcular distancia para todos los patrones (necesario para intensidad)
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
     // Aplicar patrón específico basado en el algoritmo original
     let tangentialAngle: number;
-    let distance = 0;
     
-    if (props.patternType === 'radial') {
+    if (patternType === 'radial') {
       // Radial: directamente hacia/desde el centro
       tangentialAngle = angleToCenter;
-    } else if (props.patternType === 'tangential') {
+    } else if (patternType === 'tangential') {
       // Tangencial: perpendicular al radio (ALGORITMO ORIGINAL)
       tangentialAngle = angleToCenter + piHalf;
     } else { // spiral
       // Espiral: tangencial + factor de distancia
-      distance = Math.sqrt(dx * dx + dy * dy);
-      // Usar el nuevo prop, con un fallback al valor anterior si no está definido
-      const currentSpiralFactor = props.spiralIntensity ?? spiralFactor; // spiralFactor (0.01) como fallback
-      tangentialAngle = angleToCenter + piHalf + distance * currentSpiralFactor;
+      tangentialAngle = angleToCenter + piHalf + distance * spiralIntensity;
     }
 
     // ALGORITMO ORIGINAL: rotación temporal uniforme (efecto agujas de reloj)
@@ -75,16 +73,6 @@ const animateGeometricPattern = (
     // Convertir a grados
     const finalAngle = normalizeAngle(tangentialAngle * (180 / Math.PI));
 
-    // DEBUG: Log primer vector para ver cambios
-    if (vector.originalX === vectors[0].originalX && vector.originalY === vectors[0].originalY) {
-      console.log('Primer vector transformado (simplificado):', {
-        original: vector.originalAngle,
-        tangential: tangentialAngle * (180 / Math.PI),
-        finalAngle,
-        patternType: props.patternType
-      });
-    }
-
     return {
       ...vector,
       angle: finalAngle
@@ -93,22 +81,18 @@ const animateGeometricPattern = (
 };
 
 // Validación de props mejorada
-const validateGeometricPatternProps = (props: GeometricPatternProps): boolean => {
-  if (typeof props.rotationSpeed !== 'number' || isNaN(props.rotationSpeed)) {
-    console.warn('[geometricPattern] La velocidad de rotación debe ser un número');
-    return false;
+const validateGeometricPatternProps = (props: any): boolean => {
+  // Validar rotationSpeed con fallback robusto
+  const rotationSpeed = props.rotationSpeed ?? props.speed ?? 0.3;
+  const finalRotationSpeed = typeof rotationSpeed === 'string' ? parseFloat(rotationSpeed) : rotationSpeed;
+  
+  if (typeof finalRotationSpeed !== 'number' || isNaN(finalRotationSpeed)) {
+    console.warn('[geometricPattern] rotationSpeed inválido, usando default 0.3:', props.rotationSpeed);
+    return true; // No invalidar, usar default
   }
-  if (!['radial', 'tangential', 'spiral'].includes(props.patternType)) {
-    console.warn('[geometricPattern] El tipo de patrón debe ser radial, tangential o spiral');
-    return false;
-  }
-  // Eliminamos la validación de centerInfluence y patternIntensity si ya no se usan directamente en el cálculo del ángulo
-  if (props.patternType === 'spiral' && 
-      props.spiralIntensity !== undefined && 
-      (typeof props.spiralIntensity !== 'number' || isNaN(props.spiralIntensity))) {
-    console.warn('[geometricPattern] La intensidad de la espiral debe ser un número para el tipo espiral');
-    // Decidimos no invalidar la prop aquí, ya que tenemos un fallback en la animación.
-    // Si fuera crítico, retornaríamos false.
+  const patternType = props.patternType ?? 'tangential';
+  if (!['radial', 'tangential', 'spiral'].includes(patternType)) {
+    console.warn('[geometricPattern] patternType inválido, usando default tangential:', props.patternType);
   }
   return true;
 };

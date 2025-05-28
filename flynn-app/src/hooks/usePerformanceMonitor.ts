@@ -2,7 +2,7 @@
 // Separado para mejor control de recursos y análisis
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useVectorGridStore } from '@/stores/vectorGridStore';
+// import { useVectorGridStore } from '@/stores/vectorGridStore'; // Store removed
 
 interface PerformanceMetrics {
   fps: number;
@@ -70,17 +70,24 @@ export const usePerformanceMonitor = ({
   const mergedThresholds = { ...DEFAULT_THRESHOLDS, ...thresholds };
 
   // =============== STORE CONNECTION ===============
-  const { 
-    vectorCount, 
-    canvasDimensions, 
-    renderMode,
-    updatePerformance 
-  } = useVectorGridStore(state => ({
-    vectorCount: state.vectors.length,
-    canvasDimensions: state.canvasDimensions,
-    renderMode: state.renderMode,
-    updatePerformance: state.updatePerformance
-  }));
+  // Store removed - using mock values
+  // const { 
+  //   vectorCount, 
+  //   canvasDimensions, 
+  //   renderMode,
+  //   updatePerformance 
+  // } = useVectorGridStore(state => ({
+  //   vectorCount: state.vectors.length,
+  //   canvasDimensions: state.canvasDimensions,
+  //   renderMode: state.renderMode,
+  //   updatePerformance: state.updatePerformance
+  // }));
+  
+  // Mock values to replace store
+  const vectorCount = 0;
+  const canvasDimensions = { width: 800, height: 600 };
+  const renderMode = 'svg' as const;
+  const updatePerformance = () => {};
 
   // =============== MEMORY MONITORING ===============
   const getMemoryUsage = useCallback((): number => {
@@ -165,44 +172,43 @@ export const usePerformanceMonitor = ({
   const autoOptimize = useCallback((metrics: PerformanceMetrics, issues: string[]) => {
     if (!mergedThresholds.autoOptimize || issues.length === 0) return;
 
-    const state = useVectorGridStore.getState();
+    // Store removed - commenting out store-dependent optimizations
+    // const state = useVectorGridStore.getState();
 
-    if (debugMode) {
-      console.log('⚡ [PerformanceMonitor] Auto-optimizando:', issues);
-    }
+
 
     // Optimización 1: Cambiar a Canvas si hay muchos vectores y FPS bajo
-    if (metrics.vectorCount > 300 && metrics.fps < 40 && renderMode === 'svg') {
-      updatePerformance({ renderMode: 'canvas' });
-      
-      if (debugMode) {
-        console.log('⚡ [PerformanceMonitor] Cambiado a Canvas rendering');
-      }
-    }
+    // if (metrics.vectorCount > 300 && metrics.fps < 40 && renderMode === 'svg') {
+    //   updatePerformance({ renderMode: 'canvas' });
+    //   
+    //   if (debugMode) {
+    //     console.log('⚡ [PerformanceMonitor] Cambiado a Canvas rendering');
+    //   }
+    // }
 
     // Optimización 2: Reducir vectores dinámicos si performance es muy mala
-    if (metrics.fps < 20 && state.dynamicConfig.enableDynamicLength) {
-      useVectorGridStore.setState(state => ({
-        dynamicConfig: {
-          ...state.dynamicConfig,
-          enableDynamicLength: false
-        }
-      }));
-      
-      if (debugMode) {
-        console.log('⚡ [PerformanceMonitor] Desactivada longitud dinámica');
-      }
-    }
+    // if (metrics.fps < 20 && state.dynamicConfig.enableDynamicLength) {
+    //   useVectorGridStore.setState(state => ({
+    //     dynamicConfig: {
+    //       ...state.dynamicConfig,
+    //       enableDynamicLength: false
+    //     }
+    //   }));
+    //   
+    //   if (debugMode) {
+    //     console.log('⚡ [PerformanceMonitor] Desactivada longitud dinámica');
+    //   }
+    // }
 
     // Optimización 3: Pausar animación si es crítico
-    if (metrics.fps < 15) {
-      state.togglePause();
-      
-      if (debugMode) {
-        console.log('⚡ [PerformanceMonitor] Animación pausada por performance crítica');
-      }
-    }
-  }, [mergedThresholds.autoOptimize, renderMode, updatePerformance, debugMode]);
+    // if (metrics.fps < 15) {
+    //   state.togglePause();
+    //   
+    //   if (debugMode) {
+    //     console.log('⚡ [PerformanceMonitor] Animación pausada por performance crítica');
+    //   }
+    // }
+  }, [mergedThresholds.autoOptimize, debugMode]);
 
   // =============== MONITORING LOOP ===============
   const runMonitoringCycle = useCallback(() => {
@@ -214,13 +220,13 @@ export const usePerformanceMonitor = ({
     // Actualizar estado local
     setMetrics(currentMetrics);
 
-    // Actualizar store
-    updatePerformance({
-      fps: currentMetrics.fps,
-      renderTime: currentMetrics.renderTime,
-      vectorCount: currentMetrics.vectorCount,
-      memoryUsage: currentMetrics.memoryUsage
-    });
+    // Actualizar store (commented out - store removed)
+    // updatePerformance({
+    //   fps: currentMetrics.fps,
+    //   renderTime: currentMetrics.renderTime,
+    //   vectorCount: currentMetrics.vectorCount,
+    //   memoryUsage: currentMetrics.memoryUsage
+    // });
 
     // Reportar issues
     if (issues.length > 0) {
@@ -228,16 +234,8 @@ export const usePerformanceMonitor = ({
       autoOptimize(currentMetrics, issues);
     }
 
-    if (debugMode && frameCountRef.current % 5 === 0) {
-      console.log('📊 [PerformanceMonitor] Métricas:', {
-        fps: currentMetrics.fps,
-        renderTime: currentMetrics.renderTime.toFixed(2) + 'ms',
-        memory: currentMetrics.memoryUsage.toFixed(2) + 'MB',
-        vectors: currentMetrics.vectorCount,
-        issues: issues.length
-      });
-    }
-  }, [enabled, analyzePerformance, detectPerformanceIssues, onPerformanceIssue, autoOptimize, updatePerformance, debugMode]);
+
+  }, [enabled, analyzePerformance, detectPerformanceIssues, onPerformanceIssue, autoOptimize, debugMode]);
 
   // =============== EFFECTS ===============
   useEffect(() => {

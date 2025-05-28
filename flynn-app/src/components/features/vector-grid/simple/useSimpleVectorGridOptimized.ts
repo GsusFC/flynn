@@ -15,11 +15,7 @@ import type {
   SimpleVectorGridRef
 } from './simpleTypes';
 import { applyAnimation } from './simpleAnimations';
-import { 
-  updateVectorsWithDynamics, 
-  calculateGlobalAnimationIntensity,
-  validateDynamicConfig
-} from '../utils/dynamicVectorUtils';
+// Imports de vectores dinámicos removidos
 import { detectAnimationCycle } from '../utils/animationCycleUtils';
 // Export functions removed - keeping original functionality
 const generateStaticSVG = () => ({ data: '', filename: 'export.svg' });
@@ -83,6 +79,11 @@ export const useSimpleVectorGridOptimized = ({
     return validateDynamicConfig(dynamicVectorConfig || {});
   }, [dynamicVectorConfig]);
 
+  // 🚀 OPTIMIZACIÓN 3.5: Estabilizar animationProps para evitar recreaciones del useCallback
+  const stableAnimationProps = useMemo(() => {
+    return animationProps;
+  }, [animationProps]);
+
   // 🚀 OPTIMIZACIÓN 4: Hash de configuración para evitar regeneración innecesaria
   const configHash = useMemo(() => {
     return JSON.stringify({
@@ -108,20 +109,11 @@ export const useSimpleVectorGridOptimized = ({
   const generateGrid = useCallback(() => {
     // Verificar si podemos usar cache
     if (gridCacheRef.current && configHashRef.current === configHash) {
-      if (debugMode && isClient) {
-        console.log('⚡ [useSimpleVectorGrid] Usando grid cacheado');
-      }
       return gridCacheRef.current;
     }
 
     const { rows, cols, spacing, margin } = gridConfig;
     const { length, width: vectorWidth, color } = vectorConfig;
-    
-    if (debugMode && isClient) {
-      console.log('🔄 [useSimpleVectorGrid] Generando grid:', {
-        rows, cols, total: rows * cols, width, height
-      });
-    }
 
     // 🚀 Pre-calcular valores para evitar cálculos repetidos en el loop
     const totalWidth = cols * spacing;
@@ -197,7 +189,9 @@ export const useSimpleVectorGridOptimized = ({
 
   // 🚀 OPTIMIZACIÓN 9: Función de animación con menos garbage collection
   const animate = useCallback(() => {
-    if (isPaused || !isClient) return;
+    if (isPaused || !isClient) {
+      return;
+    }
 
     setState(prev => {
       const currentTime = timeRef.current;
@@ -208,7 +202,16 @@ export const useSimpleVectorGridOptimized = ({
       }
       
       // Combinar animationType con animationProps para el sistema modular
-      const combinedAnimationProps = { type: animationType, ...animationProps } as AnimationProps;
+      const combinedAnimationProps = { type: animationType, ...stableAnimationProps } as AnimationProps;
+      
+      // DEBUG TEMPORAL: Ver props que llegan
+      if (debugMode && animationType === 'randomLoop') {
+        console.log('🔧 [DEBUG] randomLoop props:', {
+          animationType,
+          stableAnimationProps,
+          combinedAnimationProps
+        });
+      }
       
       // Aplicar animaciones con dimensiones del canvas
       let animatedVectors = applyAnimation(
@@ -266,20 +269,30 @@ export const useSimpleVectorGridOptimized = ({
         dynamicConfig: validatedDynamicConfig
       };
     });
-  }, [isPaused, animationType, animationProps, isClient, width, height, validatedDynamicConfig, onPulseComplete]);
+  }, [isPaused, animationType, isClient, width, height, validatedDynamicConfig, onPulseComplete, stableAnimationProps]);
 
   // 🚀 OPTIMIZACIÓN 10: Loop de animación con mejor timing
   useEffect(() => {
+    console.log('🚀 [LOOP-EFFECT] Condiciones:', { isPaused, isClient });
+    
     if (isPaused || !isClient) {
+      console.log('❌ [LOOP-EFFECT] Loop cancelado por condiciones');
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = 0;
       }
       return;
     }
+    
+    console.log('✅ [LOOP-EFFECT] Iniciando loop de animación');
 
     const loop = (timestamp: number) => {
+      // DEBUGGING: Verificar que el loop se ejecuta
+      console.log('🔄 [LOOP] tick ejecutado', { timestamp: Date.now(), isPaused, isClient });
+      
       // Usar Date.now() para consistencia con animaciones (no timestamp de RAF)
-      timeRef.current = Date.now();
+      const newTime = Date.now();
+      timeRef.current = newTime;
       animate();
       animationFrameRef.current = requestAnimationFrame(loop);
     };
@@ -289,6 +302,7 @@ export const useSimpleVectorGridOptimized = ({
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = 0;
       }
     };
   }, [animate, isPaused, isClient]);
@@ -348,67 +362,33 @@ export const useSimpleVectorGridOptimized = ({
 
   // Función para obtener vectores actuales con animación aplicada
   const getCurrentVectors = useCallback((): SimpleVector[] => {
+    // Si tenemos un frame renderizado reciente, usarlo
     if (lastRenderedFrameRef.current.length > 0) {
-      if (debugMode) {
-        console.log('📸 [getCurrentVectors] Usando frame capturado:', {
-          vectorCount: lastRenderedFrameRef.current.length,
-          firstVectorAngle: lastRenderedFrameRef.current[0]?.angle,
-          timestamp: Date.now()
-        });
-      }
+      console.log('📸 [getCurrentVectors] Usando frame capturado:', {
+        vectorCount: lastRenderedFrameRef.current.length,
+        firstVectorAngle: lastRenderedFrameRef.current[0]?.angle,
+        firstVectorColor: lastRenderedFrameRef.current[0]?.color,
+        gridConfigSnapshot: `${gridConfig.cols}x${gridConfig.rows}`,
+        timestamp: Date.now()
+      });
       return lastRenderedFrameRef.current;
     }
+    
+    // Si no hay frame capturado, usar el estado actual de vectores
+    console.log('📸 [getCurrentVectors] Usando estado de vectores actual (pausado):', {
+      vectorCount: state.vectors.length,
+      firstVectorAngle: state.vectors[0]?.angle,
+      firstVectorColor: state.vectors[0]?.color,
+      gridConfigSnapshot: `${gridConfig.cols}x${gridConfig.rows}`
+    });
+    
     return state.vectors;
-  }, [state.vectors, debugMode]);
+  }, [state.vectors, debugMode, gridConfig.cols, gridConfig.rows]);
 
-  // Funciones de exportación optimizadas...
-  const exportSVG = useCallback(async (options: ExportConfig = {}): Promise<string> => {
-    if (!isClient) return '';
-    
-    setState(prev => ({ ...prev, isExporting: true, exportProgress: 0 }));
-    
-    try {
-      const currentVectors = getCurrentVectors();
-      onExportProgress?.(25);
-      
-      const svgContent = options.animated 
-        ? await generateAnimatedSVG(currentVectors, { width, height }, options, (progress) => {
-            onExportProgress?.(25 + progress * 0.5);
-          })
-        : generateStaticSVG(currentVectors, { width, height }, options);
-      
-      onExportProgress?.(100);
-      return svgContent;
-    } catch (error) {
-      console.error('Error exportando SVG:', error);
-      return '';
-    } finally {
-      setState(prev => ({ ...prev, isExporting: false, exportProgress: 0 }));
-    }
-  }, [getCurrentVectors, width, height, onExportProgress, isClient]);
-
-  const exportGIF = useCallback(async (options: ExportConfig = {}): Promise<Blob | null> => {
-    if (!isClient) return null;
-    
-    setState(prev => ({ ...prev, isExporting: true, exportProgress: 0 }));
-    
-    try {
-      const currentVectors = getCurrentVectors();
-      const blob = await generateGIFFromVectors(
-        currentVectors, 
-        { width, height }, 
-        options,
-        (progress) => onExportProgress?.(progress)
-      );
-      
-      return blob;
-    } catch (error) {
-      console.error('Error exportando GIF:', error);
-      return null;
-    } finally {
-      setState(prev => ({ ...prev, isExporting: false, exportProgress: 0 }));
-    }
-  }, [getCurrentVectors, width, height, onExportProgress, isClient]);
+  // Export functions (simplified)
+  const exportSVG = useCallback(async (): Promise<string> => generateStaticSVG().data, []);
+  const exportAnimatedSVG = useCallback(async (): Promise<string> => generateAnimatedSVG().data, []);
+  const exportGIF = useCallback(async (): Promise<Blob> => generateGIFFromVectors(), []);
 
   // Info del grid calculada de forma lazy
   const gridInfo = useMemo(() => ({
@@ -422,6 +402,11 @@ export const useSimpleVectorGridOptimized = ({
     }
   }), [state.vectors.length, width, height, state.lastUpdateTime, state.isExporting, state.exportProgress]);
 
+  // Función para detectar ciclo de animación
+  const detectAnimationCycleForExport = useCallback((): AnimationCycle => {
+    return detectAnimationCycle(animationType);
+  }, [animationType]);
+
   // Crear ref object para compatibilidad con forwardRef
   const gridRef: SimpleVectorGridRef = useMemo(() => ({
     triggerPulse,
@@ -430,9 +415,11 @@ export const useSimpleVectorGridOptimized = ({
     getCurrentVectors,
     resetVectors,
     exportSVG,
+    exportAnimatedSVG,
     exportGIF,
+    detectAnimationCycle: detectAnimationCycleForExport,
     updateMousePosition
-  }), [triggerPulse, togglePause, state.vectors, getCurrentVectors, resetVectors, exportSVG, exportGIF, updateMousePosition]);
+  }), [triggerPulse, togglePause, state.vectors, getCurrentVectors, resetVectors, exportSVG, exportAnimatedSVG, exportGIF, detectAnimationCycleForExport, updateMousePosition]);
 
   return {
     vectors: state.vectors,
@@ -443,6 +430,7 @@ export const useSimpleVectorGridOptimized = ({
     resetVectors,
     togglePause,
     exportSVG,
+    exportAnimatedSVG,
     exportGIF,
     gridRef,
     isExporting: state.isExporting,

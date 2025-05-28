@@ -1,4 +1,4 @@
-import type { AnimationType, AnimationProps } from '../animations/animationTypes';
+import type { AnimationType, AnimationProps } from '../simple/simpleTypes';
 
 export type AngleCalculationFunction = (
   r: number,

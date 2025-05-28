@@ -27,17 +27,7 @@ export const useColorSystem = ({ debugMode = false }: UseColorSystemProps = {}) 
   ): ProcessedColor => {
     const result = colorEngine.processColor(color, context);
     
-    if (debugMode) {
-      console.log('🎨 [ColorSystem] Procesando color:', {
-        input: color,
-        context: {
-          time: context.time,
-          vectorIndex: context.vectorIndex,
-          animationIntensity: context.animationIntensity
-        },
-        output: result
-      });
-    }
+
     
     return result;
   }, [colorEngine, debugMode]);

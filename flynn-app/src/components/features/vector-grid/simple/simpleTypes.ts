@@ -22,7 +22,7 @@ export type AnimationType =
   | 'rippleEffect'
   | 'jitter';
 
-export type VectorShape = 'arrow' | 'line' | 'curve' | 'circle' | 'dot';
+export type VectorShape = 'line' | 'curve' | 'circle' | 'circle-wave';
 
 // Tipo para el punto de rotaciรณn de los vectores
 export type RotationOrigin = 'center' | 'start' | 'end' | 'tail';
@@ -54,11 +54,11 @@ export interface SimpleVector {
   // Posiciรณn en el grid
   gridRow: number;
   gridCol: number;
-  // Propiedades dinรกmicas (nuevas)
+  // Propiedades dinámicas (reintroducidas para compatibilidad con lógica existente del hook)
   dynamicLength?: number;
   dynamicWidth?: number;
-  intensity?: number; // Factor de intensidad 0-1 para cรกlculos dinรกmicos
-  previousAngle?: number; // Para calcular cambios de direcciรณn
+  intensity?: number;      // A menudo usado con dinámicas o calculado globalmente
+  previousAngle?: number;  // Útil para calcular cambios o para ciertas animaciones
 }
 
 // Configuraciรณn del grid - simple y directo
@@ -79,15 +79,7 @@ export interface VectorConfig {
   rotationOrigin: RotationOrigin; // Nueva propiedad para punto de rotaciรณn
 }
 
-// Configuraciรณn de vectores dinรกmicos (nueva)
-export interface DynamicVectorConfig {
-  enableDynamicLength: boolean;
-  enableDynamicWidth: boolean;
-  lengthMultiplier: number;    // 0.5 - 3.0
-  widthMultiplier: number;     // 0.5 - 3.0
-  responsiveness: number;      // Quรฉ tan reactivo es el cambio
-  smoothing: number;           // Factor de suavizado para transiciones
-}
+// DynamicVectorConfig removido para simplificar
 
 // Props de animaciones - solo las necesarias (ELIMINADAS LAS SIN GRACIA)
 export interface SmoothWavesProps {
@@ -175,8 +167,7 @@ export interface HslGradientFlowProps {
 export interface GeometricPatternProps {
   rotationSpeed: number;
   patternType: 'radial' | 'tangential' | 'spiral';
-  centerInfluence: number;
-  patternIntensity: number;
+  spiralIntensity?: number;
 }
 
 export interface VortexProps {
@@ -267,7 +258,7 @@ export interface SimpleVectorGridProps {
   animationProps: AnimationProps;
   
   // Configuraciรณn de vectores dinรกmicos (nueva)
-  dynamicVectorConfig?: DynamicVectorConfig;
+  // dynamicVectorConfig removido
   
   // Configuraciรณn del canvas
   width: number;
@@ -291,10 +282,10 @@ export interface SimpleVectorGridRef {
   getVectors: () => SimpleVector[];
   getCurrentVectors: () => SimpleVector[]; // Vectores con estado actual de animación
   resetVectors: () => void;
-  // Nuevas funciones de exportaciรณn
-  exportSVG: (config?: Partial<ExportConfig>) => Promise<string>;
-  exportAnimatedSVG: (config?: Partial<ExportConfig>) => Promise<string>;
-  exportGIF: (config?: Partial<ExportConfig>) => Promise<Blob>;
+  // Funciones de exportaciรณn (simplificadas)
+  exportSVG: () => Promise<string>;
+  exportAnimatedSVG: () => Promise<string>;
+  exportGIF: () => Promise<Blob>;
   detectAnimationCycle: () => AnimationCycle;
 }
 
@@ -314,7 +305,7 @@ export interface VectorGridState {
   pulseStartTime: number | null;
   // Nuevos estados para vectores dinรกmicos
   previousVectors?: SimpleVector[];
-  dynamicConfig?: DynamicVectorConfig;
+  // dynamicConfig removido
   // Estados para exportaciรณn
   isExporting?: boolean;
   exportProgress?: number;

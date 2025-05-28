@@ -9,31 +9,97 @@ import type {
   AnimationProps,
   AnimationType, 
   VectorGridState,
-  DynamicVectorConfig,
-  ExportConfig,
+  // DynamicVectorConfig, // Eliminado
+  // ExportConfig, // No se usa
   AnimationCycle,
-  SimpleVectorGridRef
+  SimpleVectorGridRef,
+  RotationOrigin, // Añadido para la transición
+  RotationTransition // Añadido para la transición
+  // ValidatedDynamicConfig, // Se importará desde ../utils
+  // GlobalAnimationControls // Se importará desde ../utils
 } from './simpleTypes';
 import { applyAnimation } from './simpleAnimations';
-import { 
-  updateVectorsWithDynamics, 
-  calculateGlobalAnimationIntensity,
-  validateDynamicConfig
-} from '../utils/dynamicVectorUtils';
+import {
+  updateVectorsWithDynamics,        // Desde ./vectorDynamicsUtils via ../utils
+  calculateGlobalAnimationIntensity,  // Desde ./vectorDynamicsUtils via ../utils
+  mergeGlobalControls,              // Desde ./globalAnimationControls via ../utils
+  // DEFAULT_GLOBAL_CONTROLS, // No se usa directamente
+  DEFAULT_DYNAMIC_FIELDS, // Renombrado desde DEFAULT_DYNAMIC_CONFIG
+  // type ValidatedDynamicConfig, // No se usa directamente
+  type GlobalAnimationControls       // Tipo desde ../utils
+} from '../utils';
 import { detectAnimationCycle } from '../utils/animationCycleUtils';
-// Export functions removed - keeping original functionality
-const generateStaticSVG = () => ({ data: '', filename: 'export.svg' });
-const generateAnimatedSVG = () => ({ data: '', filename: 'export.svg' });
-const generateGIFFromVectors = () => Promise.resolve(new Blob());
+// Función para generar SVG estático
+const generateStaticSVG = ({
+  vectors,
+  width,
+  height,
+  backgroundColor = '#000000', // Default to black, can be overridden
+  vectorConfig,
+}: {
+  vectors: SimpleVector[];
+  width: number;
+  height: number;
+  backgroundColor?: string;
+  vectorConfig: VectorConfig;
+}): { data: string; filename: string } => {
+  const svgElements: string[] = [];
+
+  // Add background rectangle if a color is specified and not transparent
+  if (backgroundColor && backgroundColor !== 'transparent') {
+    svgElements.push(
+      `<rect width="${width}" height="${height}" fill="${backgroundColor}" />`
+    );
+  }
+
+  vectors.forEach((vector) => {
+    const { x, y, angle, color, opacity } = vector;
+    // Use dynamicLength and dynamicWidth if available, otherwise fallback to base config
+    const currentLength = vector.dynamicLength ?? vectorConfig.length;
+    const currentWidth = vector.dynamicWidth ?? vectorConfig.width;
+
+    // Convert angle to radians for trigonometric functions
+    const radAngle = angle * (Math.PI / 180);
+
+    // Calculate end point of the vector
+    const x2 = x + currentLength * Math.cos(radAngle);
+    const y2 = y + currentLength * Math.sin(radAngle);
+
+    // Define line attributes
+    const attributes = [
+      `x1="${x.toFixed(3)}"`, // Use toFixed for cleaner SVG output
+      `y1="${y.toFixed(3)}"`, 
+      `x2="${x2.toFixed(3)}"`, 
+      `y2="${y2.toFixed(3)}"`, 
+      `stroke="${color}"`, 
+      `stroke-width="${currentWidth.toFixed(3)}"`, 
+      `opacity="${opacity.toFixed(3)}"`, 
+      `stroke-linecap="${vectorConfig.shape === 'curve' ? 'round' : 'butt'}"`, 
+    ];
+
+    svgElements.push(`<line ${attributes.join(' ')} />`);
+  });
+
+  const svgContent = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  ${svgElements.join('\n  ')}
+</svg>`;
+
+  // Generate a somewhat unique filename
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `flynn-static-vectors-${timestamp}.svg`;
+  return { data: svgContent.trim(), filename };
+};
 
 interface UseSimpleVectorGridProps {
   gridConfig: GridConfig;
   vectorConfig: VectorConfig;
   animationType: AnimationType;
   animationProps: Record<string, unknown>;
-  dynamicVectorConfig?: DynamicVectorConfig;
+  globalAnimationControlsProp?: Partial<GlobalAnimationControls>; // Modificado
   width: number;
   height: number;
+  backgroundColor?: string; // Añadido para consistencia
   isPaused?: boolean;
   debugMode?: boolean;
   onVectorCountChange?: (count: number) => void;
@@ -46,32 +112,52 @@ export const useSimpleVectorGrid = ({
   vectorConfig,
   animationType,
   animationProps,
-  dynamicVectorConfig,
+  globalAnimationControlsProp, // Modificado
   width,
   height,
   isPaused = false,
   debugMode = false,
   onVectorCountChange,
   onPulseComplete,
-  onExportProgress
+  backgroundColor // Asegurar que se desestructura si se usa directamente en exportSVG
 }: UseSimpleVectorGridProps) => {
+  const [rotationTransition, setRotationTransition] = useState<RotationTransition | null>(null);
+  const prevRotationOriginRef = useRef<RotationOrigin>(vectorConfig.rotationOrigin);
   // Estado principal - valores iniciales estáticos para evitar hidratación
   const [state, setState] = useState<VectorGridState>({
     vectors: [],
     mousePosition: { x: null, y: null },
     isPaused: false,
-    lastUpdateTime: 0, // Valor estático inicial
     pulseCenter: null,
     pulseStartTime: null,
-    previousVectors: undefined,
-    dynamicConfig: undefined,
+    previousVectors: [], // Importante para dinámicas si se usan
+    lastUpdateTime: Date.now(),
     isExporting: false,
-    exportProgress: 0,
-    capturedFrames: []
+    exportProgress: 0
+    // La propiedad 'dynamicConfig' se elimina aquí si estaba presente,
+    // ya que no pertenece a VectorGridState y causaba un error de TypeScript (18a0315a).
   });
 
-  // Ref para el animation frame
-  const animationFrameRef = useRef<number>(0);
+  const animationFrameId = useRef<number | null>(null);
+
+  // Efecto para manejar la transición del origen de rotación
+  useEffect(() => {
+    if (prevRotationOriginRef.current !== vectorConfig.rotationOrigin) {
+      if (!state.isPaused) { // Solo transicionar si no está pausado
+        setRotationTransition({
+          isTransitioning: true,
+          fromOrigin: prevRotationOriginRef.current,
+          toOrigin: vectorConfig.rotationOrigin,
+          startTime: Date.now(),
+          duration: 300, // ms
+          progress: 0,
+        });
+      } else {
+        setRotationTransition(null); // Si está pausado, cambio instantáneo
+      }
+    }
+    prevRotationOriginRef.current = vectorConfig.rotationOrigin;
+  }, [vectorConfig.rotationOrigin, state.isPaused]);
   
   // Ref para tracking de tiempo - solo se inicializa en cliente
   const timeRef = useRef<number>(0);
@@ -80,10 +166,11 @@ export const useSimpleVectorGrid = ({
   // Ref para almacenar el último frame renderizado exacto
   const lastRenderedFrameRef = useRef<SimpleVector[]>([]);
 
-  // Configuración de vectores dinámicos validada
-  const validatedDynamicConfig = useMemo(() => {
-    return validateDynamicConfig(dynamicVectorConfig || {});
-  }, [dynamicVectorConfig]);
+  // Configuración de controles globales de animación, fusionados con defaults
+  const currentGlobalControls = useMemo((): GlobalAnimationControls => {
+    // globalAnimationControlsProp puede ser parcial, mergeGlobalControls aplica los defaults.
+    return mergeGlobalControls(globalAnimationControlsProp || {});
+  }, [globalAnimationControlsProp]);
 
   // Detectar si estamos en cliente para evitar problemas de hidratación
   useEffect(() => {
@@ -98,13 +185,7 @@ export const useSimpleVectorGrid = ({
     const { rows, cols, spacing, margin } = gridConfig;
     const { length, width: vectorWidth, color } = vectorConfig;
     
-    if (debugMode && isClient) {
-      console.log('🔄 [useSimpleVectorGrid] Generando grid:', {
-        rows, cols, spacing, margin,
-        canvasSize: { width, height },
-        timestamp: new Date().toLocaleTimeString()
-      });
-    }
+
 
     // Calcular dimensiones del grid (sin incluir el último spacing)
     const gridWidth = (cols - 1) * spacing;
@@ -123,9 +204,9 @@ export const useSimpleVectorGrid = ({
         
         // Verificar que el vector esté dentro del canvas con margen
         const withinBounds = x >= margin && y >= margin && x < (width - margin) && y < (height - margin);
-        if (debugMode && row < 2 && col < 5) {
-          console.log(`🔍 Vector [${row},${col}] pos:(${x},${y}) bounds:(${margin}-${width-margin},${margin}-${height-margin}) → ${withinBounds}`);
-        }
+        // if (debugMode && row < 2 && col < 5) {
+        //   console.log(`🔍 Vector [${row},${col}] pos:(${x},${y}) bounds:(${margin}-${width-margin},${margin}-${height-margin}) → ${withinBounds}`);
+        // }
         if (withinBounds) {
           newVectors.push({
             id: `vector-${row}-${col}`,
@@ -151,15 +232,7 @@ export const useSimpleVectorGrid = ({
       }
     }
     
-    if (debugMode && isClient) {
-      console.log('✅ [useSimpleVectorGrid] Grid generado:', {
-        totalVectores: newVectors.length,
-        esperados: rows * cols,
-        gridDimensions: { gridWidth, gridHeight },
-        startPosition: { startX, startY },
-        primerosVectores: newVectors.slice(0, 3).map(v => ({ x: v.x, y: v.y }))
-      });
-    }
+
     
     // Notificar cambio en el conteo de vectores
     if (onVectorCountChange) {
@@ -167,7 +240,7 @@ export const useSimpleVectorGrid = ({
     }
     
     return newVectors;
-  }, [gridConfig, vectorConfig, width, height, debugMode, isClient, onVectorCountChange]);
+  }, [gridConfig, vectorConfig, width, height, onVectorCountChange]);
 
   // Regenerar grid cuando cambien las configuraciones - solo en cliente
   useEffect(() => {
@@ -195,14 +268,8 @@ export const useSimpleVectorGrid = ({
       }))
     }));
     
-    if (debugMode) {
-      console.log('🎨 [useSimpleVectorGrid] Propiedades de vectores actualizadas:', {
-        length: vectorConfig.length,
-        width: vectorConfig.width,
-        color: vectorConfig.color
-      });
-    }
-  }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient, debugMode]);
+
+  }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient, debugMode, state.vectors.length]);
 
   // Función de animación - solo funciona en cliente
   const animate = useCallback(() => {
@@ -214,8 +281,22 @@ export const useSimpleVectorGrid = ({
       // Combinar animationType con animationProps para el sistema modular
       const combinedAnimationProps = { type: animationType, ...animationProps } as AnimationProps;
       
+      // Debug logging for prop validation issues (controlled)
+      if (debugMode && animationType === 'randomLoop') {
+        console.log('🔧 [DEBUG] RandomLoop Props:', animationProps);
+      }
+      
       // Aplicar animaciones con dimensiones del canvas
-      let animatedVectors = applyAnimation(
+      let currentRotationTransition = rotationTransition;
+      if (currentRotationTransition?.isTransitioning) {
+        const elapsedTime = Date.now() - currentRotationTransition.startTime;
+        if (elapsedTime >= currentRotationTransition.duration) {
+          setRotationTransition(prev => prev ? { ...prev, isTransitioning: false, progress: 1 } : null);
+          currentRotationTransition = null; // Transición terminada para este frame
+        }
+      }
+
+      let newVectors = applyAnimation(
         prev.vectors,
         combinedAnimationProps,
         prev.mousePosition,
@@ -227,42 +308,20 @@ export const useSimpleVectorGrid = ({
       );
 
       // Aplicar vectores dinámicos si están habilitados
-      if (validatedDynamicConfig.enableDynamicLength || validatedDynamicConfig.enableDynamicWidth) {
-        const globalIntensity = calculateGlobalAnimationIntensity(animatedVectors, prev.previousVectors);
-        
-        if (debugMode) {
-          console.log('🔄 [useSimpleVectorGrid] Aplicando dinámicas:', {
-            enableDynamicLength: validatedDynamicConfig.enableDynamicLength,
-            enableDynamicWidth: validatedDynamicConfig.enableDynamicWidth,
-            lengthMultiplier: validatedDynamicConfig.lengthMultiplier,
-            globalIntensity,
-            vectorCount: animatedVectors.length,
-            sampleVector: animatedVectors[0] ? {
-              originalLength: animatedVectors[0].length,
-              angle: animatedVectors[0].angle
-            } : null
-          });
-        }
-        
-        const vectorLengthBefore = animatedVectors[0]?.length;
-        const dynamicLengthBefore = animatedVectors[0]?.dynamicLength;
-        
-        animatedVectors = updateVectorsWithDynamics(
-          animatedVectors,
-          prev.previousVectors,
-          validatedDynamicConfig,
-          globalIntensity
+      if (DEFAULT_DYNAMIC_FIELDS.enableDynamicLength || DEFAULT_DYNAMIC_FIELDS.enableDynamicWidth) {
+        const globalIntensity = calculateGlobalAnimationIntensity(
+          newVectors, 
+          currentGlobalControls, 
+          prev.previousVectors
         );
         
-        if (debugMode && animatedVectors[0]) {
-          console.log('🔄 [useSimpleVectorGrid] Dinámicas aplicadas:', {
-            lengthBefore: vectorLengthBefore,
-            dynamicLengthBefore: dynamicLengthBefore,
-            lengthAfter: animatedVectors[0].length,
-            dynamicLengthAfter: animatedVectors[0].dynamicLength,
-            hasChanged: dynamicLengthBefore !== animatedVectors[0].dynamicLength
-          });
-        }
+        newVectors = updateVectorsWithDynamics(
+          newVectors,
+          currentGlobalControls, 
+          globalIntensity,
+          prev.previousVectors 
+        );
+        
       }
       
       // Limpiar pulso si ha expirado
@@ -274,6 +333,7 @@ export const useSimpleVectorGrid = ({
         
         // Calcular duración dinámica basada en las dimensiones del canvas y velocidad del pulso
         const maxDistance = Math.sqrt(width * width + height * height); // Diagonal del canvas
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pulseSpeed = (animationProps as any).pulseSpeed || 0.008; // Velocidad del pulso actual
         
         // Tiempo base para que la onda llegue a la esquina más lejana
@@ -296,44 +356,44 @@ export const useSimpleVectorGrid = ({
       }
       
       // Capturar el frame exacto que se está renderizando
-      lastRenderedFrameRef.current = animatedVectors;
+      lastRenderedFrameRef.current = newVectors;
 
       return {
         ...prev,
-        vectors: animatedVectors,
+        vectors: newVectors,
         previousVectors: prev.vectors, // Guardar estado anterior para vectores dinámicos
         lastUpdateTime: currentTime,
         pulseCenter: newPulseCenter,
         pulseStartTime: newPulseStartTime,
-        dynamicConfig: validatedDynamicConfig
+        // dynamicConfig: currentGlobalControls, // Ya no es necesario en el estado, currentGlobalControls está en el scope del hook
       };
     });
-  }, [isPaused, animationType, animationProps, isClient, width, height, validatedDynamicConfig, onPulseComplete]);
+  }, [isPaused, animationType, animationProps, isClient, width, height, currentGlobalControls, onPulseComplete, debugMode, vectorConfig, gridConfig, rotationTransition]);
 
   // Loop de animación - solo en cliente
   useEffect(() => {
     if (isPaused || !isClient) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
       }
       return;
     }
 
-    const loop = (timestamp: number) => {
+    const loop = () => {
       // Usar Date.now() para consistencia con animaciones (no timestamp de RAF)
       timeRef.current = Date.now();
       animate();
-      animationFrameRef.current = requestAnimationFrame(loop);
+      animationFrameId.current = requestAnimationFrame(loop);
     };
     
-    animationFrameRef.current = requestAnimationFrame(loop);
-    
+    animationFrameId.current = requestAnimationFrame(loop);
+    // Limpiar en desmontaje
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [animate, isPaused, isClient]);
+  }, [animate, isPaused, isClient, rotationTransition]);
 
   // Función para disparar pulso
   const triggerPulse = useCallback((x?: number, y?: number) => {
@@ -348,9 +408,7 @@ export const useSimpleVectorGrid = ({
       pulseStartTime: timeRef.current
     }));
     
-    if (debugMode) {
-      console.log('💥 [useSimpleVectorGrid] Pulso disparado en:', { x: pulseX, y: pulseY });
-    }
+
   }, [width, height, debugMode, isClient]);
 
   // Función para actualizar posición del mouse
@@ -374,9 +432,7 @@ export const useSimpleVectorGrid = ({
       pulseStartTime: null
     }));
     
-    if (debugMode) {
-      console.log('♻️ [useSimpleVectorGrid] Vectores reseteados');
-    }
+
   }, [generateGrid, debugMode, isClient]);
 
   // Función para alternar pausa
@@ -387,26 +443,6 @@ export const useSimpleVectorGrid = ({
     }));
   }, []);
 
-  // Función para obtener vectores en un momento específico
-  const getVectorsAtTime = useCallback((time: number): SimpleVector[] => {
-    // Simular el estado de los vectores en un momento específico
-    // Para exportación, necesitamos poder generar vectores en cualquier momento
-    const tempMousePosition = { x: null, y: null };
-    
-    // Combinar animationType con animationProps para el sistema modular
-    const combinedAnimationProps = { type: animationType, ...animationProps } as AnimationProps;
-    
-    return applyAnimation(
-      state.vectors,
-      combinedAnimationProps,
-      tempMousePosition,
-      time,
-      null, // Sin pulso para exportación
-      null,
-      width,
-      height
-    );
-  }, [state.vectors, animationType, animationProps, width, height]);
 
   // Función para detectar ciclo de animación
   const detectAnimationCycleForExport = useCallback((): AnimationCycle => {
@@ -414,46 +450,57 @@ export const useSimpleVectorGrid = ({
   }, [animationType]);
 
   // Export functions (simplified)
-  const exportSVG = useCallback(async (): Promise<string> => generateStaticSVG().data, []);
+  const exportSVG = useCallback(async (): Promise<string> => {
+    const vectorsToExport = lastRenderedFrameRef.current && lastRenderedFrameRef.current.length > 0
+      ? lastRenderedFrameRef.current
+      : state.vectors; // Fallback si no hay frames renderizados
 
-  // Función para exportar SVG animado (simplificada)
-  const exportAnimatedSVG = useCallback(async (): Promise<string> => {
-    return generateAnimatedSVG().data;
-  }, []);
-
-  // Función para exportar GIF
-  const exportGIF = useCallback(async (config: Partial<ExportConfig> = {}): Promise<Blob> => {
-    if (!isClient) throw new Error('Export only available on client side');
-    
-    setState(prev => ({ ...prev, isExporting: true, exportProgress: 0 }));
-    
-    try {
-      const cycle = detectAnimationCycleForExport();
-      
-      const blob = await generateGIFFromVectors(
-        getVectorsAtTime,
-        cycle,
-        {
-          width: config.width || width,
-          height: config.height || height,
-          quality: config.quality || 'medium',
-          duration: config.duration || cycle.duration,
-          fps: config.fps || 30,
-          loop: config.loop !== false
-        },
-        (progress) => {
-          setState(prev => ({ ...prev, exportProgress: progress }));
-          if (onExportProgress) {
-            onExportProgress(progress);
-          }
-        }
-      );
-      
-      return blob;
-    } finally {
-      setState(prev => ({ ...prev, isExporting: false, exportProgress: 0 }));
+    if (!vectorsToExport || vectorsToExport.length === 0) {
+      console.warn('No vectors available for SVG export.');
+      // Considerar notificar al usuario a través de la UI
+      return ''; // Retorna string vacío o maneja el error como prefieras
     }
-  }, [isClient, detectAnimationCycleForExport, getVectorsAtTime, width, height, onExportProgress]);
+
+    // Asegúrate que gridConfig y vectorConfig estén disponibles en el scope del hook
+    // y sean las versiones actuales que se están usando para el renderizado.
+    const { data } = generateStaticSVG({
+      vectors: vectorsToExport,
+      width: width, // Desde props del hook
+      height: height, // Desde props del hook
+      backgroundColor: backgroundColor, // Desde props del hook (asegurar que esté disponible)
+      vectorConfig: vectorConfig, 
+    });
+    
+    // En un entorno web, aquí es donde típicamente se simularía una descarga
+    // Por ejemplo:
+    // const blob = new Blob([data], { type: 'image/svg+xml' });
+    // const url = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = filename;
+    // document.body.appendChild(a);
+    // a.click();
+    // document.body.removeChild(a);
+    // URL.revokeObjectURL(url);
+    // console.log(`SVG exportado como ${filename}`);
+
+    return data; // Devolvemos el string SVG como pide la firma original
+  }, [state.vectors, vectorConfig, lastRenderedFrameRef, width, height, backgroundColor]); // Asegúrate de incluir todas las dependencias necesarias
+
+  const exportAnimatedSVG = useCallback(async (): Promise<string> => {
+    // Placeholder implementation - Lógica para SVG animado irá aquí
+    console.warn('Animated SVG export is not implemented yet.');
+    // const { data, filename } = generateAnimatedSVG(...);
+    // Similar al exportSVG, podrías manejar la descarga aquí o solo retornar los datos.
+    return '<svg></svg>'; // Placeholder data
+  }, []); // Añadir dependencias si es necesario
+
+  const exportGIF = useCallback(async (): Promise<Blob> => {
+    // Placeholder implementation - Lógica para GIF irá aquí
+    console.warn('GIF export is not implemented yet.');
+    // const gifDataUrl = await generateGIFFromVectors(...);
+    return new Blob([], { type: 'image/gif' }); // Devuelve un Blob vacío para satisfacer la firma
+  }, []); // Añadir dependencias si es necesario
 
   // Información del grid para debugging
   const gridInfo = useMemo(() => {
@@ -469,41 +516,23 @@ export const useSimpleVectorGrid = ({
       animationType: animationProps.type,
       isPaused: isPaused || state.isPaused,
       isClient,
-      dynamicVectorsEnabled: validatedDynamicConfig.enableDynamicLength || validatedDynamicConfig.enableDynamicWidth,
+      dynamicVectorsEnabled: DEFAULT_DYNAMIC_FIELDS.enableDynamicLength || DEFAULT_DYNAMIC_FIELDS.enableDynamicWidth, // Placeholder usando DEFAULT_DYNAMIC_FIELDS
       isExporting: state.isExporting,
       exportProgress: state.exportProgress
     };
-  }, [gridConfig, state.vectors.length, state.isPaused, state.isExporting, state.exportProgress, width, height, animationProps.type, isPaused, isClient, validatedDynamicConfig]);
+  }, [gridConfig, state.vectors.length, state.isPaused, state.isExporting, state.exportProgress, width, height, animationProps.type, isPaused, isClient]);
 
-  // Log de debugging - solo en cliente
-  useEffect(() => {
-    if (debugMode && isClient) {
-      console.log('📊 [useSimpleVectorGrid] Estado actual:', gridInfo);
-    }
-  }, [debugMode, gridInfo, isClient]);
+
 
   // Función para obtener vectores actuales con animación aplicada
   const getCurrentVectors = useCallback((): SimpleVector[] => {
     // Si tenemos un frame capturado (más preciso), usarlo
     if (lastRenderedFrameRef.current.length > 0) {
-      if (debugMode) {
-        console.log('📸 [getCurrentVectors] Usando frame capturado:', {
-          vectorCount: lastRenderedFrameRef.current.length,
-          firstVectorAngle: lastRenderedFrameRef.current[0]?.angle,
-          timestamp: Date.now()
-        });
-      }
       return lastRenderedFrameRef.current;
     }
     // Fallback al estado actual
-    if (debugMode) {
-      console.log('📸 [getCurrentVectors] Usando estado actual:', {
-        vectorCount: state.vectors.length,
-        firstVectorAngle: state.vectors[0]?.angle
-      });
-    }
     return state.vectors;
-  }, [state.vectors, debugMode]);
+  }, [state.vectors]);
 
   // Crear ref object para compatibilidad con forwardRef
   const gridRef: SimpleVectorGridRef = useMemo(() => ({
@@ -545,6 +574,7 @@ export const useSimpleVectorGrid = ({
     exportProgress: state.exportProgress,
     
     // Ref para control externo
-    gridRef
-  };
-};
+    gridRef,
+    rotationTransition // Retornar el estado de la transición
+  }
+}

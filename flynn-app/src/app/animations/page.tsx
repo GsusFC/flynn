@@ -29,7 +29,7 @@ export default function AnimationsPage() {
   const currentAnimationProps = getDefaultProps(selectedAnimation);
 
   const vectorConfig: VectorConfig = {
-    shape: 'arrow',
+    shape: 'line',
     length: 18,
     width: 2,
     color: '#3b82f6',

@@ -42,9 +42,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [gridData, setGridData] = useState<any>(null);
 
-  // Extraer datos del grid cuando se abre el modal
+  // Extraer datos del grid CADA VEZ que el modal se abre o las props relevantes cambian
   useEffect(() => {
-    if (isOpen && !gridData) {
+    if (isOpen) {
       setIsLoading(true);
       extractGridData(gridRef, {
         gridConfig,
@@ -55,11 +55,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }).then((data) => {
         setGridData(data);
         setIsLoading(false);
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('❌ [ExportModal] Error en extracción:', error);
+        setGridData(null); // Limpiar en caso de error
         setIsLoading(false);
       });
+    } else {
+      // Limpiar gridData cuando el modal se cierra para asegurar una carga fresca la próxima vez
+      setGridData(null);
     }
-  }, [isOpen, gridRef, gridData, gridConfig, vectorConfig, animationType, canvasDimensions, animationProps]);
+    // gridData eliminado de las dependencias para evitar bucles si setGridData lo dispara.
+  }, [isOpen, gridRef, gridConfig, vectorConfig, animationType, canvasDimensions, animationProps]);
 
   // Generar código SVG real
   const svgCode = useMemo(() => {
@@ -78,9 +84,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     if (!gridData) {
       return `// Cargando datos del grid...
 // Vector Grid Animation - Flynn Export
-// Los datos se extraerán del grid actual
-
-console.log('Esperando datos del grid...');`;
+// Los datos se extraerán del grid actual`;
     }
     return generateJSCode(gridData);
   }, [gridData]);

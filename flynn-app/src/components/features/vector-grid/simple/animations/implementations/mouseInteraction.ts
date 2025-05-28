@@ -78,7 +78,7 @@ const animateMouseInteraction = (
 
 // Validación de props
 const validateMouseInteractionProps = (props: MouseInteractionProps): boolean => {
-  console.log('[mouseInteraction] DEBUG - Props recibidas:', props);
+
   if (typeof props.interactionRadius !== 'number' || props.interactionRadius <= 0) {
     console.warn('[mouseInteraction] El radio de interacción debe ser un número positivo. Recibido:', props.interactionRadius, typeof props.interactionRadius);
     return false;

@@ -1,4 +1,5 @@
 import { AnimatedVectorItem } from '../animations/types';
+import { HSLColor, GradientConfig, isHSLColor, isGradientConfig, ExtendedVectorColorValue } from '../types/gradientTypes';
 
 /**
  * Tipo para los vectores en el sistema antiguo
@@ -86,6 +87,36 @@ export function convertToAnimatedVectors(legacyVectors: LegacyVectorItem[]): Ani
 /**
  * Interfaz del vector para el renderer (sistema antiguo)
  */
+function processColorForRender(colorValueInput: ExtendedVectorColorValue | undefined): string | undefined {
+  if (colorValueInput === undefined || colorValueInput === null) {
+    return undefined;
+  }
+  // colorValueInput es string | HSLColor | GradientConfig en este punto.
+  if (typeof colorValueInput === 'string') {
+    return colorValueInput;
+  }
+
+  // Si no es string, y no es undefined/null, entonces es HSLColor | GradientConfig.
+  // Hacemos una aserción explícita para TypeScript.
+  const objectColor = colorValueInput as HSLColor | GradientConfig;
+
+  if (isHSLColor(objectColor)) {
+    // objectColor es HSLColor aquí
+    if (objectColor.a !== undefined && objectColor.a !== null) {
+      return `hsla(${objectColor.h}, ${objectColor.s}%, ${objectColor.l}%, ${objectColor.a})`;
+    }
+    return `hsl(${objectColor.h}, ${objectColor.s}%, ${objectColor.l}%)`;
+  } else if (isGradientConfig(objectColor)) {
+    // objectColor es GradientConfig aquí
+    if (objectColor.colors && objectColor.colors.length > 0 && typeof objectColor.colors[0].color === 'string') {
+      return objectColor.colors[0].color;
+    }
+    return '#000000'; // Color por defecto para gradientes sin un string de color simple
+  }
+  
+  return undefined; // Fallback si no coincide con ninguno (no debería ocurrir con tipos válidos)
+}
+
 export interface RenderVectorItem {
   id: string;
   x: number;
@@ -146,7 +177,7 @@ export function convertToRenderVector(animatedVector: AnimatedVectorItem): Rende
     originalLength: animatedVector.baseLength,
     initialAngle: animatedVector.baseAngle,
     currentAngle: animatedVector.angle,
-    color: animatedVector.color, // CORREGIDO: usar el color real del vector
+    color: processColorForRender(animatedVector.color),
     lengthFactor: 1,
     widthFactor: 1,
     intensityFactor: 1,
@@ -168,7 +199,7 @@ export function convertToRenderVectors(animatedVectors: AnimatedVectorItem[]): R
         id: animatedVectors[0].id,
         baseX: animatedVectors[0].baseX,
         baseY: animatedVectors[0].baseY,
-        color: animatedVectors[0].color // Agregar color para debugging
+        color: processColorForRender(animatedVectors[0].color) // Agregar color procesado para debugging
       }
     });
   }

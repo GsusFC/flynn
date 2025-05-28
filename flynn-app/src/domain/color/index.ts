@@ -28,6 +28,9 @@ export type {
   ProcessedColor
 } from './types';
 
+// Import needed types for factory
+import type { SolidColor, GradientColor, HSLColor, DynamicColor } from './types';
+
 // Factory functions para crear colores fácilmente
 export const ColorFactory = {
   solid: (value: string): SolidColor => ({ type: 'solid', value }),

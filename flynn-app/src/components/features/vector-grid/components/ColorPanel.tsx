@@ -3,11 +3,10 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useColorSystem } from '@/hooks/useColorSystem';
 import { 
   ColorFactory, 
-  COLOR_CATEGORIES, 
   type VectorColor, 
   type ColorMode 
 } from '@/domain/color';
@@ -23,7 +22,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
   onColorChange,
   debugMode = false
 }) => {
-  const { presets, getPresets, defaultColor } = useColorSystem({ debugMode });
+  const { getPresets, defaultColor } = useColorSystem({ debugMode });
 
   // Determinar el modo actual
   const currentMode: ColorMode = currentColor.type;
@@ -99,7 +98,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
           onChange={(e) => onColorChange(getPresets('gradient')[e.target.value])}
           className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
         >
-          {Object.entries(getPresets('gradient')).map(([key, gradient]) => (
+          {Object.entries(getPresets('gradient')).map(([key]) => (
             <option key={key} value={key}>
               {key.charAt(0).toUpperCase() + key.slice(1)}
             </option>

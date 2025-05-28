@@ -20,7 +20,10 @@ export * from './globalAnimationControls';
 
 // Utilidades existentes
 export * from './colorUtils';
-export * from './vectorTypeAdapter';
+// vectorTypeAdapter removed - no longer needed
 export * from './angleCalculations';
-export * from './dynamicVectorUtils';
+// dynamicVectorUtils removido
 export * from './animationCycleUtils';
+
+// Nuevas utilidades para dinámicas de vectores (placeholders)
+export * from './vectorDynamicsUtils';

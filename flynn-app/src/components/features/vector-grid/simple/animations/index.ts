@@ -148,7 +148,14 @@ export const executeAnimation = (
   // Validar props si la animación tiene validación
   if (animation.validateProps && !animation.validateProps(props)) {
     console.warn(`[AnimationRegistry] Props inválidas para '${animationId}', usando valores por defecto`);
-    props = animation.defaultProps;
+    // Mezclar props existentes con valores por defecto en lugar de reemplazar completamente
+    props = { ...animation.defaultProps, ...props };
+    
+    // Si aún falla la validación, usar solo los valores por defecto
+    if (!animation.validateProps(props)) {
+      console.warn(`[AnimationRegistry] Usando solo valores por defecto para '${animationId}'`);
+      props = animation.defaultProps;
+    }
   }
   
   try {

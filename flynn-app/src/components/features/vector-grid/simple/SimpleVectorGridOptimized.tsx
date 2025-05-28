@@ -3,7 +3,7 @@
 import React, { forwardRef, useImperativeHandle, useCallback, useRef, useState } from 'react';
 import { throttle } from 'lodash';
 import { useSimpleVectorGrid } from './useSimpleVectorGrid';
-import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized';
+// import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized'; // No se usa
 import { HybridRenderer } from '../renderers/HybridRenderer';
 // Performance monitor removed - using simplified type
 type RenderMode = 'svg' | 'canvas' | 'hybrid';
@@ -11,6 +11,7 @@ import type {
   SimpleVectorGridProps, 
   SimpleVectorGridRef,
   SimpleVector
+  // RotationTransition // No se usa directamente en este archivo, rotationTransition prop ya está tipada por el hook
 } from './simpleTypes';
 
 // Adaptador para convertir SimpleVector al formato que espera HybridRenderer
@@ -19,32 +20,20 @@ const adaptVectorForRenderer = (vector: SimpleVector) => ({
   x: vector.x,
   y: vector.y,
   angle: vector.angle,
-  currentAngle: vector.angle,
-  length: vector.length,
-  baseLength: vector.length,
-  width: vector.width,
-  baseWidth: vector.width,
+  length: vector.dynamicLength || vector.length,
+  width: vector.dynamicWidth || vector.width,
   color: vector.color,
-  originalColor: vector.color,
   opacity: vector.opacity,
-  baseOpacity: vector.opacity,
-  // Propiedades adicionales requeridas por el renderer
-  baseX: vector.x,
-  baseY: vector.y,
+  // Propiedades originales para animaciones
   originalX: vector.originalX,
   originalY: vector.originalY,
-  baseAngle: vector.originalAngle,
   originalAngle: vector.originalAngle,
-  initialAngle: vector.originalAngle,
-  previousAngle: vector.originalAngle,
-  lengthFactor: 1,
-  widthFactor: 1,
-  intensityFactor: 1,
-  r: vector.gridRow,
-  c: vector.gridCol,
-  animationData: {},
-  // Propiedades faltantes para el renderer
-  originalLength: vector.length
+  // Propiedades del grid
+  gridRow: vector.gridRow,
+  gridCol: vector.gridCol,
+  // Propiedades dinámicas opcionales
+  intensity: vector.intensity || 1,
+  previousAngle: vector.previousAngle || vector.originalAngle
 });
 
 export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleVectorGridProps>(
@@ -53,7 +42,6 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
     vectorConfig,
     animationType,
     animationProps,
-    dynamicVectorConfig,
     width,
     height,
     backgroundColor = '#000000',
@@ -61,6 +49,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
     debugMode = false,
     onVectorCountChange
   }, ref) => {
+    // console.log('🎬 [COMPONENT] SimpleVectorGridOptimized montado');
     
     // Ref para el contenedor
     const containerRef = useRef<HTMLDivElement>(null);
@@ -75,16 +64,16 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
       gridInfo,
       triggerPulse,
       updateMousePosition,
-      resetVectors,
+      // resetVectors, // No se usa
       togglePause,
       mousePosition,
-      gridRef: hookGridRef
+      gridRef: hookGridRef,
+      rotationTransition // Recibir el estado de transición del hook
     } = useSimpleVectorGrid({
       gridConfig,
       vectorConfig,
       animationType,
       animationProps: animationProps as any,
-      dynamicVectorConfig,
       width,
       height,
       isPaused,
@@ -173,15 +162,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
       );
     };
 
-    if (debugMode) {
-      console.log('🎨 [SimpleVectorGridOptimized] Renderizando:', {
-        vectores: vectors.length,
-        dimensiones: { width, height },
-        animacion: animationType,
-        pausado: isPaused,
-        modoForzado: forceMode
-      });
-    }
+
 
     return (
       <div 
@@ -221,6 +202,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
             animationType={animationType}
             onModeSwitch={handleModeSwitch}
             forceMode={forceMode}
+            rotationTransition={rotationTransition} // Pasar la transición al renderer
           />
         ) : debugMode ? (
           <div className="flex items-center justify-center w-full h-full text-red-500 bg-gray-900/80 text-sm">
