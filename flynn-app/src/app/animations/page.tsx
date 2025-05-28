@@ -33,7 +33,8 @@ export default function AnimationsPage() {
     length: 18,
     width: 2,
     color: '#3b82f6',
-    rotationOrigin: 'center'
+    rotationOrigin: 'center',
+    strokeLinecap: 'butt'
   };
 
   return (
