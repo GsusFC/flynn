@@ -245,11 +245,11 @@ export const useSimpleVectorGridOptimized = ({
         previousVectors: prev.vectors,
         lastUpdateTime: currentTime,
         pulseCenter: newPulseCenter,
-        pulseStartTime: newPulseStartTime,
-        dynamicConfig: validatedDynamicConfig
+        pulseStartTime: newPulseStartTime
+        // dynamicConfig: validatedDynamicConfig, // Eliminado ya que validatedDynamicConfig no existe
       };
     });
-  }, [isPaused, animationType, isClient, width, height, validatedDynamicConfig, onPulseComplete, stableAnimationProps]);
+  }, [isPaused, animationType, isClient, width, height, /* validatedDynamicConfig, */ onPulseComplete, stableAnimationProps]);
 
   // 🚀 OPTIMIZACIÓN 10: Loop de animación con mejor timing
   useEffect(() => {
