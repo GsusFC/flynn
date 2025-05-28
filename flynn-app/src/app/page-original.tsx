@@ -18,7 +18,6 @@ import type {
   VectorConfig, 
   SimpleVectorGridRef,
   AnimationType,
-  DynamicVectorConfig,
   RotationOrigin
 } from '@/components/features/vector-grid/simple/simpleTypes';
 
@@ -58,21 +57,6 @@ export default function VectorGridLab() {
   });
   const [isPaused, setIsPaused] = useState(false);
   const [debugMode, setDebugMode] = useState(true); // Activado temporalmente para debug
-  
-  // Estado para configuración dinámica (ahora reactiva)
-  const [dynamicConfig, setDynamicConfig] = useState<DynamicVectorConfig>({
-    enableDynamicLength: true,
-    enableDynamicWidth: false,
-    lengthMultiplier: 1.5,
-    widthMultiplier: 1.2,
-    responsiveness: 0.8,
-    smoothing: 0.8
-  });
-
-  // Debug log cuando cambia dynamicConfig
-  useEffect(() => {
-    console.log('🎛️ [App] dynamicConfig cambió:', dynamicConfig);
-  }, [dynamicConfig]);
   
   // 🚀 Dimensiones del canvas - lazy y responsivo  
   const [canvasDimensions, setCanvasDimensions] = useState(() => ({ width: 1200, height: 800 }));
@@ -325,7 +309,6 @@ export default function VectorGridLab() {
                 type: currentAnimationId,
                 ...animationProps
               } as any}
-              dynamicVectorConfig={dynamicConfig}
               isPaused={isPaused}
               debugMode={debugMode}
             />
@@ -521,73 +504,6 @@ export default function VectorGridLab() {
                 </p>
                 </div>
 
-                 {/* Controles de Longitud Dinámica */}
-                 <div className="border-t border-sidebar-border pt-3">
-                   <div className="flex items-center justify-between mb-2">
-                     <label className="text-xs font-medium text-sidebar-foreground">
-                       🔄 Longitud Dinámica
-                     </label>
-                     <input 
-                       type="checkbox" 
-                       checked={dynamicConfig.enableDynamicLength}
-                       onChange={(e) => setDynamicConfig(prev => ({ ...prev, enableDynamicLength: e.target.checked }))}
-                       className="rounded"
-                     />
-                   </div>
-                   
-                   {dynamicConfig.enableDynamicLength && (
-                     <div className="space-y-2 ml-2">
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Intensidad: {dynamicConfig.lengthMultiplier.toFixed(1)}x
-                         </label>
-                         <input 
-                           type="range" 
-                           min="1.0" 
-                           max="3.0" 
-                           step="0.1"
-                           value={dynamicConfig.lengthMultiplier}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, lengthMultiplier: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                       
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Reactividad: {(dynamicConfig.responsiveness * 100).toFixed(0)}%
-                         </label>
-                         <input 
-                           type="range" 
-                           min="0.1" 
-                           max="1.0" 
-                           step="0.1"
-                           value={dynamicConfig.responsiveness}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, responsiveness: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                       
-                       <div>
-                         <label className="block text-xs text-sidebar-foreground/80 mb-1">
-                           Suavizado: {(dynamicConfig.smoothing * 100).toFixed(0)}%
-                         </label>
-                         <input 
-                           type="range" 
-                           min="0.1" 
-                           max="1.0" 
-                           step="0.1"
-                           value={dynamicConfig.smoothing}
-                           onChange={(e) => setDynamicConfig(prev => ({ ...prev, smoothing: parseFloat(e.target.value) }))}
-                           className="w-full"
-                         />
-                       </div>
-                     </div>
-                   )}
-                   
-                   <p className="text-xs text-sidebar-foreground/60 mt-1">
-                     Los vectores se alargan según la intensidad de la animación
-                   </p>
-                 </div>
               </div>
             </div>
           </div>
