@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "//": "CACHE_BUSTER_COMMENT_2025_05_28_1225"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
