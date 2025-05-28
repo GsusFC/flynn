@@ -13,6 +13,7 @@
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@types/lodash": "^4.17.17",
+    "@vercel/kv": "^3.0.0",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
     "gif.js": "^0.2.0",

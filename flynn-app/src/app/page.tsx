@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { Save, FolderOpen } from 'lucide-react';
 import { SimpleVectorGridOptimized } from '@/components/features/vector-grid/simple/SimpleVectorGridOptimized';
 import { 
   getAllAnimations, 
@@ -13,13 +14,17 @@ import { PulseButton } from '@/components/features/vector-grid/components/PulseB
 import { SliderWithInput } from '@/components/features/vector-grid/components/SliderWithInput';
 import { useKeyboardControls } from '@/components/features/vector-grid/hooks/useKeyboardControls';
 import Tooltip from '@/components/ui/Tooltip';
+import SaveConfigModal from '@/components/features/vector-grid/simple/SaveConfigModal';
+import ConfigurationsPanel from '@/components/features/vector-grid/simple/ConfigurationsPanel';
 import type { 
   GridConfig, 
   VectorConfig, 
   SimpleVectorGridRef,
   AnimationType,
   RotationOrigin,
-  ZoomConfig
+  ZoomConfig,
+  SavedAnimation,
+  AnimationConfig
 } from '@/components/features/vector-grid/simple/simpleTypes';
 
 // Configuraciones por defecto
@@ -68,6 +73,10 @@ export default function VectorGridLab() {
   });
   const [isPaused, setIsPaused] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  
+  // Estados para sistema de configuraciones guardadas
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showConfigsPanel, setShowConfigsPanel] = useState(false);
   
   // 🔍 Funciones de cálculo de zoom
   const scaledGridConfig = useMemo((): GridConfig => ({
@@ -168,6 +177,41 @@ export default function VectorGridLab() {
       [propId]: value
     }));
   }, []);
+
+  // 🚀 Funciones para configuraciones guardadas
+  const handleSaveConfig = useCallback(() => {
+    setShowSaveModal(true);
+  }, []);
+
+  const handleLoadConfig = useCallback((config: SavedAnimation) => {
+    // Cargar configuraciones
+    setBaseGridConfig(config.gridConfig);
+    setBaseVectorConfig(config.vectorConfig);
+    setZoomConfig(config.zoomConfig);
+    
+    // Cargar animación y sus props
+    setCurrentAnimationId(config.animationConfig.type);
+    setAnimationProps(config.animationConfig.props);
+    
+    // Cerrar panel si está abierto
+    setShowConfigsPanel(false);
+  }, []);
+
+  const handleConfigSaved = useCallback((config: SavedAnimation) => {
+    // Opcional: mostrar notificación de éxito
+    console.log('Configuration saved:', config.name);
+  }, []);
+
+  const handleDeleteConfig = useCallback((configId: string, isPublic: boolean) => {
+    // Opcional: mostrar notificación de eliminación
+    console.log('Configuration deleted:', configId);
+  }, []);
+
+  // Crear configuración de animación actual para guardar
+  const currentAnimationConfig: AnimationConfig = useMemo(() => ({
+    type: currentAnimationId as AnimationType,
+    props: animationProps
+  }), [currentAnimationId, animationProps]);
 
   // 🚀 Renderizar controles memoizado para evitar re-renders innecesarios
   const renderAnimationControls = useMemo(() => {
@@ -300,6 +344,29 @@ export default function VectorGridLab() {
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3 flex items-center gap-2">
                 🔧 Herramientas
               </h3>
+              
+              {/* Configuraciones Guardadas */}
+              <div className="space-y-2 mb-4 pb-4 border-b border-sidebar-border">
+                <button
+                  onClick={handleSaveConfig}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Save size={16} />
+                  Guardar Configuración
+                </button>
+                
+                <button
+                  onClick={() => setShowConfigsPanel(!showConfigsPanel)}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                    showConfigsPanel 
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
+                      : 'bg-sidebar border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent'
+                  }`}
+                >
+                  <FolderOpen size={16} />
+                  {showConfigsPanel ? 'Ocultar' : 'Ver'} Configuraciones
+                </button>
+              </div>
               
               {/* Controles Debug/Performance */}
               <div className="space-y-3 mb-4">
@@ -438,7 +505,14 @@ export default function VectorGridLab() {
         {/* Columna Derecha - Configuración */}
         <div className="w-80 bg-sidebar border-l border-sidebar-border">
           
-          <div className="p-4 space-y-6 h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto">
+            {showConfigsPanel ? (
+              <ConfigurationsPanel
+                onLoadConfig={handleLoadConfig}
+                onDeleteConfig={handleDeleteConfig}
+              />
+            ) : (
+              <div className="p-4 space-y-6">
             {/* Grid Config */}
             <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Cuadrícula</h3>
@@ -624,9 +698,22 @@ export default function VectorGridLab() {
                  {/* Controles de longitud dinámica removidos */}
               </div>
             </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Modal para guardar configuraciones */}
+      <SaveConfigModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        gridConfig={baseGridConfig}
+        vectorConfig={baseVectorConfig}
+        animationConfig={currentAnimationConfig}
+        zoomConfig={zoomConfig}
+        onSaved={handleConfigSaved}
+      />
     </div>
   );
 }

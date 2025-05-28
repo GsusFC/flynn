@@ -12,8 +12,7 @@ import { tangenteClasicaAnimation } from './implementations/tangenteClasica';
 import { centerPulseAnimation } from './implementations/centerPulse';
 import { lissajousAnimation } from './implementations/lissajous';
 import { perlinFlowAnimation } from './implementations/perlinFlow';
-import { hslRainbowAnimation } from './implementations/hslRainbow';
-import { hslGradientFlowAnimation } from './implementations/hslGradientFlow';
+
 
 // Importar nuevas animaciones implementadas
 import { geometricPatternAnimation } from './implementations/geometricPattern';
@@ -40,9 +39,7 @@ export const animationRegistry: AnimationRegistry = {
   lissajous: lissajousAnimation,
   perlinFlow: perlinFlowAnimation,
   
-  // Animaciones HSL
-  hslRainbow: hslRainbowAnimation,
-  hslGradientFlow: hslGradientFlowAnimation,
+
   
   // Nuevas animaciones avanzadas
   geometricPattern: geometricPatternAnimation,
@@ -187,9 +184,7 @@ export {
   lissajousAnimation,
   perlinFlowAnimation,
   
-  // Animaciones HSL
-  hslRainbowAnimation,
-  hslGradientFlowAnimation,
+
   
   // Nuevas animaciones avanzadas
   geometricPatternAnimation,

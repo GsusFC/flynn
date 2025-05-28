@@ -121,6 +121,108 @@ export interface ZoomConfig {
   presets: number[];   // Niveles predefinidos (25%, 50%, 100%, etc.)
 }
 
+// ===============================
+// SISTEMA DE CONFIGURACIONES GUARDADAS
+// ===============================
+
+// Configuración completa guardada
+export interface SavedAnimation {
+  id: string;
+  name: string;
+  description: string;
+  gridConfig: GridConfig;
+  vectorConfig: VectorConfig;
+  animationConfig: {
+    type: AnimationType;
+    props: Record<string, unknown>;
+  };
+  zoomConfig: ZoomConfig;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  tags: string[];
+}
+
+// Configuración de animación para guardar
+export interface AnimationConfig {
+  type: AnimationType;
+  props: Record<string, unknown>;
+}
+
+// Filtros para configuraciones públicas
+export interface ConfigFilters {
+  search?: string;              // Búsqueda por nombre/descripción
+  tags?: string[];              // Filtrar por tags
+  animationType?: AnimationType; // Filtrar por tipo de animación
+  sortBy?: 'recent' | 'popular' | 'name'; // Ordenamiento
+  limit?: number;               // Límite de resultados
+  offset?: number;              // Para paginación
+}
+
+// Respuesta del API para configuraciones públicas
+export interface PublicConfigsResponse {
+  configs: SavedAnimation[];
+  total: number;
+  hasMore: boolean;
+}
+
+// Manager para gestión de configuraciones
+export interface ConfigManager {
+  // ===== CONFIGURACIONES PRIVADAS (localStorage) =====
+  savePrivate(config: SavedAnimation): Promise<void>;
+  loadPrivate(): SavedAnimation[];
+  deletePrivate(id: string): Promise<void>;
+  updatePrivate(id: string, updates: Partial<SavedAnimation>): Promise<void>;
+  
+  // ===== CONFIGURACIONES PÚBLICAS (Vercel KV) =====
+  savePublic(config: SavedAnimation): Promise<string>; // Retorna shareUrl
+  loadPublic(filters?: ConfigFilters): Promise<PublicConfigsResponse>;
+  loadByShareId(shareId: string): Promise<SavedAnimation | null>;
+  incrementUsage(shareId: string): Promise<void>;
+  
+  // ===== UTILIDADES =====
+  exportToJSON(config: SavedAnimation): string;
+  importFromJSON(json: string): SavedAnimation;
+  generateShareId(): string;
+  validateConfig(config: Partial<SavedAnimation>): boolean;
+}
+
+// Estados del modal de guardado
+export interface SaveConfigModalState {
+  isOpen: boolean;
+  name: string;
+  description: string;
+  tags: string[];
+  isPublic: boolean;
+  isLoading: boolean;
+  error?: string;
+}
+
+// Props para componentes de configuraciones
+export interface SaveConfigModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (config: Omit<SavedAnimation, 'id' | 'createdAt'>) => Promise<void>;
+  currentState: {
+    animationType: AnimationType;
+    animationProps: Record<string, unknown>;
+    gridConfig: GridConfig;
+    vectorConfig: VectorConfig;
+    zoomConfig: ZoomConfig;
+  };
+}
+
+export interface ConfigListProps {
+  title: string;
+  configs: SavedAnimation[];
+  isLoading?: boolean;
+  onLoad: (config: SavedAnimation) => void;
+  onDelete?: (id: string) => void;
+  showUsageCount?: boolean; // Solo para públicas
+  emptyMessage?: string;
+}
+
 // DynamicVectorConfig removido para simplificar
 
 // Props de animaciones - solo las necesarias (ELIMINADAS LAS SIN GRACIA)
