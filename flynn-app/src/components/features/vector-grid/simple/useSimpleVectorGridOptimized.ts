@@ -217,18 +217,6 @@ export const useSimpleVectorGridOptimized = ({
         height
       );
 
-      // 🚀 OPTIMIZACIÓN: Solo aplicar dinámicas si están realmente habilitadas
-      if (validatedDynamicConfig.enableDynamicLength || validatedDynamicConfig.enableDynamicWidth) {
-        const globalIntensity = calculateGlobalAnimationIntensity(animatedVectors, prev.previousVectors);
-        
-        animatedVectors = updateVectorsWithDynamics(
-          animatedVectors,
-          prev.previousVectors,
-          validatedDynamicConfig,
-          globalIntensity
-        );
-      }
-      
       // Limpiar pulso si ha expirado (optimizado)
       let newPulseCenter = prev.pulseCenter;
       let newPulseStartTime = prev.pulseStartTime;
