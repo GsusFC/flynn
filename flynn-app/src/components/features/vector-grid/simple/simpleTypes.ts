@@ -61,6 +61,38 @@ export interface SimpleVector {
   previousAngle?: number;  // Útil para calcular cambios o para ciertas animaciones
 }
 
+// Vector con todos los campos necesarios para el estado interno de la animación
+export interface AnimatedVectorItem {
+  id: string;
+  x: number;
+  y: number;
+  baseX: number;
+  baseY: number;
+  originalX: number;
+  originalY: number;
+  angle: number;
+  currentAngle: number;
+  baseAngle: number;
+  originalAngle: number;
+  initialAngle: number;
+  previousAngle: number;
+  length: number;
+  baseLength: number;
+  originalLength: number;
+  width: number;
+  baseWidth: number;
+  opacity: number;
+  baseOpacity: number;
+  color: ExtendedVectorColorValue;
+  originalColor: ExtendedVectorColorValue;
+  lengthFactor: number;
+  widthFactor: number;
+  intensityFactor: number;
+  r?: number;
+  c?: number;
+  animationData: Record<string, any>;
+}
+
 // Configuraciรณn del grid - simple y directo
 export interface GridConfig {
   rows: number;
