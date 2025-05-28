@@ -262,7 +262,7 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
                     id: item.id,
                     opacity: item.opacity,
                 };
-                return <g key={item.id} {...commonEventHandlers}>{customRenderer(renderProps)}</g>;
+                return <g key={item.id} {...commonEventHandlers}>{customRenderer(renderProps, item)}</g>;
             }
 
             if (userSvgString) {
