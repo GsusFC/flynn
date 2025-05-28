@@ -518,9 +518,7 @@ export default function VectorGridLab() {
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Cuadrícula</h3>
               <div className="space-y-3">
                 {/* Controles editables para valores base */}
-                <div className="text-xs text-sidebar-foreground/70 mb-2 p-2 bg-sidebar-accent/50 rounded border">
-                  💡 Zoom: {Math.round(zoomConfig.level * 100)}% - Valores escalados: {scaledGridConfig.rows}×{scaledGridConfig.cols}, {scaledGridConfig.spacing}px
-                </div>
+
                 <SliderWithInput
                   label="Filas"
                   value={baseGridConfig.rows}
@@ -553,9 +551,7 @@ export default function VectorGridLab() {
             <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Vectores</h3>
               <div className="space-y-3">
-                <div className="text-xs text-sidebar-foreground/70 mb-2 p-2 bg-sidebar-accent/50 rounded border">
-                  💡 Zoom: {Math.round(zoomConfig.level * 100)}% - Valores escalados: {scaledVectorConfig.length}px × {scaledVectorConfig.width}px
-                </div>
+
                 <SliderWithInput
                   label="Longitud"
                   value={baseVectorConfig.length}
