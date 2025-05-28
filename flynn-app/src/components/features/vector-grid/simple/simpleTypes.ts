@@ -112,6 +112,15 @@ export interface VectorConfig {
   strokeLinecap: 'butt' | 'round' | 'square'; // Terminaciones de línea
 }
 
+// Configuración de Zoom
+export interface ZoomConfig {
+  level: number;        // Factor de zoom actual (0.1 - 5.0)
+  min: number;         // Zoom mínimo permitido  
+  max: number;         // Zoom máximo permitido
+  step: number;        // Incremento para botones +/-
+  presets: number[];   // Niveles predefinidos (25%, 50%, 100%, etc.)
+}
+
 // DynamicVectorConfig removido para simplificar
 
 // Props de animaciones - solo las necesarias (ELIMINADAS LAS SIN GRACIA)

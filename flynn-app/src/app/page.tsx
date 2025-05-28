@@ -18,7 +18,8 @@ import type {
   VectorConfig, 
   SimpleVectorGridRef,
   AnimationType,
-  RotationOrigin
+  RotationOrigin,
+  ZoomConfig
 } from '@/components/features/vector-grid/simple/simpleTypes';
 
 // Configuraciones por defecto
@@ -38,6 +39,14 @@ const DEFAULT_VECTOR_CONFIG: VectorConfig = {
   strokeLinecap: 'butt'
 };
 
+const DEFAULT_ZOOM_CONFIG: ZoomConfig = {
+  level: 1.0,           // 100% por defecto
+  min: 0.1,            // 10% mínimo
+  max: 5.0,            // 500% máximo
+  step: 0.1,           // Incrementos de 10%
+  presets: [0.25, 0.5, 1.0, 1.5, 2.0] // 25%, 50%, 100%, 150%, 200%
+};
+
 
 
 // ✅ Sistema de animaciones modular - Sin conversiones necesarias
@@ -48,8 +57,9 @@ export default function VectorGridLab() {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   
   // 🚀 Estados de configuración con lazy initialization
-  const [gridConfig, setGridConfig] = useState<GridConfig>(() => DEFAULT_GRID_CONFIG);
-  const [vectorConfig, setVectorConfig] = useState<VectorConfig>(() => DEFAULT_VECTOR_CONFIG);
+  const [baseGridConfig, setBaseGridConfig] = useState<GridConfig>(() => DEFAULT_GRID_CONFIG);
+  const [baseVectorConfig, setBaseVectorConfig] = useState<VectorConfig>(() => DEFAULT_VECTOR_CONFIG);
+  const [zoomConfig, setZoomConfig] = useState<ZoomConfig>(() => DEFAULT_ZOOM_CONFIG);
   const [currentAnimationId, setCurrentAnimationId] = useState<string>('smoothWaves');
   const [animationProps, setAnimationProps] = useState<Record<string, unknown>>(() => {
     // Solo calcular props por defecto si estamos en cliente
@@ -59,6 +69,21 @@ export default function VectorGridLab() {
   const [isPaused, setIsPaused] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   
+  // 🔍 Funciones de cálculo de zoom
+  const scaledGridConfig = useMemo((): GridConfig => ({
+    ...baseGridConfig,
+    rows: baseGridConfig.rows,
+    cols: baseGridConfig.cols,
+    spacing: Math.round(baseGridConfig.spacing * zoomConfig.level),
+    margin: Math.round(baseGridConfig.margin * zoomConfig.level)
+  }), [baseGridConfig, zoomConfig.level]);
+
+  const scaledVectorConfig = useMemo((): VectorConfig => ({
+    ...baseVectorConfig,
+    length: Math.round(baseVectorConfig.length * zoomConfig.level),
+    width: Math.max(1, Math.round(baseVectorConfig.width * zoomConfig.level)) // Mínimo 1px
+  }), [baseVectorConfig, zoomConfig.level]);
+
   // Estado para configuración dinámica removido para simplificar
   
   // 🚀 Dimensiones del canvas - lazy y responsivo  
@@ -289,19 +314,19 @@ export default function VectorGridLab() {
                 </label>
                 
                 <div className="text-xs text-sidebar-foreground/60">
-                  Performance: {canvasDimensions.width}×{canvasDimensions.height} | Vectores: {gridConfig.cols * gridConfig.rows}
+                  Performance: {canvasDimensions.width}×{canvasDimensions.height} | Vectores: {scaledGridConfig.cols * scaledGridConfig.rows} | Zoom: {Math.round(zoomConfig.level * 100)}%
                 </div>
               </div>
               
               {/* Exportación */}
               <ExportControls 
-                gridRef={vectorGridRef}
-                gridConfig={gridConfig}
-                vectorConfig={vectorConfig}
-                animationType={currentAnimationId as AnimationType}
-                canvasDimensions={canvasDimensions}
-                animationProps={animationProps}
-                className="border-t border-sidebar-border pt-3"
+              gridRef={vectorGridRef}
+              gridConfig={scaledGridConfig}
+              vectorConfig={scaledVectorConfig}
+              animationType={currentAnimationId as AnimationType}
+              canvasDimensions={canvasDimensions}
+              animationProps={animationProps}
+              className="border-t border-sidebar-border pt-3"
               />
             </div>
           </div>
@@ -314,8 +339,8 @@ export default function VectorGridLab() {
               ref={vectorGridRef}
               width={canvasDimensions.width}
               height={canvasDimensions.height}
-              gridConfig={gridConfig}
-              vectorConfig={vectorConfig}
+              gridConfig={scaledGridConfig}
+              vectorConfig={scaledVectorConfig}
               animationType={currentAnimationId as AnimationType}
               animationProps={animationProps as any}
               isPaused={isPaused}
@@ -323,9 +348,76 @@ export default function VectorGridLab() {
             />
           </div>
           
-          {/* Botón debug dinámico removido */}
+          {/* Controles de Zoom Flotantes - Centro Inferior */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-sidebar-accent/90 backdrop-blur-sm border border-sidebar-border rounded-lg p-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              {/* Botones de Zoom Rápido */}
+              <div className="flex items-center gap-1">
+                {zoomConfig.presets.map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setZoomConfig(prev => ({ ...prev, level: preset }))}
+                    className={`px-2 py-1 text-xs rounded transition-all ${
+                      Math.abs(zoomConfig.level - preset) < 0.05
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                        : 'bg-sidebar border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent'
+                    }`}
+                    title={`Zoom ${Math.round(preset * 100)}%`}
+                  >
+                    {Math.round(preset * 100)}%
+                  </button>
+                ))}
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-6 bg-sidebar-border"></div>
+
+              {/* Controles de Incremento */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setZoomConfig(prev => ({ 
+                    ...prev, 
+                    level: Math.max(prev.min, prev.level - prev.step) 
+                  }))}
+                  disabled={zoomConfig.level <= zoomConfig.min}
+                  className="w-8 h-8 bg-sidebar border border-sidebar-border rounded text-sidebar-foreground hover:bg-sidebar-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center text-sm font-bold"
+                  title="Zoom Out"
+                >
+                  −
+                </button>
+
+                <div className="px-3 py-1 bg-sidebar border border-sidebar-border rounded text-xs text-sidebar-foreground min-w-[4rem] text-center">
+                  {Math.round(zoomConfig.level * 100)}%
+                </div>
+
+                <button
+                  onClick={() => setZoomConfig(prev => ({ 
+                    ...prev, 
+                    level: Math.min(prev.max, prev.level + prev.step) 
+                  }))}
+                  disabled={zoomConfig.level >= zoomConfig.max}
+                  className="w-8 h-8 bg-sidebar border border-sidebar-border rounded text-sidebar-foreground hover:bg-sidebar-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center text-sm font-bold"
+                  title="Zoom In"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-6 bg-sidebar-border"></div>
+
+              {/* Reset Zoom */}
+              <button
+                onClick={() => setZoomConfig(prev => ({ ...prev, level: 1.0 }))}
+                className="px-3 py-1 text-xs bg-sidebar border border-sidebar-border rounded text-sidebar-foreground hover:bg-sidebar-accent transition-all"
+                title="Reset Zoom (100%)"
+              >
+                🔍 Reset
+              </button>
+            </div>
+          </div>
            
-           {/* Botón Pause/Play Flotante */}
+           {/* Botón Pause/Play Flotante - Reposicionado */}
            <button
              onClick={handleTogglePause}
              className="absolute bottom-4 right-4 w-12 h-12 bg-sidebar-accent/90 hover:bg-sidebar-accent border border-sidebar-border rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
@@ -351,34 +443,32 @@ export default function VectorGridLab() {
             <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Cuadrícula</h3>
               <div className="space-y-3">
+                {/* Controles editables para valores base */}
+                <div className="text-xs text-sidebar-foreground/70 mb-2 p-2 bg-sidebar-accent/50 rounded border">
+                  💡 Zoom: {Math.round(zoomConfig.level * 100)}% - Valores escalados: {scaledGridConfig.rows}×{scaledGridConfig.cols}, {scaledGridConfig.spacing}px
+                </div>
                 <SliderWithInput
                   label="Filas"
-                  value={gridConfig.rows}
+                  value={baseGridConfig.rows}
                   min={5}
                   max={50}
-                  onChange={(rows) => {
-                    setGridConfig(prev => ({ ...prev, rows }));
-                  }}
+                  onChange={(rows) => setBaseGridConfig(prev => ({ ...prev, rows }))}
                   inputWidth="sm"
                 />
                 <SliderWithInput
                   label="Columnas"
-                  value={gridConfig.cols}
+                  value={baseGridConfig.cols}
                   min={5}
                   max={50}
-                  onChange={(cols) => {
-                    setGridConfig(prev => ({ ...prev, cols }));
-                  }}
+                  onChange={(cols) => setBaseGridConfig(prev => ({ ...prev, cols }))}
                   inputWidth="sm"
                 />
                 <SliderWithInput
                   label="Espaciado"
-                  value={gridConfig.spacing}
+                  value={baseGridConfig.spacing}
                   min={20}
                   max={50}
-                  onChange={(spacing) => {
-                    setGridConfig(prev => ({ ...prev, spacing }));
-                  }}
+                  onChange={(spacing) => setBaseGridConfig(prev => ({ ...prev, spacing }))}
                   suffix="px"
                   inputWidth="sm"
                 />
@@ -389,26 +479,25 @@ export default function VectorGridLab() {
             <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
               <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Vectores</h3>
               <div className="space-y-3">
+                <div className="text-xs text-sidebar-foreground/70 mb-2 p-2 bg-sidebar-accent/50 rounded border">
+                  💡 Zoom: {Math.round(zoomConfig.level * 100)}% - Valores escalados: {scaledVectorConfig.length}px × {scaledVectorConfig.width}px
+                </div>
                 <SliderWithInput
                   label="Longitud"
-                  value={vectorConfig.length}
+                  value={baseVectorConfig.length}
                   min={10}
                   max={600}
-                  onChange={(length) => {
-                    setVectorConfig(prev => ({ ...prev, length }));
-                  }}
+                  onChange={(length) => setBaseVectorConfig(prev => ({ ...prev, length }))}
                   suffix="px"
                   inputWidth="sm"
                 />
                 
                 <SliderWithInput
                   label="Grosor"
-                  value={vectorConfig.width}
+                  value={baseVectorConfig.width}
                   min={1}
                   max={8}
-                  onChange={(width) => {
-                    setVectorConfig(prev => ({ ...prev, width }));
-                  }}
+                  onChange={(width) => setBaseVectorConfig(prev => ({ ...prev, width }))}
                   suffix="px"
                   inputWidth="sm"
                 />
@@ -422,13 +511,13 @@ export default function VectorGridLab() {
                   {/* Selector de tipo */}
                   <div className="mb-2">
                     <select 
-                      value={typeof vectorConfig.color === 'string' ? 'solid' : 'gradient'}
+                      value={typeof baseVectorConfig.color === 'string' ? 'solid' : 'gradient'}
                       onChange={(e) => {
-                        if (e.target.value === 'solid') {
-                          setVectorConfig(prev => ({ ...prev, color: '#10b981' }));
-                        } else {
-                          setVectorConfig(prev => ({ ...prev, color: PRESET_GRADIENTS.sunset }));
-                        }
+                      if (e.target.value === 'solid') {
+                      setBaseVectorConfig(prev => ({ ...prev, color: '#10b981' }));
+                      } else {
+                      setBaseVectorConfig(prev => ({ ...prev, color: PRESET_GRADIENTS.sunset }));
+                      }
                       }}
                       className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                     >
@@ -438,22 +527,22 @@ export default function VectorGridLab() {
                   </div>
                   
                   {/* Control específico según el tipo */}
-                  {typeof vectorConfig.color === 'string' ? (
+                  {typeof baseVectorConfig.color === 'string' ? (
                     <input 
                       type="color" 
-                      value={vectorConfig.color} 
-                      onChange={(e) => setVectorConfig(prev => ({ ...prev, color: e.target.value }))}
+                      value={baseVectorConfig.color as string} 
+                      onChange={(e) => setBaseVectorConfig(prev => ({ ...prev, color: e.target.value }))}
                       className="w-full h-8 border border-sidebar-border rounded"
                     />
                   ) : (
                     <div className="space-y-2">
                       <select 
                         value={Object.keys(PRESET_GRADIENTS).find(key => 
-                          PRESET_GRADIENTS[key] === vectorConfig.color
+                        PRESET_GRADIENTS[key] === baseVectorConfig.color
                         ) || 'sunset'}
-                        onChange={(e) => setVectorConfig(prev => ({ 
-                          ...prev, 
-                          color: PRESET_GRADIENTS[e.target.value] 
+                        onChange={(e) => setBaseVectorConfig(prev => ({ 
+                        ...prev, 
+                        color: PRESET_GRADIENTS[e.target.value] 
                         }))}
                         className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                       >
@@ -468,10 +557,10 @@ export default function VectorGridLab() {
                       <div 
                         className="w-full h-6 border border-sidebar-border rounded"
                         style={{
-                          background: typeof vectorConfig.color === 'object' && 'type' in vectorConfig.color
-                            ? vectorConfig.color.type === 'linear' 
-                              ? `linear-gradient(${vectorConfig.color.angle || 0}deg, ${vectorConfig.color.colors.map(c => `${c.color} ${c.offset * 100}%`).join(', ')})`
-                              : `radial-gradient(circle, ${vectorConfig.color.colors.map(c => `${c.color} ${c.offset * 100}%`).join(', ')})`
+                          background: typeof baseVectorConfig.color === 'object' && 'type' in baseVectorConfig.color
+                          ? baseVectorConfig.color.type === 'linear' 
+                          ? `linear-gradient(${baseVectorConfig.color.angle || 0}deg, ${baseVectorConfig.color.colors.map(c => `${c.color} ${c.offset * 100}%`).join(', ')})`
+                          : `radial-gradient(circle, ${baseVectorConfig.color.colors.map(c => `${c.color} ${c.offset * 100}%`).join(', ')})`
                             : '#10b981'
                         }}
                       />
@@ -484,8 +573,8 @@ export default function VectorGridLab() {
                     Forma
                   </label>
                   <select 
-                    value={vectorConfig.shape} 
-                    onChange={(e) => setVectorConfig(prev => ({ ...prev, shape: e.target.value as VectorConfig["shape"] }))}
+                  value={baseVectorConfig.shape} 
+                  onChange={(e) => setBaseVectorConfig(prev => ({ ...prev, shape: e.target.value as VectorConfig["shape"] }))}
                     className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                   >
                     <option value="line">📏 Línea</option>
@@ -500,8 +589,8 @@ export default function VectorGridLab() {
                 Punto de Rotación
                 </label>
                 <select 
-                value={vectorConfig.rotationOrigin} 
-                onChange={(e) => setVectorConfig(prev => ({ ...prev, rotationOrigin: e.target.value as RotationOrigin }))}
+                value={baseVectorConfig.rotationOrigin} 
+                onChange={(e) => setBaseVectorConfig(prev => ({ ...prev, rotationOrigin: e.target.value as RotationOrigin }))}
                 className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                 >
                 <option value="center">🎯 Centro</option>
@@ -519,8 +608,8 @@ export default function VectorGridLab() {
                     Terminaciones
                   </label>
                   <select 
-                    value={vectorConfig.strokeLinecap} 
-                    onChange={(e) => setVectorConfig(prev => ({ ...prev, strokeLinecap: e.target.value as VectorConfig["strokeLinecap"] }))}
+                    value={baseVectorConfig.strokeLinecap} 
+                    onChange={(e) => setBaseVectorConfig(prev => ({ ...prev, strokeLinecap: e.target.value as VectorConfig["strokeLinecap"] }))}
                     className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
                   >
                     <option value="butt">📐 Sin Terminación</option>
