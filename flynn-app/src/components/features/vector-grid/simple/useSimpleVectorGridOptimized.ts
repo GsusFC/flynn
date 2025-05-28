@@ -9,7 +9,6 @@ import type {
   AnimationProps,
   AnimationType, 
   VectorGridState,
-  DynamicVectorConfig,
   ExportConfig,
   AnimationCycle,
   SimpleVectorGridRef
@@ -27,7 +26,6 @@ interface UseSimpleVectorGridProps {
   vectorConfig: VectorConfig;
   animationType: AnimationType;
   animationProps: Record<string, unknown>;
-  dynamicVectorConfig?: DynamicVectorConfig;
   width: number;
   height: number;
   isPaused?: boolean;
@@ -42,7 +40,6 @@ export const useSimpleVectorGridOptimized = ({
   vectorConfig,
   animationType,
   animationProps,
-  dynamicVectorConfig,
   width,
   height,
   isPaused = false,
@@ -73,11 +70,6 @@ export const useSimpleVectorGridOptimized = ({
   const lastRenderedFrameRef = useRef<SimpleVector[]>([]);
   const gridCacheRef = useRef<SimpleVector[] | null>(null);
   const configHashRef = useRef<string>('');
-
-  // 🚀 OPTIMIZACIÓN 3: Configuración dinámica memoizada con cache
-  const validatedDynamicConfig = useMemo(() => {
-    return validateDynamicConfig(dynamicVectorConfig || {});
-  }, [dynamicVectorConfig]);
 
   // 🚀 OPTIMIZACIÓN 3.5: Estabilizar animationProps para evitar recreaciones del useCallback
   const stableAnimationProps = useMemo(() => {
