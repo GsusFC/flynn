@@ -206,7 +206,7 @@ export const useSimpleVectorGridOptimized = ({
       }
       
       // Aplicar animaciones con dimensiones del canvas
-      let animatedVectors = applyAnimation(
+      const animatedVectors = applyAnimation(
         prev.vectors,
         combinedAnimationProps,
         prev.mousePosition,
