@@ -34,7 +34,8 @@ const DEFAULT_VECTOR_CONFIG: VectorConfig = {
   length: 24,
   width: 2,
   color: '#10b981',
-  rotationOrigin: 'center'
+  rotationOrigin: 'center',
+  strokeLinecap: 'butt'
 };
 
 
