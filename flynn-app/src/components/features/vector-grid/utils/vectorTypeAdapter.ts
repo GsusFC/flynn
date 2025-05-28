@@ -1,4 +1,4 @@
-import { NonExistentTypeXYZ123 } from '../simple/simpleTypes'
+import { AnimatedVectorItem } from '../simple/simpleTypes';
 import { HSLColor, GradientConfig, isHSLColor, isGradientConfig, ExtendedVectorColorValue } from '../types/gradientTypes';
 
 /**
