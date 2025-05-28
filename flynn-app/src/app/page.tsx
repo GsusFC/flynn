@@ -34,7 +34,8 @@ const DEFAULT_VECTOR_CONFIG: VectorConfig = {
   length: 24,
   width: 2,
   color: '#10b981',
-  rotationOrigin: 'center'
+  rotationOrigin: 'center',
+  strokeLinecap: 'butt'
 };
 
 
@@ -56,7 +57,7 @@ export default function VectorGridLab() {
     return getDefaultProps('smoothWaves');
   });
   const [isPaused, setIsPaused] = useState(false);
-  const [debugMode, setDebugMode] = useState(true); // Activado temporalmente para debug
+  const [debugMode, setDebugMode] = useState(false);
   
   // Estado para configuración dinámica removido para simplificar
   
@@ -510,6 +511,25 @@ export default function VectorGridLab() {
                 <p className="text-xs text-sidebar-foreground/60 mt-1">
                 Punto alrededor del cual rota el vector
                 </p>
+                </div>
+
+                {/* Control de Terminaciones de Línea */}
+                <div>
+                  <label className="block text-xs font-medium mb-1 text-sidebar-foreground">
+                    Terminaciones
+                  </label>
+                  <select 
+                    value={vectorConfig.strokeLinecap} 
+                    onChange={(e) => setVectorConfig(prev => ({ ...prev, strokeLinecap: e.target.value as VectorConfig["strokeLinecap"] }))}
+                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                  >
+                    <option value="butt">📐 Sin Terminación</option>
+                    <option value="round">🔵 Redondeadas</option>
+                    <option value="square">⬜ Cuadradas</option>
+                  </select>
+                  <p className="text-xs text-sidebar-foreground/60 mt-1">
+                    Estilo de las puntas de los vectores
+                  </p>
                 </div>
 
                  {/* Controles de longitud dinámica removidos */}

@@ -109,6 +109,7 @@ export interface VectorConfig {
   color: ExtendedVectorColorValue; // Ahora soporta string, HSL y degradados
   opacity?: number;
   rotationOrigin: RotationOrigin; // Nueva propiedad para punto de rotaciรณn
+  strokeLinecap: 'butt' | 'round' | 'square'; // Terminaciones de línea
 }
 
 // DynamicVectorConfig removido para simplificar

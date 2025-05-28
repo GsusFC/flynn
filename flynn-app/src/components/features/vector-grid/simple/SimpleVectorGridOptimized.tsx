@@ -189,7 +189,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
             baseVectorLength={vectorConfig.length}
             baseVectorColor={vectorConfig.color as any}
             baseVectorWidth={vectorConfig.width}
-            baseStrokeLinecap="round"
+            baseStrokeLinecap={vectorConfig.strokeLinecap}
             baseVectorShape={vectorConfig.shape === "curve" ? "circle-wave" : vectorConfig.shape}
             baseRotationOrigin={vectorConfig.rotationOrigin}
             interactionEnabled={!isPaused}
