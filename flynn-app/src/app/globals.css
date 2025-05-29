@@ -59,3 +59,21 @@ body {
 .text-balance {
   text-wrap: balance;
 }
+
+/* Custom scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--sidebar));
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--sidebar-border));
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--sidebar-accent));
+}

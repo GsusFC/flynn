@@ -202,35 +202,13 @@ export const VectorGrid = () => {
         </div>
 
         {/* Code Preview */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full p-4 space-y-4">
-            
-            {/* Preview compacto */}
-            <div className="bg-sidebar-accent border border-sidebar-border rounded-lg overflow-hidden">
-              <div className="bg-sidebar border-b border-sidebar-border p-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-sidebar-foreground/60 font-mono">Preview</span>
-                </div>
-                <span className="text-xs text-sidebar-foreground/60">
-                  {getCurrentCode().split('\n').length > 8 ? '8+' : getCurrentCode().split('\n').length} líneas
-                </span>
-              </div>
-              <div className="p-3 max-h-32 overflow-hidden relative">
-                <CodeHighlighter
-                  code={getCodePreview()}
-                  language={activeTab}
-                  className="text-sidebar-foreground text-xs"
-                />
-                {getCurrentCode().split('\n').length > 8 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-sidebar-accent to-transparent"></div>
-                )}
-              </div>
-            </div>
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 p-4">
             
             {/* Código completo */}
-            <div className="flex-1 bg-sidebar-accent border border-sidebar-border rounded overflow-hidden">
+            <div className="h-full bg-sidebar-accent border border-sidebar-border rounded overflow-hidden flex flex-col">
               {/* Code editor header */}
-              <div className="bg-sidebar border-b border-sidebar-border p-2 flex items-center justify-between">
+              <div className="bg-sidebar border-b border-sidebar-border p-2 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                     <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -255,14 +233,12 @@ export const VectorGrid = () => {
               </div>
               
               {/* Code content */}
-              <div className="h-full overflow-auto">
-                <div className="p-4">
-                  <CodeHighlighter
-                    code={getCurrentCode()}
-                    language={activeTab}
-                    className="text-sidebar-foreground"
-                  />
-                </div>
+              <div className="flex-1 min-h-0 overflow-auto p-4 custom-scrollbar">
+                <CodeHighlighter
+                  code={getCurrentCode()}
+                  language={activeTab}
+                  className="text-sidebar-foreground"
+                />
               </div>
             </div>
           </div>
