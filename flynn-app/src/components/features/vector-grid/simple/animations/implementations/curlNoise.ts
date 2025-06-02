@@ -148,11 +148,15 @@ export const curlNoiseAnimation = createSimpleAnimation<CurlNoiseProps>({
     const speed = props.speed ?? 0.002;       // Alineado con defaultProps
     const intensity = props.intensity ?? 1;       // Alineado con defaultProps (ya estaba correcto)
     const turbulenceAmount = props.turbulence ?? 0.5; // Sin defaultProp, fallback local está bien
-    const persistence: number = props.persistence ?? 0.5; // Alineado con defaultProps
-    const octaves: number = props.octaves ?? 3;         // Alineado con defaultProps
+    const persistence = props.persistence ?? 0.5; // Alineado con defaultProps
+    const octaves = props.octaves ?? 3;         // Alineado con defaultProps
     
     const { time } = context; // Eliminado canvasWidth y canvasHeight no utilizados
     const noiseTime = time * speed; // Tiempo para la evolución del ruido, similar a perlinFlow
+
+    // Create constant values to ensure TypeScript knows they're numbers
+    const finalOctaves = 3;
+    const finalPersistence = 0.5;
 
     return vectors.map(vector => {
       // Coordenadas escaladas directamente
@@ -168,7 +172,7 @@ export const curlNoiseAnimation = createSimpleAnimation<CurlNoiseProps>({
         vector.originalY,
         noiseTime,        // Usamos el tiempo modulado por la velocidad
         noiseScale,       // calculateCurlStandard se encarga de la escala principal
-        (nx, ny, nt) => generateOctaveNoise(nx, ny, nt, octaves || 3, persistence || 0.5) // generateOctaveNoise ya no toma noiseScale
+        (nx, ny, nt) => generateOctaveNoise(nx, ny, nt, finalOctaves, finalPersistence) // generateOctaveNoise ya no toma noiseScale
       );
       
       // Aplicar turbulencia si está habilitada

@@ -80,9 +80,7 @@ export default function DemoVectorGrid({
   curvatureIntensity = 1,
   waveFrequency = 2,
   spiralTightness = 1,
-  organicNoise = 0.5,
-
-  gradientType
+  organicNoise = 0.5
 }: DemoVectorGridProps) {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [vectors, setVectors] = useState<Vector[]>([]);
