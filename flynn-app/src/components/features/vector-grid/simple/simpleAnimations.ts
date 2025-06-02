@@ -134,12 +134,15 @@ export const applyAnimation = (
       return executeAnimation('dipoleField', vectors, props as Record<string, unknown>, context);
     }
     
-    case 'testRotation': {
-      const { ...props } = animationProps;
-      return executeAnimation('testRotation', vectors, props as Record<string, unknown>, context);
-    }
+    // testRotation handled by default case via executeAnimation
     
     default:
+      // Handle any animation types not explicitly in the switch case
+      const anyProps = animationProps as any;
+      if (anyProps.type && typeof anyProps.type === 'string') {
+        const { type, ...props } = anyProps;
+        return executeAnimation(type, vectors, props as Record<string, unknown>, context);
+      }
       console.warn('Tipo de animación desconocido:', animationProps);
       return executeAnimation('none', vectors, {}, context);
   }

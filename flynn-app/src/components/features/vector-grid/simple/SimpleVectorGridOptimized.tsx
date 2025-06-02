@@ -74,7 +74,7 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
       gridConfig,
       vectorConfig,
       animationType,
-      animationProps: animationProps,
+      animationProps: animationProps as Record<string, unknown>,
       width,
       height,
       canvasRef, // 🚀 NUEVO: Pasar canvasRef al hook optimizado

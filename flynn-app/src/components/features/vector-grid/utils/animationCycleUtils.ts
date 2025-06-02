@@ -87,6 +87,21 @@ const ANIMATION_CYCLE_CONFIGS: Record<AnimationType, AnimationCycle> = {
     duration: 12000,
     frameCount: 360,
     isDetected: true
+  },
+  gaussianGradient: {
+    duration: 8000,
+    frameCount: 240,
+    isDetected: true
+  },
+  dipoleField: {
+    duration: 6000,
+    frameCount: 180,
+    isDetected: true
+  },
+  testRotation: {
+    duration: 4000,
+    frameCount: 120,
+    isDetected: true
   }
 };
 

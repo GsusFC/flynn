@@ -499,12 +499,12 @@ export const useSimpleVectorGrid = (props: UseSimpleVectorGridProps) => {
     return { data, filename }; // Devolver objeto
   }, [state.vectors, vectorConfig, lastRenderedFrameRef, width, height, backgroundColor]); // Asegúrate de incluir todas las dependencias necesarias
 
-  const exportAnimatedSVG = useCallback(async (): Promise<string> => {
+  const exportAnimatedSVG = useCallback(async (): Promise<{ data: string; filename: string; }> => {
     // Placeholder implementation - Lógica para SVG animado irá aquí
     console.warn('Animated SVG export is not implemented yet.');
     // const { data, filename } = generateAnimatedSVG(...);
     // Similar al exportSVG, podrías manejar la descarga aquí o solo retornar los datos.
-    return '<svg></svg>'; // Placeholder data
+    return { data: '<svg></svg>', filename: 'animated-vectors.svg' }; // Placeholder data
   }, []); // Añadir dependencias si es necesario
 
   const exportGIF = useCallback(async (options?: {
