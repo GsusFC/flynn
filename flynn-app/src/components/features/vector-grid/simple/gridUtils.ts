@@ -1,4 +1,4 @@
-import { SimpleVector, GridConfig, VectorConfig, ExtendedVectorColorValue } from './simpleTypes';
+import { SimpleVector, GridConfig, VectorConfig } from './simpleTypes';
 
 // Grid generation patterns
 export type GridPattern = 
@@ -310,7 +310,7 @@ function createVectorAt(
   vectorConfig: VectorConfig
 ): SimpleVector {
   const id = `vector-${row}-${col}`;
-  const angle = vectorConfig.angleOffset || 0;
+  const angle = 0; // Default angle
   
   return {
     id,

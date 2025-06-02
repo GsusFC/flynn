@@ -172,7 +172,7 @@ export const curlNoiseAnimation = createSimpleAnimation<CurlNoiseProps>({
         vector.originalY,
         noiseTime,        // Usamos el tiempo modulado por la velocidad
         noiseScale,       // calculateCurlStandard se encarga de la escala principal
-        (nx, ny, nt) => generateOctaveNoise(nx, ny, nt, finalOctaves, finalPersistence) // generateOctaveNoise ya no toma noiseScale
+        (nx: number, ny: number, nt?: number) => generateOctaveNoise(nx, ny, nt || 0, 3, 0.5) // generateOctaveNoise ya no toma noiseScale
       );
       
       // Aplicar turbulencia si está habilitada

@@ -23,7 +23,8 @@ export type AnimationType =
   | 'flowField'
 | 'curlNoise'
 | 'gaussianGradient'
-| 'dipoleField';
+| 'dipoleField'
+| 'testRotation';
 
 export type VectorShape = 'line' | 'curve' | 'circle' | 'circle-wave';
 

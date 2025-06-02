@@ -14,6 +14,7 @@ import type {
   RotationTransition, // 🔧 AÑADIDO para compatibilidad
   RotationOrigin // 🔧 AÑADIDO para compatibilidad
 } from './simpleTypes';
+// import { type AnimationProps as CorrectAnimationProps } from './animations/types';
 import { applyAnimation } from './simpleAnimations';
 // Imports de vectores dinámicos removidos
 import { detectAnimationCycle } from '../utils/animationCycleUtils';

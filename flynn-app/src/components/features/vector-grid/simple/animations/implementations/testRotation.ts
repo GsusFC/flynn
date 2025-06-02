@@ -38,7 +38,7 @@ export const testRotationAnimation = createSimpleAnimation<TestRotationProps>({
   id: 'testRotation',
   name: 'Test Rotación',
   description: 'Animación de prueba - todos los vectores rotan juntos',
-  category: 'test',
+  category: 'basic',
   icon: '🔄',
   controls: [
     {
