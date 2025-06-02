@@ -95,7 +95,7 @@ interface UseSimpleVectorGridProps {
   gridConfig: GridConfig;
   vectorConfig: VectorConfig;
   animationType: AnimationType;
-  animationProps: Record<string, unknown>;
+  animationProps: AnimationProps;
   globalAnimationControlsProp?: Partial<GlobalAnimationControls>; // Modificado
   width: number;
   height: number;
@@ -107,20 +107,26 @@ interface UseSimpleVectorGridProps {
   onExportProgress?: (progress: number) => void;
 }
 
-export const useSimpleVectorGrid = ({
-  gridConfig,
-  vectorConfig,
-  animationType,
-  animationProps,
-  globalAnimationControlsProp, // Modificado
-  width,
-  height,
-  isPaused = false,
-  debugMode = false,
-  onVectorCountChange,
-  onPulseComplete,
-  backgroundColor // Asegurar que se desestructura si se usa directamente en exportSVG
-}: UseSimpleVectorGridProps) => {
+export const useSimpleVectorGrid = (props: UseSimpleVectorGridProps) => {
+  const {
+    gridConfig,
+    vectorConfig,
+    animationType,
+    animationProps,
+    globalAnimationControlsProp,
+    width,
+    height,
+    backgroundColor,
+    isPaused = false,
+    debugMode = false,
+    onVectorCountChange,
+    onPulseComplete,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onExportProgress
+  } = props;
+
+  console.log('[useSimpleVectorGrid] Hook called. animationType:', animationType, 'animationProps:', JSON.stringify(animationProps));
+
   const [rotationTransition, setRotationTransition] = useState<RotationTransition | null>(null);
   const prevRotationOriginRef = useRef<RotationOrigin>(vectorConfig.rotationOrigin);
   // Estado principal - valores iniciales estáticos para evitar hidratación
@@ -128,6 +134,8 @@ export const useSimpleVectorGrid = ({
     vectors: [],
     mousePosition: { x: null, y: null },
     isPaused: false,
+    time: 0, // Añadido para cumplir con VectorGridState
+    frameCount: 0, // Añadido para cumplir con VectorGridState
     pulseCenter: null,
     pulseStartTime: null,
     previousVectors: [], // Importante para dinámicas si se usan
@@ -272,14 +280,10 @@ export const useSimpleVectorGrid = ({
   }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient, debugMode, state.vectors.length]);
 
   // Función de animación - solo funciona en cliente
-  const animate = useCallback(() => {
-    if (isPaused || !isClient) return;
-
+  const animate = useCallback((): void => {
+    // No es necesario verificar isPaused o !isClient aquí, ya que el useEffect que llama a animate lo hará.
     setState(prev => {
-      const currentTime = timeRef.current;
-      
-      // Combinar animationType con animationProps para el sistema modular
-      const combinedAnimationProps = { type: animationType, ...animationProps } as AnimationProps;
+      const currentTime = timeRef.current; // Usar el timeRef actualizado por el loop
       
       // Debug logging for prop validation issues (controlled)
       if (debugMode && animationType === 'randomLoop') {
@@ -291,14 +295,19 @@ export const useSimpleVectorGrid = ({
       if (currentRotationTransition?.isTransitioning) {
         const elapsedTime = Date.now() - currentRotationTransition.startTime;
         if (elapsedTime >= currentRotationTransition.duration) {
-          setRotationTransition(prev => prev ? { ...prev, isTransitioning: false, progress: 1 } : null);
+          setRotationTransition(prevTransition => prevTransition ? { ...prevTransition, isTransitioning: false, progress: 1 } : null);
           currentRotationTransition = null; // Transición terminada para este frame
         }
       }
 
+      const completeAnimationProps: AnimationProps = {
+        ...(animationProps as any), // Cast to any to avoid type conflict before merging
+        type: animationType,
+      };
+
       let newVectors = applyAnimation(
         prev.vectors,
-        combinedAnimationProps,
+        completeAnimationProps, // Use the new complete props object
         prev.mousePosition,
         currentTime,
         prev.pulseCenter,
@@ -321,7 +330,6 @@ export const useSimpleVectorGrid = ({
           globalIntensity,
           prev.previousVectors 
         );
-        
       }
       
       // Limpiar pulso si ha expirado
@@ -330,70 +338,73 @@ export const useSimpleVectorGrid = ({
       
       if (animationProps.type === 'centerPulse' && prev.pulseStartTime) {
         const elapsed = currentTime - prev.pulseStartTime;
-        
-        // Calcular duración dinámica basada en las dimensiones del canvas y velocidad del pulso
-        const maxDistance = Math.sqrt(width * width + height * height); // Diagonal del canvas
+        const maxDistance = Math.sqrt(width * width + height * height);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pulseSpeed = (animationProps as any).pulseSpeed || 0.008; // Velocidad del pulso actual
-        
-        // Tiempo base para que la onda llegue a la esquina más lejana
-        const baseTime = maxDistance / (pulseSpeed * 1000); // Convertir a segundos
-        
-        // Tiempo extra para que la onda salga completamente del grid (50% adicional)
+        const pulseSpeed = (animationProps as any).pulseSpeed || 0.008;
+        const baseTime = maxDistance / (pulseSpeed * 1000);
         const extraTime = baseTime * 0.5;
-        
-        // Duración total en milisegundos (mínimo 1.5s, máximo 8s para casos extremos)
         const pulseDuration = Math.max(1500, Math.min(8000, (baseTime + extraTime) * 1000));
         
         if (elapsed > pulseDuration) {
           newPulseCenter = null;
           newPulseStartTime = null;
-          // Notificar que el pulso se completó
           if (onPulseComplete) {
             onPulseComplete();
           }
         }
       }
       
-      // Capturar el frame exacto que se está renderizando
       lastRenderedFrameRef.current = newVectors;
 
       return {
         ...prev,
         vectors: newVectors,
-        previousVectors: prev.vectors, // Guardar estado anterior para vectores dinámicos
+        previousVectors: prev.vectors,
         lastUpdateTime: currentTime,
         pulseCenter: newPulseCenter,
-        pulseStartTime: newPulseStartTime,
-        // dynamicConfig: currentGlobalControls, // Ya no es necesario en el estado, currentGlobalControls está en el scope del hook
+        pulseStartTime: newPulseStartTime
       };
     });
-  }, [isPaused, animationType, animationProps, isClient, width, height, currentGlobalControls, onPulseComplete, debugMode, vectorConfig, gridConfig, rotationTransition]);
+  }, [
+    setState, // Aunque setState es estable, incluirla explícitamente es una buena práctica para claridad.
+    timeRef, // Incluido aunque sea un ref, para ser explícito sobre su uso.
+    debugMode,
+    animationType,
+    animationProps,
+    rotationTransition,
+    setRotationTransition,
+    width,
+    height,
+    currentGlobalControls,
+    onPulseComplete,
+    lastRenderedFrameRef // Incluido aunque sea un ref.
+  ]);
 
   // Loop de animación - solo en cliente
   useEffect(() => {
     if (isPaused || !isClient) {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = null;
       }
       return;
     }
 
     const loop = () => {
-      // Usar Date.now() para consistencia con animaciones (no timestamp de RAF)
-      timeRef.current = Date.now();
+      timeRef.current = Date.now(); // Actualizar timeRef antes de llamar a animate
       animate();
       animationFrameId.current = requestAnimationFrame(loop);
     };
     
     animationFrameId.current = requestAnimationFrame(loop);
-    // Limpiar en desmontaje
+    
     return () => {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = null;
       }
     };
-  }, [animate, isPaused, isClient, rotationTransition]);
+  }, [animate, isPaused, isClient, timeRef, animationFrameId]);
 
   // Función para disparar pulso
   const triggerPulse = useCallback((x?: number, y?: number) => {
@@ -409,7 +420,7 @@ export const useSimpleVectorGrid = ({
     }));
     
 
-  }, [width, height, debugMode, isClient]);
+  }, [width, height, isClient]); // Eliminado debugMode
 
   // Función para actualizar posición del mouse
   const updateMousePosition = useCallback((x: number | null, y: number | null) => {
@@ -433,7 +444,7 @@ export const useSimpleVectorGrid = ({
     }));
     
 
-  }, [generateGrid, debugMode, isClient]);
+  }, [generateGrid, isClient]); // Eliminado debugMode
 
   // Función para alternar pausa
   const togglePause = useCallback(() => {
@@ -450,7 +461,7 @@ export const useSimpleVectorGrid = ({
   }, [animationType]);
 
   // Export functions (simplified)
-  const exportSVG = useCallback(async (): Promise<string> => {
+  const exportSVG = useCallback(async (): Promise<{ data: string; filename: string }> => {
     const vectorsToExport = lastRenderedFrameRef.current && lastRenderedFrameRef.current.length > 0
       ? lastRenderedFrameRef.current
       : state.vectors; // Fallback si no hay frames renderizados
@@ -458,12 +469,13 @@ export const useSimpleVectorGrid = ({
     if (!vectorsToExport || vectorsToExport.length === 0) {
       console.warn('No vectors available for SVG export.');
       // Considerar notificar al usuario a través de la UI
-      return ''; // Retorna string vacío o maneja el error como prefieras
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      return { data: '<svg></svg>', filename: `empty-vectors-${timestamp}.svg` }; // Devolver objeto
     }
 
     // Asegúrate que gridConfig y vectorConfig estén disponibles en el scope del hook
     // y sean las versiones actuales que se están usando para el renderizado.
-    const { data } = generateStaticSVG({
+    const { data, filename } = generateStaticSVG({
       vectors: vectorsToExport,
       width: width, // Desde props del hook
       height: height, // Desde props del hook
@@ -484,7 +496,7 @@ export const useSimpleVectorGrid = ({
     // URL.revokeObjectURL(url);
     // console.log(`SVG exportado como ${filename}`);
 
-    return data; // Devolvemos el string SVG como pide la firma original
+    return { data, filename }; // Devolver objeto
   }, [state.vectors, vectorConfig, lastRenderedFrameRef, width, height, backgroundColor]); // Asegúrate de incluir todas las dependencias necesarias
 
   const exportAnimatedSVG = useCallback(async (): Promise<string> => {
@@ -495,12 +507,73 @@ export const useSimpleVectorGrid = ({
     return '<svg></svg>'; // Placeholder data
   }, []); // Añadir dependencias si es necesario
 
-  const exportGIF = useCallback(async (): Promise<Blob> => {
-    // Placeholder implementation - Lógica para GIF irá aquí
-    console.warn('GIF export is not implemented yet.');
-    // const gifDataUrl = await generateGIFFromVectors(...);
-    return new Blob([], { type: 'image/gif' }); // Devuelve un Blob vacío para satisfacer la firma
-  }, []); // Añadir dependencias si es necesario
+  const exportGIF = useCallback(async (options?: {
+    fps?: number;
+    duration?: number;
+    quality?: number;
+    width?: number;
+    height?: number;
+    loop?: boolean;
+  }): Promise<Blob> => {
+    console.log('🚀 Exportando GIF con opciones:', options);
+    
+    // Buscar SVG en el DOM
+    const svgElement = document.querySelector('svg') as SVGSVGElement;
+    if (!svgElement) {
+      throw new Error('No se encontró SVG para exportar');
+    }
+
+    const {
+      quality = 10,
+      width = 800,
+      height = 600,
+      loop = true
+    } = options || {};
+
+    // Crear canvas temporal
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = width;
+    canvas.height = height;
+
+    // Importar gif.js
+    const GIF = (await import('gif.js')).default;
+    
+    const gif = new GIF({
+      workers: 2,
+      quality,
+      width,
+      height,
+      repeat: loop ? 0 : -1
+    });
+
+    return new Promise((resolve) => {
+      // Renderizar SVG en canvas
+      const svgData = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      
+      const img = new Image();
+      img.onload = () => {
+        // Limpiar canvas y dibujar SVG
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Por ahora, capturar solo un frame
+        gif.addFrame(canvas, { delay: 1000 });
+        
+        gif.on('finished', (blob: Blob) => {
+          console.log('✅ GIF generado:', blob.size, 'bytes');
+          URL.revokeObjectURL(url);
+          resolve(blob);
+        });
+        
+        gif.render();
+      };
+      img.src = url;
+    });
+  }, []);
 
   // Información del grid para debugging
   const gridInfo = useMemo(() => {

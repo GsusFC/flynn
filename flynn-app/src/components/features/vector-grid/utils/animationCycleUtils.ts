@@ -53,16 +53,6 @@ const ANIMATION_CYCLE_CONFIGS: Record<AnimationType, AnimationCycle> = {
     frameCount: 300,
     isDetected: true
   },
-  hslRainbow: {
-    duration: 4000,
-    frameCount: 120,
-    isDetected: true
-  },
-  hslGradientFlow: {
-    duration: 5000,
-    frameCount: 150,
-    isDetected: true
-  },
   geometricPattern: {
     duration: 6000,
     frameCount: 180,
@@ -86,6 +76,16 @@ const ANIMATION_CYCLE_CONFIGS: Record<AnimationType, AnimationCycle> = {
   jitter: {
     duration: 3000,
     frameCount: 90,
+    isDetected: true
+  },
+  flowField: {
+    duration: 8000,
+    frameCount: 240,
+    isDetected: true
+  },
+  curlNoise: {
+    duration: 12000,
+    frameCount: 360,
     isDetected: true
   }
 };

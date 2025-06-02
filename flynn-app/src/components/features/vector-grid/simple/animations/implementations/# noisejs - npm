@@ -1,0 +1,116 @@
+# noisejs - npm
+
+content
+package search
+sign in
+- [Pro](https://www.npmjs.com/products/pro)
+- [Teams](https://www.npmjs.com/products/teams)
+- [Pricing](https://www.npmjs.com/products)
+- [Documentation](https://docs.npmjs.com)
+[Pro](https://www.npmjs.com/products/pro)
+[Teams](https://www.npmjs.com/products/teams)
+[Pricing](https://www.npmjs.com/products)
+[Documentation](https://docs.npmjs.com)
+[Sign Up](https://www.npmjs.com/signup)
+[Sign In](https://www.npmjs.com/login)
+
+## https://www.npmjs.com/package/@types/noisejsnoisejs
+- [Readme](https://www.npmjs.com/package/noisejs?activeTab=readme)
+- [Code Beta](https://www.npmjs.com/package/noisejs?activeTab=code)
+- [0 Dependencies](https://www.npmjs.com/package/noisejs?activeTab=dependencies)
+- [26 Dependents](https://www.npmjs.com/package/noisejs?activeTab=dependents)
+- [2 Versions](https://www.npmjs.com/package/noisejs?activeTab=versions)
+[Readme](https://www.npmjs.com/package/noisejs?activeTab=readme)
+[Code Beta](https://www.npmjs.com/package/noisejs?activeTab=code)
+[0 Dependencies](https://www.npmjs.com/package/noisejs?activeTab=dependencies)
+[26 Dependents](https://www.npmjs.com/package/noisejs?activeTab=dependents)
+[2 Versions](https://www.npmjs.com/package/noisejs?activeTab=versions)
+
+# NOISE!
+This is a simple library for 2d & 3d perlin noise and simplex noise in javascript. Noise is [pretty](https://dl.dropbox.com/u/2494815/perlin/index.html).
+The library is pretty fast (10M queries / sec). But its still way [slow](http://josephg.github.com/noisejs/demo3d.html)er than using a shader. For example, if you try and update an entire screen's worth of pixels, it'll be slow.
+The code is based on Stefan Gustavson's implementation. Do whatever you want with it, etc.
+
+## How to make noise:
+
+```
+// value passed into the constructor is used as a seedvar noise = new Noise(Math.random()); for (var x = 0; x < canvas.width; x++) {  for (var y = 0; y < canvas.height; y++) {    // noise.simplex2 and noise.perlin2 return values between -1 and 1.    var value = noise.simplex2(x / 100, y / 100);     image[x][y].r = Math.abs(value) * 256; // Or whatever. Open demo.html to see it used with canvas.  }}
+```
+
+The library exposes a constructor function called Noise with the following instance methods:
+
+```
+Noise
+```
+
+- simplex2(x, y): 2D Simplex noise function
+- simplex3(x, y, z): 3D Simplex noise function
+- perlin2(x, y): 2D Perlin noise function
+- perlin3(x, y, z): 3D Perlin noise function
+- seed(val): Seed the noise functions. Only 65536 different seeds are supported. Use a float between 0 and 1 or an integer from 1 to 65536.
+
+## Readme
+
+### Keywords
+
+## Package Sidebar
+
+### Install
+npm i noisejs
+
+```
+npm i noisejs
+```
+
+
+### Repository
+[Gitgithub.com/xixixao/noisejs](https://github.com/xixixao/noisejs)
+
+### Homepage
+[github.com/xixixao/noisejs#readme](https://github.com/xixixao/noisejs)
+
+### DownloadsWeekly Downloads
+20,650
+
+### Version
+2.1.0
+
+### License
+none
+
+### Last publish
+12 years ago
+
+### Collaborators
+[Try on RunKit](https://runkit.com/npm/noisejs)
+[Report malware](https://www.npmjs.com/support?inquire=security&security-inquire=malware&package=noisejs&version=2.1.0)
+
+## Footer
+
+### Support
+- [Help](https://docs.npmjs.com)
+- [Advisories](https://github.com/advisories)
+- [Status](http://status.npmjs.org/)
+- [Contact npm](https://www.npmjs.com/support)
+[Help](https://docs.npmjs.com)
+[Advisories](https://github.com/advisories)
+[Status](http://status.npmjs.org/)
+[Contact npm](https://www.npmjs.com/support)
+
+### Company
+- [About](https://www.npmjs.com/about)
+- [Blog](https://github.blog/tag/npm/)
+- [Press](https://www.npmjs.com/press)
+[About](https://www.npmjs.com/about)
+[Blog](https://github.blog/tag/npm/)
+[Press](https://www.npmjs.com/press)
+
+### Terms & Policies
+- [Policies](https://www.npmjs.com/policies/)
+- [Terms of Use](https://www.npmjs.com/policies/terms)
+- [Code of Conduct](https://www.npmjs.com/policies/conduct)
+- [Privacy](https://www.npmjs.com/policies/privacy)
+[Policies](https://www.npmjs.com/policies/)
+[Terms of Use](https://www.npmjs.com/policies/terms)
+[Code of Conduct](https://www.npmjs.com/policies/conduct)
+[Privacy](https://www.npmjs.com/policies/privacy)

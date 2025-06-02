@@ -112,11 +112,7 @@ export const VectorGrid = () => {
     }
   };
 
-  // Obtener preview de las primeras líneas
-  const getCodePreview = () => {
-    const code = getCurrentCode();
-    return code.split('\n').slice(0, 8).join('\n') + (code.split('\n').length > 8 ? '\n...' : '');
-  };
+
 
   // Funciones de utilidad
   const handleCopy = async () => {
@@ -131,13 +127,13 @@ export const VectorGrid = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const code = getCurrentCode();
     const filename = {
       svg: 'vector-grid.svg',
       js: 'vector-animation.js',
       react: 'VectorGrid.tsx'
-    }[activeTab];
+    }[activeTab] || 'export.txt';
     
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -236,7 +232,7 @@ export const VectorGrid = () => {
               <div className="flex-1 min-h-0 overflow-auto p-4 custom-scrollbar">
                 <CodeHighlighter
                   code={getCurrentCode()}
-                  language={activeTab}
+                  language={activeTab as 'svg' | 'js' | 'react'}
                   className="text-sidebar-foreground"
                 />
               </div>

@@ -21,6 +21,13 @@ import { pinwheelsAnimation } from './implementations/pinwheels';
 import { rippleEffectAnimation } from './implementations/rippleEffect';
 import { jitterAnimation } from './implementations/jitter';
 
+// Importar animaciones de flujo
+import { flowFieldAnimation } from './implementations/flowField';
+import { curlNoiseAnimation } from './implementations/curlNoise';
+import { gaussianGradientAnimation } from './implementations/gaussianGradient';
+import { dipoleFieldAnimation } from './implementations/dipoleField';
+import { testRotationAnimation } from './implementations/testRotation';
+
 // Registry de animaciones disponibles - EXPANDIDO
 export const animationRegistry: AnimationRegistry = {
   // Animaciones básicas
@@ -45,7 +52,18 @@ export const animationRegistry: AnimationRegistry = {
   geometricPattern: geometricPatternAnimation,
   vortex: vortexAnimation,
   pinwheels: pinwheelsAnimation,
-  jitter: jitterAnimation
+  jitter: jitterAnimation,
+  
+  // Animaciones de flujo
+  flowField: flowFieldAnimation,
+  curlNoise: curlNoiseAnimation,
+  
+  // Animaciones matemáticas
+  gaussianGradient: gaussianGradientAnimation,
+  dipoleField: dipoleFieldAnimation,
+  
+  // Animaciones de prueba
+  testRotation: testRotationAnimation
 };
 
 // Función para obtener una animación por ID
@@ -190,5 +208,12 @@ export {
   geometricPatternAnimation,
   vortexAnimation,
   pinwheelsAnimation,
-  jitterAnimation
+  jitterAnimation,
+  
+  // Animaciones de flujo
+  flowFieldAnimation,
+  curlNoiseAnimation,
+  gaussianGradientAnimation,
+  dipoleFieldAnimation,
+  testRotationAnimation
 };

@@ -37,7 +37,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
         onColorChange(getPresets('gradient')['sunset']);
         break;
       case 'hsl':
-        onColorChange(ColorFactory.hslRainbow());
+        onColorChange({ type: 'solid', value: '#ff0080' }); // Color estático en lugar de dinámico
         break;
       case 'dynamic':
         // Para implementar en futuras fases

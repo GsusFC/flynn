@@ -22,29 +22,53 @@ interface AppConfig {
 }
 
 const calculateLinearGradientCoordinates = (angleInDegrees: number = 0): { x1: string; y1: string; x2: string; y2: string } => {
-  // Angle convention: 0 degrees is to the right (positive X axis), 90 degrees is upwards (positive Y axis)
+  // Para objectBoundingBox: el gradiente va de 0% a 100% en la dirección del ángulo
+  // Ángulo 0° = horizontal hacia la derecha
+  // Ángulo 90° = vertical hacia arriba
+  // Ángulo 180° = horizontal hacia la izquierda
+  // Ángulo 270° = vertical hacia abajo
+  
   const angleRad = angleInDegrees * (Math.PI / 180);
-  const cosAngle = Math.cos(angleRad);
-  const sinAngle = Math.sin(angleRad); // Positive for 'up' in standard math
-
-  // Convert standard math angle to SVG gradient vector coordinates (for gradientUnits="objectBoundingBox")
-  // The gradient flows from (x1,y1) to (x2,y2).
-  // SVG Y-axis is downwards. If sinAngle is positive (upwards), y-coordinates for 'start' should be larger (bottom) 
-  // and for 'end' smaller (top) to make the gradient go upwards.
-  const x1 = (1 - cosAngle) / 2;
-  const y1 = (1 + sinAngle) / 2; // For a standard 'up' angle, sinAngle is positive, making y1 larger (closer to bottom of bbox)
-  const x2 = (1 + cosAngle) / 2;
-  const y2 = (1 - sinAngle) / 2; // Making y2 smaller (closer to top of bbox)
+  
+  // Calcular vector de dirección
+  const dirX = Math.cos(angleRad);
+  const dirY = -Math.sin(angleRad); // Negativo porque SVG Y va hacia abajo
+  
+  // Para un gradiente en objectBoundingBox que vaya del inicio al final del vector
+  // Necesitamos que el gradiente vaya de (0,0) a (100%, 100%) pero orientado
+  
+  // Punto inicial del gradiente (donde empieza el color)
+  let x1 = 0;
+  let y1 = 0;
+  
+  // Punto final del gradiente (donde termina el color)
+  let x2 = 100;
+  let y2 = 0;
+  
+  // Rotar según el ángulo - simplificado para objectBoundingBox
+  if (Math.abs(dirX) > Math.abs(dirY)) {
+    // Más horizontal
+    x1 = dirX > 0 ? 0 : 100;
+    x2 = dirX > 0 ? 100 : 0;
+    y1 = 50;
+    y2 = 50;
+  } else {
+    // Más vertical
+    y1 = dirY > 0 ? 0 : 100;
+    y2 = dirY > 0 ? 100 : 0;
+    x1 = 50;
+    x2 = 50;
+  }
 
   return {
-    x1: `${(x1 * 100).toFixed(2)}%`,
-    y1: `${(y1 * 100).toFixed(2)}%`,
-    x2: `${(x2 * 100).toFixed(2)}%`,
-    y2: `${(y2 * 100).toFixed(2)}%`,
+    x1: `${x1}%`,
+    y1: `${y1}%`,
+    x2: `${x2}%`,
+    y2: `${y2}%`,
   };
 };
 
-const getGradientSvgId = (gradConfig: GradientConfig): string => {
+const getGradientSvgId = (gradConfig: GradientConfig, vectorIndex?: number): string => {
   const relevantProps = {
     type: gradConfig.type,
     colors: gradConfig.colors,
@@ -52,6 +76,7 @@ const getGradientSvgId = (gradConfig: GradientConfig): string => {
     centerX: gradConfig.centerX,
     centerY: gradConfig.centerY,
     radius: gradConfig.radius,
+    vectorIndex: vectorIndex // Incluir índice del vector para gradientes únicos
   };
   const stableString = JSON.stringify(relevantProps);
   let hash = 0;
@@ -107,35 +132,81 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
     return nativeSVG;
   }
 
-  const uniqueGradientConfigs = new Map<string, GradientConfig>();
-  // Collect gradients from individual vectors
-  vectors.forEach(vector => {
+  const uniqueGradientConfigs = new Map<string, {gradConfig: GradientConfig, vector?: SimpleVector, vectorIndex?: number}>();
+  
+  // Collect gradients from individual vectors - cada vector con degradado necesita su propio gradiente
+  vectors.forEach((vector, index) => {
     if (isGradientConfig(vector.color)) {
-      const svgId = getGradientSvgId(vector.color);
-      if (!uniqueGradientConfigs.has(svgId)) {
-        uniqueGradientConfigs.set(svgId, vector.color);
-      }
+      const svgId = getGradientSvgId(vector.color, index);
+      uniqueGradientConfigs.set(svgId, { gradConfig: vector.color, vector, vectorIndex: index });
     }
   });
-  // Also collect gradient from vectorConfig.color if it's a gradient
+  
+  // Also collect gradient from vectorConfig.color if it's a gradient (para vectores sin degradado específico)
   if (isGradientConfig(vectorConfig.color)) {
     const svgId = getGradientSvgId(vectorConfig.color);
-    if (!uniqueGradientConfigs.has(svgId)) {
-      uniqueGradientConfigs.set(svgId, vectorConfig.color);
-    }
+    uniqueGradientConfigs.set(svgId, { gradConfig: vectorConfig.color });
   }
 
   let gradientDefsString = '';
   if (uniqueGradientConfigs.size > 0) {
     gradientDefsString = '<defs>\n';
-    uniqueGradientConfigs.forEach((gradConfig, id) => {
+    uniqueGradientConfigs.forEach((gradData, id) => {
+      const { gradConfig, vector } = gradData;
+      
       if (gradConfig.type === 'linear') {
-        const coords = calculateLinearGradientCoordinates(gradConfig.angle);
-        gradientDefsString += `  <linearGradient id="${id}" x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}">\n`;
-        gradConfig.colors.forEach(stop => {
+        let gradientElement = '';
+        
+        if (vector) {
+          // Gradiente específico para este vector - usar coordenadas del vector
+          const { x, y, angle, length } = vector;
+          const actualLength = length || vectorConfig.length;
+          
+          // Calcular coordenadas del inicio y final del vector según rotationOrigin
+          let startX = x;
+          let startY = y;
+          let endX = x;
+          let endY = y;
+          
+          switch (vectorConfig.rotationOrigin) {
+            case 'start':
+              endX = x + Math.cos(angle * Math.PI / 180) * actualLength;
+              endY = y + Math.sin(angle * Math.PI / 180) * actualLength;
+              break;
+            case 'center':
+              const halfLength = actualLength / 2;
+              startX = x - Math.cos(angle * Math.PI / 180) * halfLength;
+              startY = y - Math.sin(angle * Math.PI / 180) * halfLength;
+              endX = x + Math.cos(angle * Math.PI / 180) * halfLength;
+              endY = y + Math.sin(angle * Math.PI / 180) * halfLength;
+              break;
+            case 'end':
+              startX = x - Math.cos(angle * Math.PI / 180) * actualLength;
+              startY = y - Math.sin(angle * Math.PI / 180) * actualLength;
+              endX = x;
+              endY = y;
+              break;
+            default: // center por defecto
+              const defaultHalf = actualLength / 2;
+              startX = x - Math.cos(angle * Math.PI / 180) * defaultHalf;
+              startY = y - Math.sin(angle * Math.PI / 180) * defaultHalf;
+              endX = x + Math.cos(angle * Math.PI / 180) * defaultHalf;
+              endY = y + Math.sin(angle * Math.PI / 180) * defaultHalf;
+          }
+          
+          gradientElement = `  <linearGradient id="${id}" x1="${startX.toFixed(2)}" y1="${startY.toFixed(2)}" x2="${endX.toFixed(2)}" y2="${endY.toFixed(2)}" gradientUnits="userSpaceOnUse">\n`;
+        } else {
+          // Gradiente genérico - usar objectBoundingBox
+          const coords = calculateLinearGradientCoordinates(gradConfig.angle || 0);
+          gradientElement = `  <linearGradient id="${id}" x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}">\n`;
+        }
+        
+        gradientDefsString += gradientElement;
+        gradConfig.colors.forEach((stop: any) => {
           gradientDefsString += `    <stop offset="${stop.offset * 100}%" stop-color="${stop.color}" />\n`;
         });
         gradientDefsString += '  </linearGradient>\n';
+        
       } else if (gradConfig.type === 'radial') {
         // Basic radialGradient with cx, cy, r is implemented.
         // Future enhancements could include support for focus point (fx, fy, fr) if required.
@@ -144,7 +215,7 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
         const r = gradConfig.radius !== undefined ? `${gradConfig.radius * 100}%` : '50%';
 
         gradientDefsString += `  <radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">\n`;
-        gradConfig.colors.forEach(stop => {
+        gradConfig.colors.forEach((stop: any) => {
           gradientDefsString += `    <stop offset="${stop.offset * 100}%" stop-color="${stop.color}" />\n`;
         });
         gradientDefsString += '  </radialGradient>\n';
@@ -167,7 +238,7 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
     } else if (isHSLColor(color)) {
       vectorColorValue = `hsl(${color.h}, ${color.s}%, ${color.l}%)`;
     } else if (isGradientConfig(color)) {
-      const svgId = getGradientSvgId(color);
+      const svgId = getGradientSvgId(color, index);
       vectorColorValue = `url(#${svgId})`;
     } else {
       // Fallback al color por defecto de vectorConfig o un color genérico
@@ -228,7 +299,7 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
         const controlY = (startY + endY) / 2 + Math.sin((angle + 90) * Math.PI / 180) * actualLength * 0.3;
         return `  <path id="vector-${index}" 
     d="M ${startX.toFixed(2)} ${startY.toFixed(2)} Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${endX.toFixed(2)} ${endY.toFixed(2)}" 
-    fill="none" stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
+    fill="none" stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="${vectorConfig.strokeLinecap}"/>`;
     
       case 'circle':
         const circleRadius = actualLength * 0.15;
@@ -241,7 +312,7 @@ export const generateSVGCode = (data: CodeGenerationData): string => {
         return `  <line id="vector-${index}" 
     x1="${startX.toFixed(2)}" y1="${startY.toFixed(2)}" 
     x2="${endX.toFixed(2)}" y2="${endY.toFixed(2)}" 
-    stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="round"/>`;
+    stroke="${vectorColorValue}" stroke-width="${actualWidth}" stroke-linecap="${vectorConfig.strokeLinecap}"/>`;
     }
   }).join('\n');
   
@@ -303,13 +374,14 @@ class VectorGrid {
     this.config = {
       width: ${canvasWidth},
       height: ${canvasHeight},
-      vectorColor: '${vectorConfig.color}',
+      vectorColor: ${isGradientConfig(vectorConfig.color) ? JSON.stringify(vectorConfig.color) : `'${vectorConfig.color}'`},
       vectorLength: ${vectorConfig.length},
       vectorWidth: ${vectorConfig.width},
       animationType: '${animationType}',
       gridRows: ${gridConfig.rows},
       gridCols: ${gridConfig.cols},
-      spacing: ${gridConfig.spacing}
+      spacing: ${gridConfig.spacing},
+      strokeLinecap: '${vectorConfig.strokeLinecap}'
     };
     
     // Inicializar vectores
@@ -406,7 +478,7 @@ class VectorGrid {
       // Estilo
       this.ctx.strokeStyle = this.config.vectorColor;
       this.ctx.lineWidth = this.config.vectorWidth;
-      this.ctx.lineCap = 'round';
+      this.ctx.lineCap = this.config.strokeLinecap;
       
       // Dibujar línea
       this.ctx.beginPath();
@@ -455,6 +527,7 @@ interface VectorGridProps {
   height?: number;
   vectorColor?: string;
   animationType?: string;
+  strokeLinecap?: string;
   className?: string;
 }
 
@@ -474,6 +547,7 @@ export const VectorGrid: React.FC<VectorGridProps> = ({
   height = ${canvasHeight},
   vectorColor = '${vectorConfig.color}',
   animationType = '${animationType}',
+  strokeLinecap = '${vectorConfig.strokeLinecap}',
   className = ''
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -568,7 +642,7 @@ export const VectorGrid: React.FC<VectorGridProps> = ({
       // Estilo
       ctx.strokeStyle = vectorColor;
       ctx.lineWidth = config.vectorWidth;
-      ctx.lineCap = 'round';
+      ctx.lineCap = strokeLinecap;
       
       // Dibujar
       ctx.beginPath();
@@ -578,7 +652,7 @@ export const VectorGrid: React.FC<VectorGridProps> = ({
       
       ctx.restore();
     });
-  }, [width, height, vectorColor, config.vectorWidth]);
+  }, [width, height, vectorColor, config.vectorWidth, strokeLinecap]);
   
   // Loop de animación
   const animate = useCallback((time: number) => {

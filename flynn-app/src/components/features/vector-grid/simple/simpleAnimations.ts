@@ -30,6 +30,17 @@ export const applyAnimation = (
     pulseStartTime
   };
 
+  // Verificar que animationProps tenga el tipo correcto
+  if (!animationProps || typeof (animationProps as any)?.type !== 'string') {
+    console.error('AnimationProps inválido:', {
+      animationProps,
+      hasAnimationProps: !!animationProps,
+      typeOfType: typeof (animationProps as any)?.type,
+      propsKeys: animationProps ? Object.keys(animationProps) : []
+    });
+    return executeAnimation('none', vectors, {}, context);
+  }
+
   // Usar el nuevo sistema modular de animaciones
   switch (animationProps.type) {
     case 'none': {
@@ -76,15 +87,7 @@ export const applyAnimation = (
       return executeAnimation('perlinFlow', vectors, props as Record<string, unknown>, context);
     }
     
-    case 'hslRainbow': {
-      const { ...props } = animationProps;
-      return executeAnimation('hslRainbow', vectors, props as Record<string, unknown>, context);
-    }
-    
-    case 'hslGradientFlow': {
-      const { ...props } = animationProps;
-      return executeAnimation('hslGradientFlow', vectors, props as Record<string, unknown>, context);
-    }
+
     
     case 'geometricPattern': {
       const { ...props } = animationProps;
@@ -109,6 +112,31 @@ export const applyAnimation = (
     case 'jitter': {
       const { ...props } = animationProps;
       return executeAnimation('jitter', vectors, props as Record<string, unknown>, context);
+    }
+    
+    case 'curlNoise': {
+      const { ...props } = animationProps;
+      return executeAnimation('curlNoise', vectors, props as Record<string, unknown>, context);
+    }
+    
+    case 'flowField': {
+      const { ...props } = animationProps;
+      return executeAnimation('flowField', vectors, props as Record<string, unknown>, context);
+    }
+    
+    case 'gaussianGradient': {
+      const { ...props } = animationProps;
+      return executeAnimation('gaussianGradient', vectors, props as Record<string, unknown>, context);
+    }
+    
+    case 'dipoleField': {
+      const { ...props } = animationProps;
+      return executeAnimation('dipoleField', vectors, props as Record<string, unknown>, context);
+    }
+    
+    case 'testRotation': {
+      const { ...props } = animationProps;
+      return executeAnimation('testRotation', vectors, props as Record<string, unknown>, context);
     }
     
     default:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SimpleVectorGridOptimized } from '@/components/features/vector-grid/simple/SimpleVectorGridOptimized';
 import { 
   getAllAnimations, 
@@ -26,7 +26,7 @@ export default function AnimationsPage() {
 
   const currentGridConfig = gridConfigs[selectedGrid];
   const availableAnimations = getAllAnimations();
-  const currentAnimationProps = getDefaultProps(selectedAnimation);
+  const baseAnimationProps = useMemo(() => getDefaultProps(selectedAnimation), [selectedAnimation]);
 
   const vectorConfig: VectorConfig = {
     shape: 'line',
@@ -96,10 +96,15 @@ export default function AnimationsPage() {
               gridConfig={currentGridConfig}
               vectorConfig={vectorConfig}
               animationType={selectedAnimation as AnimationType}
-              animationProps={{
-                type: selectedAnimation,
-                ...currentAnimationProps
-              } as any}
+              animationProps={useMemo(() => {
+                if (selectedAnimation === 'none') return { type: 'none' };
+                // Asegurarnos de que baseAnimationProps no es undefined y quitar 'type' si existe
+                const { type: _discardedType, ...specificBaseProps } = baseAnimationProps || {};
+                return {
+                  type: selectedAnimation as AnimationType, // El tipo principal de la animación
+                  ...specificBaseProps // Las propiedades específicas de esa animación
+                } as any;
+              }, [selectedAnimation, baseAnimationProps])}
               width={Math.min(1000, currentGridConfig.cols * currentGridConfig.spacing + currentGridConfig.margin * 2)}
               height={Math.min(600, currentGridConfig.rows * currentGridConfig.spacing + currentGridConfig.margin * 2)}
               backgroundColor="#f9fafb"

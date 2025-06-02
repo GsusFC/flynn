@@ -16,6 +16,7 @@ import { useKeyboardControls } from '@/components/features/vector-grid/hooks/use
 import Tooltip from '@/components/ui/Tooltip';
 import SaveConfigModal from '@/components/features/vector-grid/simple/SaveConfigModal';
 import ConfigurationsPanel from '@/components/features/vector-grid/simple/ConfigurationsPanel';
+import { GifExportModal } from '@/components/features/vector-grid/components/GifExportModal';
 import type { 
   GridConfig, 
   VectorConfig, 
@@ -77,6 +78,7 @@ export default function VectorGridLab() {
   // Estados para sistema de configuraciones guardadas
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showConfigsPanel, setShowConfigsPanel] = useState(false);
+  const [showGifExportModal, setShowGifExportModal] = useState(false);
   
   // 🔍 Funciones de cálculo de zoom
   const scaledGridConfig = useMemo((): GridConfig => ({
@@ -115,6 +117,8 @@ export default function VectorGridLab() {
   }, []);
 
   // Función de inspección dinámica removida
+
+  console.log('[VectorGridLab] Rendering. currentAnimationId:', currentAnimationId, 'animationProps:', JSON.stringify(animationProps));
 
   // Hook para controles de teclado
   useKeyboardControls({
@@ -156,7 +160,7 @@ export default function VectorGridLab() {
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [updateCanvasDimensions]);
 
   // 🚀 Efecto para actualizar props cuando cambia la animación (solo en cliente)
   useEffect(() => {
@@ -202,7 +206,7 @@ export default function VectorGridLab() {
     console.log('Configuration saved:', config.name);
   }, []);
 
-  const handleDeleteConfig = useCallback((configId: string, isPublic: boolean) => {
+  const handleDeleteConfig = useCallback((configId: string) => {
     // Opcional: mostrar notificación de eliminación
     console.log('Configuration deleted:', configId);
   }, []);
@@ -385,7 +389,21 @@ export default function VectorGridLab() {
                 </div>
               </div>
               
-              {/* Exportación */}
+              {/* Exportación GIF */}
+              <div className="border-t border-sidebar-border pt-3 mb-3">
+                <button
+                  onClick={() => setShowGifExportModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
+                  </svg>
+                  Exportar GIF
+                </button>
+              </div>
+
+              {/* Exportación Código */}
               <ExportControls 
               gridRef={vectorGridRef}
               gridConfig={scaledGridConfig}
@@ -709,6 +727,13 @@ export default function VectorGridLab() {
         animationConfig={currentAnimationConfig}
         zoomConfig={zoomConfig}
         onSaved={handleConfigSaved}
+      />
+
+      {/* Modal para exportar GIF */}
+      <GifExportModal
+        isOpen={showGifExportModal}
+        onClose={() => setShowGifExportModal(false)}
+        gridRef={vectorGridRef}
       />
     </div>
   );

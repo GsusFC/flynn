@@ -2,8 +2,8 @@
 
 import React, { forwardRef, useImperativeHandle, useCallback, useRef, useState } from 'react';
 import { throttle } from 'lodash';
-import { useSimpleVectorGrid } from './useSimpleVectorGrid';
-// import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized'; // No se usa
+// import { useSimpleVectorGrid } from './useSimpleVectorGrid'; // Hook básico (ROLLBACK disponible)
+import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized'; // 🚀 Hook optimizado ACTIVADO
 import { HybridRenderer } from '../renderers/HybridRenderer';
 // Performance monitor removed - using simplified type
 type RenderMode = 'svg' | 'canvas' | 'hybrid';
@@ -51,14 +51,15 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
   }, ref) => {
     // console.log('🎬 [COMPONENT] SimpleVectorGridOptimized montado');
     
-    // Ref para el contenedor
+    // Refs para el contenedor y canvas
     const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     
     // Estados para el control de performance
     const [forceMode, setForceMode] = useState<RenderMode | undefined>(undefined);
     const [showPerformancePanel, setShowPerformancePanel] = useState(debugMode);
     
-    // Usar el hook principal
+    // 🚀 Usar el hook optimizado ACTIVADO
     const {
       vectors,
       gridInfo,
@@ -69,16 +70,25 @@ export const SimpleVectorGridOptimized = forwardRef<SimpleVectorGridRef, SimpleV
       mousePosition,
       gridRef: hookGridRef,
       rotationTransition // Recibir el estado de transición del hook
-    } = useSimpleVectorGrid({
+    } = useSimpleVectorGridOptimized({
       gridConfig,
       vectorConfig,
       animationType,
-      animationProps: animationProps as any,
+      animationProps: animationProps,
       width,
       height,
+      canvasRef, // 🚀 NUEVO: Pasar canvasRef al hook optimizado
       isPaused,
-      debugMode
+      debugMode,
+      onVectorCountChange // 🚀 NUEVO: Hook optimizado soporta este callback
     });
+
+    // console.log('🕵️ [SimpleVectorGridOptimized] Debugging Props & GridInfo:', {
+    //   receivedWidth: width,
+    //   receivedHeight: height,
+    //   receivedGridConfig: gridConfig,
+    //   hookGridInfo: gridInfo
+    // });
 
     // Throttled mouse move handler
     const handleMouseMove = useCallback(

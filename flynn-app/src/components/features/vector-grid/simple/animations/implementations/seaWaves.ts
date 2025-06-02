@@ -20,6 +20,7 @@ const animateSeaWaves = (
   props: SeaWavesProps,
   context: AnimationContext
 ): SimpleVector[] => {
+  console.log('[seaWaves] animateSeaWaves called. context.time:', context.time);
   const time = context.time * 0.001; // Convertir a segundos
   
   // Pre-calcular constantes temporales para optimizar
@@ -94,8 +95,20 @@ const validateSeaWavesProps = (props: SeaWavesProps): boolean => {
     console.warn('[seaWaves] La amplitud base debe ser un número positivo');
     return false;
   }
+  if (typeof props.rippleFrequency !== 'number' || props.rippleFrequency <= 0) {
+    console.warn('[seaWaves] La frecuencia de ripples debe ser un número positivo');
+    return false;
+  }
+  if (typeof props.rippleAmplitude !== 'number' || props.rippleAmplitude <= 0) {
+    console.warn('[seaWaves] La amplitud de ripples debe ser un número positivo');
+    return false;
+  }
   if (typeof props.choppiness !== 'number' || props.choppiness < 0 || props.choppiness > 1) {
     console.warn('[seaWaves] El choppiness debe estar entre 0 y 1');
+    return false;
+  }
+  if (typeof props.spatialFactor !== 'number' || props.spatialFactor <= 0) {
+    console.warn('[seaWaves] El factor espacial debe ser un número positivo');
     return false;
   }
   return true;
@@ -177,12 +190,12 @@ export const seaWavesAnimation = createSimpleAnimation<SeaWavesProps>({
     }
   ],
   defaultProps: {
-    baseFrequency: 0.003,
-    baseAmplitude: 30,
-    rippleFrequency: 0.005,
-    rippleAmplitude: 15,
-    choppiness: 0.5,
-    spatialFactor: 0.01
+    baseFrequency: 0.008,
+    baseAmplitude: 60,
+    rippleFrequency: 0.012,
+    rippleAmplitude: 25,
+    choppiness: 0.7,
+    spatialFactor: 0.02
   },
   animate: animateSeaWaves,
   validateProps: validateSeaWavesProps

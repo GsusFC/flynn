@@ -2,6 +2,7 @@
 import { createSimpleAnimation } from '../base/AnimationBase';
 import type { SimpleVector } from '../../simpleTypes';
 import type { AnimationContext } from '../types';
+import { simpleNoise } from '../base/utils'; // Importar simpleNoise
 
 // Props para la animación perlinFlow
 interface PerlinFlowProps {
@@ -12,32 +13,6 @@ interface PerlinFlowProps {
   persistence: number;
 }
 
-// Cache para factores de tiempo pre-calculados
-let timeFactorsCache: { time: number; factors: number[] } | null = null;
-
-// Función de ruido simple optimizada (aproximación de Perlin)
-const simpleNoise = (x: number, y: number, time: number): number => {
-  // Pre-calcular factores temporales si no están en cache
-  if (!timeFactorsCache || timeFactorsCache.time !== time) {
-    timeFactorsCache = {
-      time,
-      factors: [
-        time,           // factor1
-        time * 0.7,     // factor2  
-        time * 1.3      // factor3
-      ]
-    };
-  }
-
-  const [timeFactor1, timeFactor2, timeFactor3] = timeFactorsCache.factors;
-  
-  // Usar frecuencias constantes pre-calculadas
-  const freq1 = Math.sin(x * 0.1 + timeFactor1) * Math.cos(y * 0.1 + timeFactor1);
-  const freq2 = Math.sin(x * 0.05 + timeFactor2) * Math.cos(y * 0.05 + timeFactor2) * 0.5;
-  const freq3 = Math.sin(x * 0.2 + timeFactor3) * Math.cos(y * 0.2 + timeFactor3) * 0.25;
-  
-  return (freq1 + freq2 + freq3) / 1.75; // Normalizar
-};
 
 // Función de animación optimizada
 const animatePerlinFlow = (

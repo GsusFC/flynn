@@ -143,9 +143,9 @@ export const geometricPatternAnimation = createSimpleAnimation<GeometricPatternP
     // Eliminamos centerInfluence y patternIntensity de los controles si ya no se usan directamente
   ],
   defaultProps: {
-    rotationSpeed: 0.3,
+    rotationSpeed: 1.2,
     patternType: 'tangential',
-    spiralIntensity: 0.01, // Valor por defecto para la nueva prop
+    spiralIntensity: 0.05, // Valor por defecto para la nueva prop
   },
   animate: animateGeometricPattern,
   validateProps: validateGeometricPatternProps

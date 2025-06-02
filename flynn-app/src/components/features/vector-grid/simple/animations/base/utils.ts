@@ -71,6 +71,37 @@ export const validateNumberRange = (
   return true;
 };
 
+// Cache para factores de tiempo pre-calculados para simpleNoise
+// NOTA: Este caché es global. Si simpleNoise se usa en múltiples contextos
+// con diferentes secuencias de 'time', podría necesitarse una gestión de caché más sofisticada
+// o que la función sea completamente pura y reciba los factores precalculados.
+let timeFactorsCache: { time: number; factors: number[] } | null = null;
+
+// Función de ruido simple optimizada (aproximación de Perlin)
+// Originalmente de perlinFlow.ts
+export const simpleNoise = (x: number, y: number, time: number): number => {
+  // Pre-calcular factores temporales si no están en cache
+  if (!timeFactorsCache || timeFactorsCache.time !== time) {
+    timeFactorsCache = {
+      time,
+      factors: [
+        time,           // factor1
+        time * 0.7,     // factor2  
+        time * 1.3      // factor3
+      ]
+    };
+  }
+
+  const [timeFactor1, timeFactor2, timeFactor3] = timeFactorsCache.factors;
+  
+  // Usar frecuencias constantes pre-calculadas
+  const freq1 = Math.sin(x * 0.1 + timeFactor1) * Math.cos(y * 0.1 + timeFactor1);
+  const freq2 = Math.sin(x * 0.05 + timeFactor2) * Math.cos(y * 0.05 + timeFactor2) * 0.5;
+  const freq3 = Math.sin(x * 0.2 + timeFactor3) * Math.cos(y * 0.2 + timeFactor3) * 0.25;
+  
+  return (freq1 + freq2 + freq3) / 1.75; // Normalizar
+};
+
 // Utilidad para crear un generador de ruido simple
 export const createNoiseGenerator = (seed: number = 1) => {
   let currentSeed = seed;
