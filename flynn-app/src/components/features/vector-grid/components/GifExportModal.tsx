@@ -37,8 +37,8 @@ export const GifExportModal: React.FC<GifExportModalProps> = ({
       console.log('📐 gridRef.current:', gridRef.current);
       
       if (!gridRef.current) {
-        setExportStatus('Error: Grid no disponible');
-        setTimeout(() => setExportStatus(null), 3000);
+        setExportStatus('⚠️ GIF Export requiere integración completa con SimpleVectorGridOptimized');
+        setTimeout(() => setExportStatus(null), 5000);
         return;
       }
       

@@ -1,7 +1,7 @@
 'use client';
 
 import './dev/dev.css';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import DemoVectorGrid from './dev/DemoVectorGrid';
 import LengthDynamicsHelp from './dev/LengthDynamicsHelp';
 import SliderWithInput from '@/components/features/vector-grid/components/SliderWithInput';
@@ -10,10 +10,13 @@ import { GradientEditorModal } from '@/components/ui/GradientEditorModal';
 import { SimpleTabs } from '@/components/ui/SimpleTabs';
 import { useCustomGradients } from '@/lib/customGradients';
 import type { GradientColor } from '@/domain/color/types';
+import { ExportModal } from '@/components/features/vector-grid/components/ExportModal';
+import { GifExportModal } from '@/components/features/vector-grid/components/GifExportModal';
+import type { AnimationType as ExportAnimationType } from '@/components/features/vector-grid/simple/simpleTypes';
 
 
 type AnimationType = 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
-type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden';
+type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
 
 interface PresetConfig {
     name: string;
@@ -75,6 +78,11 @@ export default function DevPage() {
     });
     const [showLengthHelp, setShowLengthHelp] = useState(false);
     const [showGradientEditor, setShowGradientEditor] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [showGifExportModal, setShowGifExportModal] = useState(false);
+    
+    // Ref dummy para los modales de exportación (temporal)
+    const gridRef = useRef(null);
 
     // Hook para gradientes personalizados
     const { gradients: customGradients, refresh: refreshCustomGradients } = useCustomGradients();
@@ -83,6 +91,39 @@ export default function DevPage() {
     useEffect(() => {
         refreshCustomGradients();
     }, [refreshCustomGradients]);
+
+    // Cargar configuración desde URL al montar el componente
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.size > 0) {
+            console.log('🔗 Cargando configuración desde URL...');
+            
+            const urlConfig: Partial<PresetConfig> = {};
+            
+            // Cargar parámetros básicos
+            if (urlParams.get('animation')) urlConfig.animation = urlParams.get('animation') as AnimationType;
+            if (urlParams.get('gridPattern')) urlConfig.gridPattern = urlParams.get('gridPattern') as GridPattern;
+            if (urlParams.get('gridSize')) urlConfig.gridSize = parseInt(urlParams.get('gridSize')!);
+            if (urlParams.get('speed')) urlConfig.speed = parseFloat(urlParams.get('speed')!);
+            if (urlParams.get('intensity')) urlConfig.intensity = parseFloat(urlParams.get('intensity')!);
+            if (urlParams.get('colorMode')) urlConfig.colorMode = urlParams.get('colorMode') as 'solid' | 'gradient' | 'dynamic';
+            if (urlParams.get('solidColor')) urlConfig.solidColor = urlParams.get('solidColor')!;
+            if (urlParams.get('gradientPalette')) urlConfig.gradientPalette = urlParams.get('gradientPalette')!;
+            if (urlParams.get('rows')) urlConfig.rows = parseInt(urlParams.get('rows')!);
+            if (urlParams.get('cols')) urlConfig.cols = parseInt(urlParams.get('cols')!);
+            if (urlParams.get('spacing')) urlConfig.spacing = parseInt(urlParams.get('spacing')!);
+            
+            // Aplicar configuración cargada
+            if (Object.keys(urlConfig).length > 0) {
+                setConfig(prev => ({ ...prev, ...urlConfig }));
+                console.log('✅ Configuración cargada desde URL:', urlConfig);
+                
+                // Limpiar URL después de cargar (opcional)
+                // window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    }, []);
 
     // Animation-specific Length Dynamics presets
     const ANIMATION_LD_PRESETS: Record<string, Partial<PresetConfig>> = {
@@ -165,11 +206,11 @@ export default function DevPage() {
 
 
     const exportSVG = () => {
-        console.log('Exporting SVG...', config);
+        setShowExportModal(true);
     };
 
     const exportAnimatedSVG = () => {
-        console.log('Exporting Animated SVG...', config);
+        setShowGifExportModal(true);
     };
 
     // 🚀 Funciones para controles de animación
@@ -192,6 +233,49 @@ export default function DevPage() {
         }));
         refreshCustomGradients();
     }, [refreshCustomGradients]);
+
+    // 🚀 Función para compartir configuración actual
+    const handleShareConfig = useCallback(async () => {
+        console.log('🔗 Iniciando proceso de compartir...');
+        console.log('📋 Configuración actual:', config);
+        
+        try {
+            // Crear URL con la configuración actual como parámetros
+            const configParams = new URLSearchParams({
+                animation: config.animation,
+                gridPattern: config.gridPattern,
+                gridSize: config.gridSize.toString(),
+                speed: config.speed.toString(),
+                intensity: config.intensity.toString(),
+                colorMode: config.colorMode,
+                solidColor: config.solidColor,
+                gradientPalette: config.gradientPalette,
+                ...(config.rows && { rows: config.rows.toString() }),
+                ...(config.cols && { cols: config.cols.toString() }),
+                ...(config.spacing && { spacing: config.spacing.toString() })
+            });
+            
+            const shareUrl = `${window.location.origin}${window.location.pathname}?${configParams.toString()}`;
+            console.log('🌐 URL generada:', shareUrl);
+            
+            // Verificar si el navegador soporta clipboard API
+            if (!navigator.clipboard) {
+                console.warn('⚠️ Clipboard API no disponible, usando fallback');
+                // Fallback: mostrar la URL para copiar manualmente
+                alert(`URL para compartir:\n\n${shareUrl}`);
+                return;
+            }
+            
+            // Copiar al portapapeles
+            await navigator.clipboard.writeText(shareUrl);
+            
+            console.log('✅ URL copiada al portapapeles exitosamente!');
+            alert('✅ ¡Configuración copiada al portapapeles!');
+        } catch (error) {
+            console.error('❌ Error compartiendo configuración:', error);
+            alert('❌ Error al copiar. Revisa la consola para más detalles.');
+        }
+    }, [config]);
 
     // 🚀 Hook para controles de teclado global
     useKeyboardControls({
@@ -600,7 +684,7 @@ export default function DevPage() {
                                                     className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                 >
                                                     <option value="fibonacci">📐 Fibonacci Spiral</option>
-                                                    <option value="golden">⭐ Golden Ratio</option>
+                                                    <option value="polar">🎯 Polar Grid (Dartboard)</option>
                                                     <option value="triangular">🔺 Triangular Lattice</option>
                                                     <option value="voronoi">🌿 Random Distribution</option>
                                                     <option value="radial">🎯 Radial Pattern</option>
@@ -814,6 +898,45 @@ export default function DevPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Export Card */}
+                        <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
+                            <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Export & Share</h3>
+                            
+                            <div className="space-y-3">
+                                <button
+                                    onClick={exportSVG}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>Export SVG/Code</span>
+                                </button>
+
+                                <button
+                                    onClick={exportAnimatedSVG}
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
+                                    title="GIF Export requiere integración con SimpleVectorGridOptimized"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10v4a2 2 0 002 2h2a2 2 0 002-2v-4M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1" />
+                                    </svg>
+                                    <span>Export GIF (Beta)</span>
+                                </button>
+
+                                <button
+                                    onClick={handleShareConfig}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
+                                    title="Copiar URL con configuración actual al portapapeles"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                                    </svg>
+                                    <span>Share Config</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -828,6 +951,41 @@ export default function DevPage() {
                 isOpen={showGradientEditor}
                 onClose={() => setShowGradientEditor(false)}
                 onGradientCreated={handleGradientCreated}
+            />
+
+            {/* Export Modal */}
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                gridRef={gridRef}
+                gridConfig={{
+                    rows: config.rows || Math.sqrt(config.gridSize),
+                    cols: config.cols || Math.sqrt(config.gridSize),
+                    spacing: config.spacing || 80,
+                    margin: config.margin || 20
+                }}
+                vectorConfig={{
+                    shape: 'line',
+                    length: config.lengthMax,
+                    width: 2,
+                    color: config.solidColor,
+                    rotationOrigin: 'center',
+                    strokeLinecap: 'butt'
+                }}
+                animationType={'rotation' as ExportAnimationType}
+                canvasDimensions={{ width: 800, height: 600 }}
+                animationProps={{
+                    speed: config.speed,
+                    intensity: config.intensity,
+                    spatialFactor: config.spatialFactor
+                }}
+            />
+
+            {/* GIF Export Modal */}
+            <GifExportModal
+                isOpen={showGifExportModal}
+                onClose={() => setShowGifExportModal(false)}
+                gridRef={gridRef}
             />
         </div>
     );

@@ -9,7 +9,8 @@ export type GridPattern =
   | 'staggered'        // Offset rows
   | 'triangular'       // Triangular lattice
   | 'voronoi'          // Voronoi-like random distribution
-  | 'golden'           // Golden ratio based positioning;
+  | 'golden'           // Golden ratio based positioning
+  | 'polar'            // Polar grid (dartboard pattern);
 
 /**
  * Generates initial vectors based on the specified grid pattern.
@@ -43,6 +44,8 @@ export const generateInitialVectors = (
       return generateVoronoiGrid(gridConfig, vectorConfig, width, height);
     case 'golden':
       return generateGoldenGrid(gridConfig, vectorConfig, width, height);
+    case 'polar':
+      return generatePolarGrid(gridConfig, vectorConfig, width, height);
     case 'regular':
     default:
       return generateRegularGrid(gridConfig, vectorConfig, width, height);
@@ -345,4 +348,50 @@ function createVectorAt(
     c: col,
     animationData: {},
   } as SimpleVector;
+}
+
+/**
+ * Polar grid pattern - dartboard/radar arrangement
+ * Vectors arranged in concentric circles with radial spokes
+ */
+function generatePolarGrid(
+  gridConfig: GridConfig,
+  vectorConfig: VectorConfig,
+  width: number,
+  height: number
+): SimpleVector[] {
+  const { rows, cols } = gridConfig;
+  const vectors: SimpleVector[] = [];
+  
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const maxRadius = Math.min(centerX, centerY) * 0.9; // Leave some margin
+  
+  // Number of concentric circles (radial levels)
+  const numRings = Math.ceil(Math.sqrt(rows));
+  // Number of spokes/rays
+  const numSpokes = Math.ceil(cols * 2);
+  
+  for (let ring = 1; ring <= numRings; ring++) {
+    const radius = (ring / numRings) * maxRadius;
+    
+    // More vectors in outer rings (proportional to circumference)
+    const vectorsInRing = Math.max(8, Math.floor((ring / numRings) * numSpokes));
+    
+    for (let spoke = 0; spoke < vectorsInRing; spoke++) {
+      const angle = (spoke / vectorsInRing) * 2 * Math.PI;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      
+      // Check if vector is within bounds
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        vectors.push(createVectorAt(x, y, ring - 1, spoke, vectorConfig));
+      }
+    }
+  }
+  
+  // Add center vector
+  vectors.push(createVectorAt(centerX, centerY, 0, 0, vectorConfig));
+  
+  return vectors;
 }

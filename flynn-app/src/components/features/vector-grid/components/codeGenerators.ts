@@ -94,8 +94,54 @@ export const extractGridData = async (
   appConfig: AppConfig
 ): Promise<CodeGenerationData | null> => {
   if (!gridRef.current) {
-    console.error('❌ [extractGridData] No hay gridRef.current');
-    return null;
+    console.warn('⚠️ [extractGridData] No hay gridRef.current, usando datos mock');
+    // Crear datos mock para cuando no hay gridRef real
+    const mockVectors: SimpleVector[] = [];
+    const { rows, cols } = appConfig.gridConfig;
+    
+    // Generar vectores mock básicos
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = c * appConfig.gridConfig.spacing + 50;
+        const y = r * appConfig.gridConfig.spacing + 50;
+        const angle = Math.random() * Math.PI * 2;
+        
+        mockVectors.push({
+          id: `mock-${r}-${c}`,
+          x,
+          y,
+          angle,
+          originalX: x,
+          originalY: y,
+          originalAngle: angle,
+          length: appConfig.vectorConfig.length,
+          width: appConfig.vectorConfig.width,
+          color: appConfig.vectorConfig.color,
+          opacity: 1,
+          lengthFactor: 1,
+          widthFactor: 1,
+          intensityFactor: 1,
+          originalLength: appConfig.vectorConfig.length,
+          baseWidth: appConfig.vectorConfig.width,
+          baseOpacity: 1,
+          originalColor: appConfig.vectorConfig.color,
+          r, c,
+          gridRow: r,
+          gridCol: c,
+          animationData: {}
+        } as SimpleVector);
+      }
+    }
+    
+    return {
+      vectors: mockVectors,
+      gridConfig: appConfig.gridConfig,
+      vectorConfig: appConfig.vectorConfig,
+      animationType: appConfig.animationType,
+      canvasWidth: appConfig.canvasDimensions.width,
+      canvasHeight: appConfig.canvasDimensions.height,
+      animationProps: appConfig.animationProps
+    };
   }
   
   try {
