@@ -255,7 +255,7 @@ export default function DevPage() {
                 ...(config.spacing && { spacing: config.spacing.toString() })
             });
             
-            const shareUrl = `${window.location.origin}${window.location.pathname}?${configParams.toString()}`;
+            const shareUrl = `${window.location.origin}/view?${configParams.toString()}`;
             console.log('🌐 URL generada:', shareUrl);
             
             // Verificar si el navegador soporta clipboard API
