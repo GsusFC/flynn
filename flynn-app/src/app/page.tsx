@@ -262,10 +262,17 @@ export default function DevPage() {
         console.log('📋 Configuración actual:', config);
         
         try {
-        // Crear URL comprimida con la configuración actual
-        const { createCompressedShareUrl } = await import('@/utils/urlCompression');
-        const shareUrl = createCompressedShareUrl(config, window.location.origin);
-        console.log('🌐 URL comprimida generada:', shareUrl);
+        // Crear URL comprimida con la configuración actual (incluyendo dimensiones)
+        const configToShare = {
+            ...config,
+            // Asegurar que las dimensiones del canvas estén incluidas
+                 canvasWidth: config.canvasWidth || 800,
+                 canvasHeight: config.canvasHeight || 600,
+                 margin: config.margin || 20
+             };
+             const { createCompressedShareUrl } = await import('@/utils/urlCompression');
+             const shareUrl = createCompressedShareUrl(configToShare, window.location.origin);
+             console.log('🌐 URL comprimida generada:', shareUrl);
             
             // Verificar si el navegador soporta clipboard API
             if (!navigator.clipboard) {

@@ -51,6 +51,12 @@ function ViewContent() {
   const [waveFrequency, setWaveFrequency] = useState(2);
   const [spiralTightness, setSpiralTightness] = useState(1);
   const [organicNoise, setOrganicNoise] = useState(0.5);
+  
+  // Canvas dimensions
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(600);
+  const [margin, setMargin] = useState(20);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     // First try to load compressed configuration
@@ -93,6 +99,10 @@ function ViewContent() {
           if (config.waveFrequency !== undefined) setWaveFrequency(config.waveFrequency);
           if (config.spiralTightness !== undefined) setSpiralTightness(config.spiralTightness);
           if (config.organicNoise !== undefined) setOrganicNoise(config.organicNoise);
+          if (config.canvasWidth !== undefined) setCanvasWidth(config.canvasWidth);
+          if (config.canvasHeight !== undefined) setCanvasHeight(config.canvasHeight);
+          if (config.margin !== undefined) setMargin(config.margin);
+          if (config.isPaused !== undefined) setIsPaused(config.isPaused);
           
           console.log('✅ Configuración cargada desde URL comprimida:', config);
           return; // Exit early if compressed config was loaded
@@ -198,6 +208,19 @@ function ViewContent() {
     
     const organicNoiseParam = searchParams.get('organicNoise');
     if (organicNoiseParam) setOrganicNoise(parseFloat(organicNoiseParam));
+    
+    // Canvas dimensions (legacy format)
+    const canvasWidthParam = searchParams.get('canvasWidth');
+    if (canvasWidthParam) setCanvasWidth(parseInt(canvasWidthParam));
+    
+    const canvasHeightParam = searchParams.get('canvasHeight');
+    if (canvasHeightParam) setCanvasHeight(parseInt(canvasHeightParam));
+    
+    const marginParam = searchParams.get('margin');
+    if (marginParam) setMargin(parseInt(marginParam));
+    
+    const isPausedParam = searchParams.get('isPaused');
+    if (isPausedParam) setIsPaused(isPausedParam === 'true');
     };
     
     tryLoadCompressedConfig();
@@ -211,7 +234,8 @@ function ViewContent() {
       colorSaturation, colorBrightness, lengthMin, lengthMax, oscillationFreq,
       oscillationAmp, pulseSpeed, spatialFactor, spatialMode, mouseInfluence,
       mouseMode, physicsMode, vectorShape, showArrowheads, curvatureIntensity,
-      waveFrequency, spiralTightness, organicNoise
+      waveFrequency, spiralTightness, organicNoise, canvasWidth, canvasHeight,
+      margin, isPaused
     };
     
     try {
@@ -279,6 +303,10 @@ function ViewContent() {
           waveFrequency={waveFrequency}
           spiralTightness={spiralTightness}
           organicNoise={organicNoise}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          margin={margin}
+          isPaused={isPaused}
         />
       </div>
       
