@@ -262,43 +262,10 @@ export default function DevPage() {
         console.log('📋 Configuración actual:', config);
         
         try {
-            // Crear URL con la configuración actual como parámetros
-            const configParams = new URLSearchParams({
-                animation: config.animation,
-                gridPattern: config.gridPattern,
-                gridSize: config.gridSize.toString(),
-                speed: config.speed.toString(),
-                intensity: config.intensity.toString(),
-                colorMode: config.colorMode,
-                solidColor: config.solidColor,
-                gradientPalette: config.gradientPalette,
-                colorIntensityMode: config.colorIntensityMode,
-                colorHueShift: config.colorHueShift.toString(),
-                colorSaturation: config.colorSaturation.toString(),
-                colorBrightness: config.colorBrightness.toString(),
-                lengthMin: config.lengthMin.toString(),
-                lengthMax: config.lengthMax.toString(),
-                oscillationFreq: config.oscillationFreq.toString(),
-                oscillationAmp: config.oscillationAmp.toString(),
-                pulseSpeed: config.pulseSpeed.toString(),
-                spatialFactor: config.spatialFactor.toString(),
-                spatialMode: config.spatialMode,
-                mouseInfluence: config.mouseInfluence.toString(),
-                mouseMode: config.mouseMode,
-                physicsMode: config.physicsMode,
-                vectorShape: config.vectorShape,
-                showArrowheads: config.showArrowheads.toString(),
-                curvatureIntensity: config.curvatureIntensity.toString(),
-                waveFrequency: config.waveFrequency.toString(),
-                spiralTightness: config.spiralTightness.toString(),
-                organicNoise: config.organicNoise.toString(),
-                ...(config.rows && { rows: config.rows.toString() }),
-                ...(config.cols && { cols: config.cols.toString() }),
-                ...(config.spacing && { spacing: config.spacing.toString() })
-            });
-            
-            const shareUrl = `${window.location.origin}/view?${configParams.toString()}`;
-            console.log('🌐 URL generada:', shareUrl);
+        // Crear URL comprimida con la configuración actual
+        const { createCompressedShareUrl } = await import('@/utils/urlCompression');
+        const shareUrl = createCompressedShareUrl(config, window.location.origin);
+        console.log('🌐 URL comprimida generada:', shareUrl);
             
             // Verificar si el navegador soporta clipboard API
             if (!navigator.clipboard) {

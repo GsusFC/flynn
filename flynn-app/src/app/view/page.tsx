@@ -53,9 +53,58 @@ function ViewContent() {
   const [organicNoise, setOrganicNoise] = useState(0.5);
 
   useEffect(() => {
-    // Load configuration from URL parameters
-    const animationParam = searchParams.get('animation') as 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
-    if (animationParam) setAnimation(animationParam);
+    // First try to load compressed configuration
+    const tryLoadCompressedConfig = async () => {
+      const compressedParam = searchParams.get('c');
+      if (compressedParam) {
+        try {
+          const { decompressConfig } = await import('@/utils/urlCompression');
+          const config = decompressConfig(decodeURIComponent(compressedParam));
+          
+          // Apply all configuration from compressed data
+          if (config.animation) setAnimation(config.animation);
+          if (config.speed !== undefined) setSpeed(config.speed);
+          if (config.intensity !== undefined) setIntensity(config.intensity);
+          if (config.gridPattern) setGridPattern(config.gridPattern);
+          if (config.gridSize !== undefined) setGridSize(config.gridSize);
+          if (config.spacing !== undefined) setSpacing(config.spacing);
+          if (config.rows !== undefined) setRows(config.rows);
+          if (config.cols !== undefined) setCols(config.cols);
+          if (config.colorMode) setColorMode(config.colorMode);
+          if (config.solidColor) setSolidColor(config.solidColor);
+          if (config.gradientPalette) setGradientPalette(config.gradientPalette);
+          if (config.colorIntensityMode) setColorIntensityMode(config.colorIntensityMode);
+          if (config.colorHueShift !== undefined) setColorHueShift(config.colorHueShift);
+          if (config.colorSaturation !== undefined) setColorSaturation(config.colorSaturation);
+          if (config.colorBrightness !== undefined) setColorBrightness(config.colorBrightness);
+          if (config.lengthMin !== undefined) setLengthMin(config.lengthMin);
+          if (config.lengthMax !== undefined) setLengthMax(config.lengthMax);
+          if (config.oscillationFreq !== undefined) setOscillationFreq(config.oscillationFreq);
+          if (config.oscillationAmp !== undefined) setOscillationAmp(config.oscillationAmp);
+          if (config.pulseSpeed !== undefined) setPulseSpeed(config.pulseSpeed);
+          if (config.spatialFactor !== undefined) setSpatialFactor(config.spatialFactor);
+          if (config.spatialMode) setSpatialMode(config.spatialMode);
+          if (config.mouseInfluence !== undefined) setMouseInfluence(config.mouseInfluence);
+          if (config.mouseMode) setMouseMode(config.mouseMode);
+          if (config.physicsMode) setPhysicsMode(config.physicsMode);
+          if (config.vectorShape) setVectorShape(config.vectorShape);
+          if (config.showArrowheads !== undefined) setShowArrowheads(config.showArrowheads);
+          if (config.curvatureIntensity !== undefined) setCurvatureIntensity(config.curvatureIntensity);
+          if (config.waveFrequency !== undefined) setWaveFrequency(config.waveFrequency);
+          if (config.spiralTightness !== undefined) setSpiralTightness(config.spiralTightness);
+          if (config.organicNoise !== undefined) setOrganicNoise(config.organicNoise);
+          
+          console.log('✅ Configuración cargada desde URL comprimida:', config);
+          return; // Exit early if compressed config was loaded
+        } catch (error) {
+          console.error('❌ Error descomprimiendo configuración:', error);
+          // Fall through to try legacy parameter loading
+        }
+      }
+      
+      // Fallback to legacy URL parameter loading
+      const animationParam = searchParams.get('animation') as 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
+      if (animationParam) setAnimation(animationParam);
     
     const speedParam = searchParams.get('speed');
     if (speedParam) setSpeed(parseFloat(speedParam));
@@ -149,44 +198,36 @@ function ViewContent() {
     
     const organicNoiseParam = searchParams.get('organicNoise');
     if (organicNoiseParam) setOrganicNoise(parseFloat(organicNoiseParam));
+    };
+    
+    tryLoadCompressedConfig();
   }, [searchParams]);
 
   // Generate edit URL with current parameters
-  const generateEditUrl = () => {
-    const params = new URLSearchParams();
-    params.set('animation', animation);
-    params.set('speed', speed.toString());
-    params.set('intensity', intensity.toString());
-    params.set('gridPattern', gridPattern);
-    params.set('gridSize', gridSize.toString());
-    params.set('spacing', spacing.toString());
-    if (rows !== undefined) params.set('rows', rows.toString());
-    if (cols !== undefined) params.set('cols', cols.toString());
-    params.set('colorMode', colorMode);
-    params.set('solidColor', encodeURIComponent(solidColor));
-    params.set('gradientPalette', gradientPalette);
-    params.set('colorIntensityMode', colorIntensityMode);
-    params.set('colorHueShift', colorHueShift.toString());
-    params.set('colorSaturation', colorSaturation.toString());
-    params.set('colorBrightness', colorBrightness.toString());
-    params.set('lengthMin', lengthMin.toString());
-    params.set('lengthMax', lengthMax.toString());
-    params.set('oscillationFreq', oscillationFreq.toString());
-    params.set('oscillationAmp', oscillationAmp.toString());
-    params.set('pulseSpeed', pulseSpeed.toString());
-    params.set('spatialFactor', spatialFactor.toString());
-    params.set('spatialMode', spatialMode);
-    params.set('mouseInfluence', mouseInfluence.toString());
-    params.set('mouseMode', mouseMode);
-    params.set('physicsMode', physicsMode);
-    params.set('vectorShape', vectorShape);
-    params.set('showArrowheads', showArrowheads.toString());
-    params.set('curvatureIntensity', curvatureIntensity.toString());
-    params.set('waveFrequency', waveFrequency.toString());
-    params.set('spiralTightness', spiralTightness.toString());
-    params.set('organicNoise', organicNoise.toString());
+  const generateEditUrl = async () => {
+    const config = {
+      animation, speed, intensity, gridPattern, gridSize, spacing, rows, cols,
+      colorMode, solidColor, gradientPalette, colorIntensityMode, colorHueShift,
+      colorSaturation, colorBrightness, lengthMin, lengthMax, oscillationFreq,
+      oscillationAmp, pulseSpeed, spatialFactor, spatialMode, mouseInfluence,
+      mouseMode, physicsMode, vectorShape, showArrowheads, curvatureIntensity,
+      waveFrequency, spiralTightness, organicNoise
+    };
     
-    return `${window.location.origin}/?${params.toString()}`;
+    try {
+      const { createCompressedShareUrl } = await import('@/utils/urlCompression');
+      return createCompressedShareUrl(config, window.location.origin.replace('/view', ''));
+    } catch (error) {
+      console.error('Error generating edit URL:', error);
+      // Fallback to regular URL with basic parameters
+      const params = new URLSearchParams();
+      params.set('animation', animation);
+      params.set('gridPattern', gridPattern);
+      params.set('gridSize', gridSize.toString());
+      if (rows !== undefined) params.set('rows', rows.toString());
+      if (cols !== undefined) params.set('cols', cols.toString());
+      return `${window.location.origin.replace('/view', '')}/?${params.toString()}`;
+    }
   };
 
   return (
@@ -194,7 +235,10 @@ function ViewContent() {
       {/* Header with edit button */}
       <div className="absolute top-4 right-4 z-10">
         <button
-          onClick={() => window.open(generateEditUrl(), '_blank')}
+          onClick={async () => {
+            const editUrl = await generateEditUrl();
+            window.open(editUrl, '_blank');
+          }}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-lg"
         >
           Edit Animation
