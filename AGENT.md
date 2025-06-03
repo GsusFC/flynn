@@ -5,6 +5,15 @@
 - **Build**: `cd flynn-app && npm run build`
 - **Lint**: `cd flynn-app && npm run lint`
 
+## Cambios Recientes (Enero 2025)
+- **Página principal actualizada**: Movida `/dev` → `/` (página principal)
+- **Página legacy disponible**: Backup en `/legacy`
+- **Canvas rendering implementado**: Automático para 900+ vectores
+- **Módulos UI mejorados**: Grid Patterns y Colors con mejor organización visual
+- **HybridRenderer mejorado**: Renderizado híbrido SVG/Canvas con threshold de 900 vectores
+- **Sistema de tabs**: Colors organizados en Solid | Gradient | Dynamic
+- **Grid Patterns refactorizado**: Mejor UX con secciones y indicadores de performance
+
 ## Arquitectura del Proyecto
 
 ### Estructura Principal

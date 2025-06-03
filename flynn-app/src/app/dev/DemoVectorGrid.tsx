@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { getCustomGradient } from '@/lib/customGradients';
 
 interface Vector {
   id: string;
@@ -14,15 +15,21 @@ interface Vector {
 interface DemoVectorGridProps {
   gridSize?: number;
   gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden';
-  animation?: 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence';
+  animation?: 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
+  // 🔴 HYBRID SYSTEM - Advanced grid control
+  rows?: number;
+  cols?: number;
+  spacing?: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  margin?: number;
   speed?: number;
   intensity?: number;
   // New Color System
-  colorMode?: 'solid' | 'gradient';
+  colorMode?: 'solid' | 'gradient' | 'dynamic';
   solidColor?: string;
-  gradientPalette?: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean';
+  gradientPalette?: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean' | string; // string para custom gradients
   // Dynamic Color Modulation
-  dynamicColors?: boolean;
   colorIntensityMode?: 'field' | 'velocity' | 'distance' | 'angle';
   colorHueShift?: number;
   colorSaturation?: number;
@@ -45,6 +52,9 @@ interface DemoVectorGridProps {
   waveFrequency?: number;
   spiralTightness?: number;
   organicNoise?: number;
+  // Animation Control
+  isPaused?: boolean;
+
 }
 
 export default function DemoVectorGrid({ 
@@ -58,7 +68,6 @@ export default function DemoVectorGrid({
   solidColor = '#3b82f6',
   gradientPalette = 'flow',
   // Dynamic Color Modulation defaults
-  dynamicColors = false,
   colorIntensityMode = 'field',
   colorHueShift = 1,
   colorSaturation = 80,
@@ -80,34 +89,101 @@ export default function DemoVectorGrid({
   curvatureIntensity = 1,
   waveFrequency = 2,
   spiralTightness = 1,
-  organicNoise = 0.5
+  organicNoise = 0.5,
+  // Animation Control defaults
+  isPaused = false,
+  // Hybrid System defaults
+  rows,
+  cols,
+  spacing,
+  canvasWidth,
+  canvasHeight,
+  margin = 20
 }: DemoVectorGridProps) {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const [vectors, setVectors] = useState<Vector[]>([]);
   const [animationTime, setAnimationTime] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const prevValuesRef = useRef<{[key: string]: number}>({});
   const animationRef = useRef<number | undefined>(undefined);
+  
+  // Simple noise function for advanced animations
+  const simpleNoise = useCallback((x: number, y: number, z: number) => {
+    // Simple hash-based noise function
+    const hash = (Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453) % 1;
+    return (hash - 0.5) * 2; // Return value between -1 and 1
+  }, []);
 
-  // DEBUG: Log props to verify they're being received
-  console.log('🎛️ Length Dynamics Props:', {
-    lengthMin,
-    lengthMax,
-    oscillationFreq,
-    oscillationAmp,
-    pulseSpeed,
-    spatialFactor,
-    spatialMode,
-    mouseInfluence,
-    mouseMode,
-    physicsMode,
-    vectorShape,
-    showArrowheads,
-    curvatureIntensity,
-    waveFrequency,
-    spiralTightness,
-    organicNoise
-  });
+  // 🧠 HYBRID SYSTEM - Automatic mode detection
+  const hybridConfig = useMemo(() => {
+    const hasHybridProps = !!(rows || cols || spacing || canvasWidth || canvasHeight);
+    
+    // 🎯 BASE SPACING: Usar container real para evitar bucle circular
+    const containerSize = Math.min(800, 600); // Fallback seguro
+    const baseSpacing = containerSize / (Math.sqrt(gridSize) + 1);
+    
+    if (!hasHybridProps) {
+      // 🟢 AUTOMATIC MODE - Use base spacing, not calculated dimensions
+      return {
+        mode: 'auto' as const,
+        effectiveGridSize: gridSize,
+        effectiveRows: Math.sqrt(gridSize),
+        effectiveCols: Math.sqrt(gridSize),
+        effectiveSpacing: baseSpacing,
+        effectiveCanvasWidth: dimensions.width,
+        effectiveCanvasHeight: dimensions.height,
+        info: {
+          mode: '🟢 Automatic',
+          description: `Using gridSize: ${gridSize}`,
+          calculation: `${Math.sqrt(gridSize).toFixed(1)}×${Math.sqrt(gridSize).toFixed(1)} grid`
+        }
+      };
+    } else {
+      // 🔴 HYBRID MODE - Calculate effective grid from hybrid props
+      const effectiveRows = rows || Math.sqrt(gridSize);
+      const effectiveCols = cols || Math.sqrt(gridSize);
+      const effectiveGridSize = Math.round(effectiveRows * effectiveCols);
+      const effectiveSpacing = spacing || baseSpacing;
+      const effectiveCanvasWidth = canvasWidth || dimensions.width;
+      const effectiveCanvasHeight = canvasHeight || dimensions.height;
+      
+      return {
+        mode: 'hybrid' as const,
+        effectiveGridSize,
+        effectiveRows,
+        effectiveCols,
+        effectiveSpacing,
+        effectiveCanvasWidth,
+        effectiveCanvasHeight,
+        info: {
+          mode: '🔴 Hybrid',
+          description: `Custom ${effectiveRows}×${effectiveCols} grid`,
+          calculation: `${effectiveSpacing.toFixed(0)}px spacing, ${effectiveCanvasWidth}×${effectiveCanvasHeight}px canvas`
+        }
+      };
+    }
+  }, [gridSize, rows, cols, spacing, canvasWidth, canvasHeight, dimensions.width, dimensions.height]);
+
+  // DEBUG: Log props to verify they're being received (commented out to reduce console spam)
+  // console.log('🎛️ Length Dynamics Props:', {
+  //   lengthMin,
+  //   lengthMax,
+  //   oscillationFreq,
+  //   oscillationAmp,
+  //   pulseSpeed,
+  //   spatialFactor,
+  //   spatialMode,
+  //   mouseInfluence,
+  //   mouseMode,
+  //   physicsMode,
+  //   vectorShape,
+  //   showArrowheads,
+  //   curvatureIntensity,
+  //   waveFrequency,
+  //   spiralTightness,
+  //   organicNoise
+  // });
 
   // Update dimensions when container changes
   useEffect(() => {
@@ -171,6 +247,47 @@ export default function DemoVectorGrid({
           const oceanFactor = y / height;
           const oceanHue = 200 + oceanFactor * 60 + time * 5;
           return `hsl(${oceanHue}, 70%, 55%)`;
+        default:
+          // Handle custom gradients
+          const customGradient = getCustomGradient(gradientPalette);
+          if (customGradient) {
+            // Para gradientes personalizados, usamos una interpolación basada en posición
+            const normalizedX = x / width;
+            const normalizedY = y / height;
+            
+            // Determinar factor de interpolación basado en el tipo de gradiente
+            let factor = 0;
+            if (customGradient.gradient.variant === 'radial') {
+              // Para gradientes radiales, usar distancia desde el centro
+              const centerDistance = Math.sqrt((normalizedX - 0.5) ** 2 + (normalizedY - 0.5) ** 2);
+              factor = Math.min(centerDistance * 2, 1); // Normalizar a [0,1]
+            } else {
+              // Para gradientes lineales, usar el ángulo del gradiente
+              const angle = (customGradient.gradient.angle || 90) * Math.PI / 180;
+              factor = (normalizedX * Math.cos(angle) + normalizedY * Math.sin(angle) + 1) / 2;
+              factor = Math.max(0, Math.min(1, factor)); // Clamp a [0,1]
+            }
+            
+            // Interpolación entre color stops
+            const stops = customGradient.gradient.stops.sort((a, b) => a.offset - b.offset);
+            
+            // Encontrar los dos stops más cercanos
+            let startStop = stops[0];
+            let endStop = stops[stops.length - 1];
+            
+            for (let i = 0; i < stops.length - 1; i++) {
+              if (factor >= stops[i].offset && factor <= stops[i + 1].offset) {
+                startStop = stops[i];
+                endStop = stops[i + 1];
+                break;
+              }
+            }
+            
+            // Interpolación simple entre colores (por ahora retornamos el color más cercano)
+            const t = (factor - startStop.offset) / (endStop.offset - startStop.offset);
+            return t < 0.5 ? startStop.color : endStop.color;
+          }
+          break;
       }
     }
     
@@ -181,27 +298,68 @@ export default function DemoVectorGrid({
   // Generate initial vectors based on pattern
   const generateVectors = useCallback((pattern: string, count: number) => {
     const vectors: Vector[] = [];
-    const gridSideLength = Math.sqrt(count);
-    const { width, height } = dimensions;
+    
+    // 🧠 HYBRID SYSTEM - Use hybrid config for grid calculations
+    const effectiveRows = hybridConfig.effectiveRows;
+    const effectiveCols = hybridConfig.effectiveCols;
+    const effectiveSpacing = hybridConfig.effectiveSpacing;
+    const canvasW = hybridConfig.effectiveCanvasWidth;
+    const canvasH = hybridConfig.effectiveCanvasHeight;
+    
+    // 🎯 SISTEMA DE COORDENADAS UNIFICADO
+    const maxVectorLength = Math.max(lengthMax, 50);
+    const padding = maxVectorLength; // Marco fijo del tamaño del vector
+    
+    // 📐 ÁREA DE CONTENIDO ESTÁNDAR - Una sola fuente de verdad
+    const contentArea = {
+      x: padding,
+      y: padding,
+      width: canvasW - 2 * padding,
+      height: canvasH - 2 * padding,
+      centerX: canvasW / 2,
+      centerY: canvasH / 2
+    };
+    
+    // Grid dimensions para patrones regulares
+    const gridWidth = (effectiveCols - 1) * effectiveSpacing;
+    const gridHeight = (effectiveRows - 1) * effectiveSpacing;
+    
+    // Grid positioning centrado en contentArea
+    const gridStartX = contentArea.x + (contentArea.width - gridWidth) / 2;
+    const gridStartY = contentArea.y + (contentArea.height - gridHeight) / 2;
+    
+    // 🐛 DEBUG: Log calculations para entender el problema
+    if (pattern === 'regular' && count > 2000) {
+      console.log('🔍 DEBUG CENTERING:', {
+        canvasW, canvasH,
+        padding,
+        contentArea,
+        effectiveSpacing,
+        effectiveCols, effectiveRows,
+        gridWidth, gridHeight,
+        gridStartX, gridStartY,
+        'gridFitsInContent': gridWidth <= contentArea.width && gridHeight <= contentArea.height
+      });
+    }
     
     for (let i = 0; i < count; i++) {
       let x, y;
       
       switch (pattern) {
         case 'hexagonal':
-          const row = Math.floor(i / gridSideLength);
-          const col = i % gridSideLength;
-          const offsetX = (row % 2) * (width / gridSideLength / 2);
-          x = col * (width / gridSideLength) + offsetX + width / gridSideLength / 2;
-          y = row * (height / gridSideLength) * 0.866 + height / gridSideLength / 2;
+          const row = Math.floor(i / effectiveCols);
+          const col = i % effectiveCols;
+          const offsetX = (row % 2) * (effectiveSpacing / 2);
+          x = gridStartX + col * effectiveSpacing + offsetX;
+          y = gridStartY + row * effectiveSpacing * 0.866;
           break;
           
         case 'fibonacci':
           const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-          const radius = Math.min(width, height) / 3 * Math.sqrt(i / count);
+          const radius = Math.min(contentArea.width, contentArea.height) / 3 * Math.sqrt(i / count);
           const angle = i * goldenAngle;
-          x = width / 2 + Math.cos(angle) * radius;
-          y = height / 2 + Math.sin(angle) * radius;
+          x = contentArea.centerX + Math.cos(angle) * radius;
+          y = contentArea.centerY + Math.sin(angle) * radius;
           break;
           
         case 'radial':
@@ -209,54 +367,54 @@ export default function DemoVectorGrid({
           const ringIndex = Math.floor(Math.sqrt(i * Math.PI));
           const pointsInRing = Math.max(1, Math.round(2 * Math.PI * ringIndex));
           const angleInRing = (i % pointsInRing) * (2 * Math.PI / pointsInRing);
-          const radiusInRing = (ringIndex / numRings) * Math.min(width, height) / 2.5;
-          x = width / 2 + Math.cos(angleInRing) * radiusInRing;
-          y = height / 2 + Math.sin(angleInRing) * radiusInRing;
+          const radiusInRing = (ringIndex / numRings) * Math.min(contentArea.width, contentArea.height) / 2.5;
+          x = contentArea.centerX + Math.cos(angleInRing) * radiusInRing;
+          y = contentArea.centerY + Math.sin(angleInRing) * radiusInRing;
           break;
           
         case 'staggered':
-          const staggeredRow = Math.floor(i / gridSideLength);
-          const staggeredCol = i % gridSideLength;
-          const staggerOffset = (staggeredRow % 2) * (width / gridSideLength / 4);
-          x = staggeredCol * (width / gridSideLength) + staggerOffset + width / gridSideLength / 2;
-          y = staggeredRow * (height / gridSideLength) + height / gridSideLength / 2;
+          const staggeredRow = Math.floor(i / effectiveCols);
+          const staggeredCol = i % effectiveCols;
+          const staggerOffset = (staggeredRow % 2) * (effectiveSpacing / 4);
+          x = gridStartX + staggeredCol * effectiveSpacing + staggerOffset;
+          y = gridStartY + staggeredRow * effectiveSpacing;
           break;
           
         case 'triangular':
           const triRow = Math.floor((-1 + Math.sqrt(1 + 8 * i)) / 2);
           const triCol = i - (triRow * (triRow + 1)) / 2;
-          const triSpacingX = width / (triRow + 2);
-          const triSpacingY = height / Math.ceil(Math.sqrt(count));
-          x = triCol * triSpacingX + (triRow % 2) * triSpacingX / 2 + triSpacingX;
-          y = triRow * triSpacingY + triSpacingY;
+          const triSpacingX = contentArea.width / (triRow + 2);
+          const triSpacingY = contentArea.height / Math.ceil(Math.sqrt(count));
+          x = contentArea.x + triCol * triSpacingX + (triRow % 2) * triSpacingX / 2 + triSpacingX;
+          y = contentArea.y + triRow * triSpacingY + triSpacingY;
           break;
           
         case 'voronoi':
-          // Pseudo-random but deterministic positioning
+          // Pseudo-random but deterministic positioning dentro de contentArea
           const seed1 = (i * 73 + 37) % 997;
           const seed2 = (i * 179 + 83) % 991;
-          x = (seed1 / 997) * (width - 40) + 20;
-          y = (seed2 / 991) * (height - 40) + 20;
+          x = contentArea.x + (seed1 / 997) * contentArea.width;
+          y = contentArea.y + (seed2 / 991) * contentArea.height;
           break;
           
         case 'golden':
           const goldenRatio = (1 + Math.sqrt(5)) / 2;
           const goldenAngleRad = 2 * Math.PI / goldenRatio;
-          const goldenRadius = Math.sqrt(i) * Math.min(width, height) / (2 * Math.sqrt(count));
+          const goldenRadius = Math.sqrt(i) * Math.min(contentArea.width, contentArea.height) / (2 * Math.sqrt(count));
           const goldenAnglePos = i * goldenAngleRad;
-          x = width / 2 + Math.cos(goldenAnglePos) * goldenRadius;
-          y = height / 2 + Math.sin(goldenAnglePos) * goldenRadius;
+          x = contentArea.centerX + Math.cos(goldenAnglePos) * goldenRadius;
+          y = contentArea.centerY + Math.sin(goldenAnglePos) * goldenRadius;
           break;
           
         default: // regular
-          const rowReg = Math.floor(i / gridSideLength);
-          const colReg = i % gridSideLength;
-          x = colReg * (width / gridSideLength) + width / gridSideLength / 2;
-          y = rowReg * (height / gridSideLength) + height / gridSideLength / 2;
+          const rowReg = Math.floor(i / effectiveCols);
+          const colReg = i % effectiveCols;
+          x = gridStartX + colReg * effectiveSpacing;
+          y = gridStartY + rowReg * effectiveSpacing;
       }
       
-      const finalX = Math.max(20, Math.min(width - 20, x));
-      const finalY = Math.max(20, Math.min(height - 20, y));
+      const finalX = Math.max(margin, Math.min(canvasW - margin, x));
+      const finalY = Math.max(margin, Math.min(canvasH - margin, y));
       
       vectors.push({
         id: `vector-${i}`,
@@ -269,12 +427,12 @@ export default function DemoVectorGrid({
     }
     
     return vectors;
-  }, [dimensions, generateColor]);
+  }, [hybridConfig, margin, lengthMin, lengthMax, generateColor]);
 
   // Initialize vectors
   useEffect(() => {
-    setVectors(generateVectors(gridPattern, gridSize));
-  }, [gridPattern, gridSize, dimensions, colorMode, solidColor, lengthMin, lengthMax, generateVectors]);
+    setVectors(generateVectors(gridPattern, hybridConfig.effectiveGridSize));
+  }, [gridPattern, hybridConfig.effectiveGridSize, dimensions, colorMode, solidColor, lengthMin, lengthMax, generateVectors, hybridConfig]);
 
   // Mouse tracking - Fixed to use SVG coordinates
   const svgRef = useRef<SVGSVGElement>(null);
@@ -296,22 +454,57 @@ export default function DemoVectorGrid({
     }
   }, [mouseInfluence, handleMouseMove]);
 
-  // Handle window resize for fullscreen mode
+  // Handle container resize for responsive canvas
   useEffect(() => {
-    const handleResize = () => {
-      // Force re-render when window resizes
-      if (dimensions.width === window.innerWidth || dimensions.height === window.innerHeight) {
-        // This triggers a re-render with new dimensions
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        
+        // 🎯 CANVAS ADAPTATIVO: Usa mismos cálculos que contentArea
+        const maxVectorLength = Math.max(lengthMax, 50);
+        const padding = maxVectorLength; // Padding en ambos lados
+        
+        // Usar exactamente los mismos cálculos que hybridConfig
+        const gridDimension = Math.sqrt(gridSize);
+        const baseSpacing = Math.min(rect.width, rect.height) / (gridDimension + 1);
+        
+        // Fórmula: Canvas mínimo = gridSpace + padding en ambos lados  
+        const gridRequiredWidth = baseSpacing * (gridDimension - 1);
+        const gridRequiredHeight = baseSpacing * (gridDimension - 1);
+        const minRequiredWidth = gridRequiredWidth + (padding * 2);
+        const minRequiredHeight = gridRequiredHeight + (padding * 2);
+        
+        // Usar el espacio disponible pero garantizar el mínimo
+        const availableWidth = rect.width - 40; // Margen mínimo del contenedor
+        const availableHeight = rect.height - 40;
+        
+        const newWidth = Math.max(minRequiredWidth, availableWidth, 400);
+        const newHeight = Math.max(minRequiredHeight, availableHeight, 300);
+        
+        setDimensions(prev => {
+          // Solo actualizar si hay cambio significativo
+          if (Math.abs(prev.width - newWidth) > 20 || Math.abs(prev.height - newHeight) > 20) {
+            return { width: newWidth, height: newHeight };
+          }
+          return prev;
+        });
       }
+    };
+
+    // Actualizar al montar
+    updateDimensions();
+
+    const handleResize = () => {
+      updateDimensions();
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [dimensions]);
+  }, [lengthMax, spacing, gridSize]);
 
   // Animation loop
   useEffect(() => {
-    if (animation === 'static') return;
+    if (animation === 'static' || isPaused) return;
 
     const animate = () => {
       setAnimationTime(prev => prev + 0.02 * speed);
@@ -324,7 +517,7 @@ export default function DemoVectorGrid({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [animation, speed]);
+  }, [animation, speed, isPaused]);
 
   // Smooth interpolation helper
   const smoothLerp = (current: number, target: number, factor: number = 0.1): number => {
@@ -477,10 +670,10 @@ export default function DemoVectorGrid({
   const calculateDynamicLength = (vector: Vector, time: number, index: number): number => {
     const { width, height } = dimensions;
 
-    // DEBUG: Log to verify function is being called
-    if (index === 0) {
-      console.log('🔧 calculateDynamicLength called with:', { lengthMin, lengthMax, oscillationFreq, time });
-    }
+    // DEBUG: Log to verify function is being called (commented out to reduce console spam)
+    // if (index === 0) {
+    //   console.log('🔧 calculateDynamicLength called with:', { lengthMin, lengthMax, oscillationFreq, time });
+    // }
 
     // 1. Start with base length mapped to our range
     const length = lengthMin + ((lengthMax - lengthMin) * 0.5);
@@ -590,27 +783,27 @@ export default function DemoVectorGrid({
     // Update previous values for next frame
     prevValuesRef.current[key] = smoothedLength;
     
-    // DEBUG: Log final result for first vector
-    if (index === 0) {
-      console.log('🎯 Final length calculation:', {
-        baseLength: length,
-        complexOscillation,
-        pulse,
-        spatialModifier,
-        mouseModifier,
-        physicsModifier,
-        intensity,
-        targetLength,
-        smoothedLength
-      });
-    }
+    // DEBUG: Log final result for first vector (commented out to reduce console spam)
+    // if (index === 0) {
+    //   console.log('🎯 Final length calculation:', {
+    //     baseLength: length,
+    //     complexOscillation,
+    //     pulse,
+    //     spatialModifier,
+    //     mouseModifier,
+    //     physicsModifier,
+    //     intensity,
+    //     targetLength,
+    //     smoothedLength
+    //   });
+    // }
     
     return smoothedLength;
   };
 
   // Dynamic color calculation function
   const calculateDynamicColor = (vector: Vector, time: number, animationData: any = {}) => {
-    if (!dynamicColors) return colorMode === 'solid' ? solidColor : generateColor(0, vector.x, vector.y, time);
+    if (colorMode !== 'dynamic') return colorMode === 'solid' ? solidColor : generateColor(0, vector.x, vector.y, time);
     
     let intensity = 0;
     
@@ -797,10 +990,268 @@ export default function DemoVectorGrid({
         const turbHue = (time * 20 + turbulenceIntensity * 100 + vector.x * 0.1) % 360;
         animatedColor = `hsl(${turbHue}, 85%, ${50 + turbulenceIntensity * 20}%)`;
         break;
+        
+      case 'pinwheels':
+        // Pinwheels animation - multiple rotating centers
+        const pinwheelCount = 4;
+        const rotationSpeed = 2;
+        const influenceRadius = Math.min(width, height) * 0.15;
+        
+        // Calculate pinwheel centers
+        const pinwheelCenters = [];
+        for (let i = 0; i < pinwheelCount; i++) {
+          const pinwheelAngle = (i / pinwheelCount) * Math.PI * 2 + time * 0.3;
+          const radius = Math.min(width, height) * 0.25;
+          const pinCenterX = width * 0.5 + Math.cos(pinwheelAngle) * radius;
+          const pinCenterY = height * 0.5 + Math.sin(pinwheelAngle) * radius;
+          pinwheelCenters.push({ x: pinCenterX, y: pinCenterY });
+        }
+        
+        // Find closest pinwheel and calculate influence
+        let closestDist = Infinity;
+        let influenceAngle = 0;
+        
+        pinwheelCenters.forEach((center, i) => {
+          const dx = vector.x - center.x;
+          const dy = vector.y - center.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < closestDist) {
+            closestDist = dist;
+            const pinwheelRotation = time * rotationSpeed + i * Math.PI * 0.5;
+            const influence = Math.max(0, 1 - dist / influenceRadius);
+            influenceAngle = Math.atan2(dy, dx) + pinwheelRotation * influence;
+          }
+        });
+        
+        animatedAngle = vector.angle + influenceAngle * 0.3;
+        
+        // Set animation data for dynamic coloring
+        const pinwheelVelocity = Math.min(1, influenceRadius / (closestDist + 1));
+        animationData.velocity = pinwheelVelocity;
+        
+        const pinwheelHue = (time * 30 + closestDist * 0.5) % 360;
+        animatedColor = `hsl(${pinwheelHue}, 80%, 60%)`;
+        break;
+        
+      case 'seaWaves':
+        // Sea waves animation - organic wave patterns
+        const baseFrequency = 0.8;
+        const rippleFrequency = 2.5;
+        const choppiness = 0.4;
+        const spatialFactor = 0.005;
+        
+        // Multiple wave layers for realistic ocean effect
+        const wave1 = Math.sin(time * baseFrequency + vector.x * spatialFactor);
+        const wave2 = Math.sin(time * baseFrequency * 1.3 + vector.y * spatialFactor * 0.8) * 0.7;
+        const ripple1 = Math.sin(time * rippleFrequency + (vector.x + vector.y) * spatialFactor * 2) * 0.3;
+        const ripple2 = Math.cos(time * rippleFrequency * 0.9 + vector.x * spatialFactor * 1.5) * 0.2;
+        
+        const waveHeight = wave1 + wave2 + ripple1 + ripple2;
+        const waveGradientX = Math.cos(time * baseFrequency + vector.x * spatialFactor) * spatialFactor;
+        const waveGradientY = Math.cos(time * baseFrequency * 1.3 + vector.y * spatialFactor * 0.8) * spatialFactor * 0.8;
+        
+        // Calculate wave normal for realistic water behavior
+        const waveAngle = Math.atan2(waveGradientY, waveGradientX);
+        animatedAngle = waveAngle + Math.sin(time + vector.x * 0.01) * choppiness;
+        
+        // Combine with Length Dynamics for organic length variation
+        const seaWaveModifier = 0.7 + Math.abs(waveHeight) * 0.6;
+        animatedLength = dynamicLength * seaWaveModifier;
+        
+        // Set animation data for dynamic coloring
+        animationData.velocity = Math.abs(waveHeight);
+        animationData.fieldStrength = Math.sqrt(waveGradientX * waveGradientX + waveGradientY * waveGradientY);
+        
+        const seaHue = 180 + Math.sin(time * 0.5 + waveHeight * 2) * 30; // Blue-green range
+        animatedColor = `hsl(${seaHue}, 70%, ${45 + Math.abs(waveHeight) * 20}%)`;
+        break;
+        
+      case 'geometricPattern':
+        // Geometric pattern animation - mathematical precision
+        const rotSpeed = 1.5;
+        
+        const geoCenterX = width * 0.5;
+        const geoCenterY = height * 0.5;
+        const distFromCenter = Math.sqrt((vector.x - geoCenterX) ** 2 + (vector.y - geoCenterY) ** 2);
+        const angleFromCenter = Math.atan2(vector.y - geoCenterY, vector.x - geoCenterX);
+        
+        // Default to radial pattern (could be made configurable later)
+        const spokeCount = 8;
+        const spokeAngle = Math.round(angleFromCenter / (Math.PI * 2 / spokeCount)) * (Math.PI * 2 / spokeCount);
+        animatedAngle = spokeAngle + time * rotSpeed + Math.sin(distFromCenter * 0.01) * 0.3;
+        
+        // Set animation data for dynamic coloring
+        const geometricVelocity = Math.abs(Math.sin(time + distFromCenter * 0.02));
+        animationData.velocity = geometricVelocity;
+        animationData.fieldStrength = distFromCenter * 0.01;
+        
+        const geoHue = (angleFromCenter * 180 / Math.PI + 180 + time * 20) % 360;
+        animatedColor = `hsl(${geoHue}, 75%, 65%)`;
+        break;
+        
+      case 'flowField':
+        // Flow field using layered noise for organic movement
+        const flowTimeScale = time * 0.001;
+        const flowSpatialScale = 0.005;
+        
+        // Three noise layers with different frequencies
+        const flowNoise1 = simpleNoise(vector.x * flowSpatialScale, vector.y * flowSpatialScale, flowTimeScale) * 0.5;
+        const flowNoise2 = simpleNoise(vector.x * flowSpatialScale * 2, vector.y * flowSpatialScale * 2, flowTimeScale * 1.5) * 0.25;
+        const flowNoise3 = simpleNoise(vector.x * flowSpatialScale * 4, vector.y * flowSpatialScale * 4, flowTimeScale * 0.8) * 0.125;
+        
+        const flowNoiseValue = flowNoise1 + flowNoise2 + flowNoise3;
+        const flowCoherence = intensity; // Use intensity as coherence factor
+        animatedAngle = flowNoiseValue * Math.PI * flowCoherence;
+        
+        // Length modulation based on noise
+        const flowLengthMultiplier = 0.6 + Math.abs(flowNoiseValue) * 0.8;
+        animatedLength = vector.length * flowLengthMultiplier;
+        
+        // Animation data for dynamic coloring
+        animationData.velocity = Math.abs(flowNoiseValue);
+        animationData.fieldStrength = Math.abs(flowLengthMultiplier - 1);
+        
+        const flowHue = 200 + flowNoiseValue * 60; // Blue-cyan-green range
+        animatedColor = `hsl(${flowHue}, 65%, 50%)`;
+        break;
+        
+      case 'curlNoise':
+        // Curl noise for divergence-free turbulent flow
+        const curlTimeScale = time * 0.0008;
+        const curlSpatialScale = 0.004;
+        const epsilon = 1.0; // Finite difference step
+        
+        // Calculate curl using finite differences
+        const curlP_x_pos = simpleNoise((vector.x + epsilon) * curlSpatialScale, vector.y * curlSpatialScale, curlTimeScale);
+        const curlP_x_neg = simpleNoise((vector.x - epsilon) * curlSpatialScale, vector.y * curlSpatialScale, curlTimeScale);
+        const curlP_y_pos = simpleNoise(vector.x * curlSpatialScale, (vector.y + epsilon) * curlSpatialScale, curlTimeScale);
+        const curlP_y_neg = simpleNoise(vector.x * curlSpatialScale, (vector.y - epsilon) * curlSpatialScale, curlTimeScale);
+        
+        // Curl = (∂P/∂y, -∂P/∂x)
+        const curlDpDy = (curlP_y_pos - curlP_y_neg) / (2 * epsilon);
+        const curlDpDx = (curlP_x_pos - curlP_x_neg) / (2 * epsilon);
+        
+        // Multi-octave turbulence
+        const curlTurbulence1 = simpleNoise(vector.x * curlSpatialScale * 2, vector.y * curlSpatialScale * 2, curlTimeScale * 1.3) * 0.5;
+        const curlTurbulence2 = simpleNoise(vector.x * curlSpatialScale * 4, vector.y * curlSpatialScale * 4, curlTimeScale * 0.7) * 0.25;
+        
+        const curlVectorX = curlDpDy + curlTurbulence1;
+        const curlVectorY = -curlDpDx + curlTurbulence2;
+        
+        animatedAngle = Math.atan2(curlVectorY, curlVectorX);
+        
+        const curlMagnitude = Math.sqrt(curlVectorX * curlVectorX + curlVectorY * curlVectorY);
+        animatedLength = vector.length * (0.5 + Math.min(curlMagnitude, 1.5));
+        
+        // Animation data
+        animationData.velocity = curlMagnitude;
+        animationData.fieldStrength = Math.abs(curlTurbulence1 + curlTurbulence2);
+        
+        const curlHue = 280 + curlMagnitude * 80; // Purple-pink range
+        animatedColor = `hsl(${curlHue}, 70%, 55%)`;
+        break;
+        
+      case 'rippleEffect':
+        // Radial wave propagation from center
+        const rippleCenterX = width * 0.5;
+        const rippleCenterY = height * 0.5;
+        const rippleDistance = Math.sqrt((vector.x - rippleCenterX) ** 2 + (vector.y - rippleCenterY) ** 2);
+        
+        const rippleWaveLength = 50 * intensity; // Configurable wavelength
+        const rippleWaveSpeed = 2.0;
+        const ripplePhase = (rippleDistance / rippleWaveLength - time * rippleWaveSpeed * 0.001) * 2 * Math.PI;
+        const rippleAmplitude = Math.sin(ripplePhase) * Math.exp(-rippleDistance * 0.002); // Decay with distance
+        
+        // Base radial angle
+        const rippleBaseAngle = Math.atan2(vector.y - rippleCenterY, vector.x - rippleCenterX);
+        animatedAngle = rippleBaseAngle + rippleAmplitude * Math.PI * 0.5;
+        
+        // Length modulation
+        const rippleLengthMod = 0.7 + Math.abs(rippleAmplitude) * 0.6;
+        animatedLength = vector.length * rippleLengthMod;
+        
+        // Animation data
+        animationData.velocity = Math.abs(rippleAmplitude);
+        animationData.fieldStrength = rippleDistance * 0.001;
+        
+        const rippleHue = 180 + rippleAmplitude * 40; // Blue-teal range
+        animatedColor = `hsl(${rippleHue}, 75%, 60%)`;
+        break;
+        
+      case 'perlinFlow':
+        // Multi-octave Perlin noise for organic flow
+        const perlinTimeScale = time * 0.0006;
+        const perlinSpatialScale = 0.003;
+        const perlinOctaves = 4;
+        const perlinPersistence = 0.6;
+        const perlinAngleMultiplier = 2.5;
+        
+        let perlinNoiseValue = 0;
+        let perlinAmplitude = 1;
+        let perlinFrequency = 1;
+        
+        // Sum multiple octaves
+        for (let i = 0; i < perlinOctaves; i++) {
+          perlinNoiseValue += simpleNoise(
+            vector.x * perlinSpatialScale * perlinFrequency,
+            vector.y * perlinSpatialScale * perlinFrequency,
+            perlinTimeScale * perlinFrequency
+          ) * perlinAmplitude;
+          perlinAmplitude *= perlinPersistence;
+          perlinFrequency *= 2;
+        }
+        
+        const perlinBaseAngle = Math.atan2(vector.y - height * 0.5, vector.x - width * 0.5);
+        animatedAngle = perlinBaseAngle + perlinNoiseValue * perlinAngleMultiplier * Math.PI;
+        
+        // Length based on noise intensity
+        const perlinLengthMod = 0.6 + Math.abs(perlinNoiseValue) * 0.7;
+        animatedLength = vector.length * perlinLengthMod;
+        
+        // Animation data
+        animationData.velocity = Math.abs(perlinNoiseValue);
+        animationData.fieldStrength = perlinLengthMod;
+        
+        const perlinHue = 120 + perlinNoiseValue * 60; // Green-yellow range
+        animatedColor = `hsl(${perlinHue}, 65%, 55%)`;
+        break;
+        
+      case 'gaussianGradient':
+        // Gaussian field with temporal pulsing
+        const gaussCenterX = width * 0.5;
+        const gaussCenterY = height * 0.5;
+        const gaussDistance = Math.sqrt((vector.x - gaussCenterX) ** 2 + (vector.y - gaussCenterY) ** 2);
+        
+        const gaussSigma = Math.max(width, height) * 0.3; // Gaussian width
+        const gaussStrength = intensity * 2;
+        const gaussPulse = 1 + Math.sin(time * 0.003) * 0.7; // Temporal pulsing
+        
+        // Gaussian function with pulsing
+        const gaussGaussian = Math.exp(-(gaussDistance * gaussDistance) / (2 * gaussSigma * gaussSigma)) * gaussPulse;
+        
+        // Radial gradient direction (attract or repel based on config)
+        const gaussDx = vector.x - gaussCenterX;
+        const gaussDy = vector.y - gaussCenterY;
+        const gaussMode = 1; // 1 for attract, -1 for repel
+        
+        animatedAngle = Math.atan2(gaussMode * gaussDy, gaussMode * gaussDx);
+        
+        // Length based on Gaussian intensity
+        const gaussIntensity = Math.min(gaussGaussian * gaussStrength * 3, 5.0);
+        animatedLength = vector.length * (0.3 + gaussIntensity * 0.4);
+        
+        // Animation data
+        animationData.velocity = gaussIntensity;
+        animationData.fieldStrength = gaussGaussian;
+        
+        const gaussHue = 300 + gaussIntensity * 30; // Purple-magenta range
+        animatedColor = `hsl(${gaussHue}, 80%, 60%)`;
+        break;
     }
 
     // Apply dynamic coloring if enabled
-    if (dynamicColors) {
+    if (colorMode === 'dynamic') {
       animatedColor = calculateDynamicColor(vector, time, animationData);
     }
 
@@ -808,13 +1259,14 @@ export default function DemoVectorGrid({
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-black">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
       <svg 
         ref={svgRef}
-        width={dimensions.width} 
-        height={dimensions.height} 
-        className="border border-gray-700/50 bg-gray-950"
-        style={{ maxWidth: '100%', maxHeight: '100%' }}
+        width={hybridConfig.effectiveCanvasWidth} 
+        height={hybridConfig.effectiveCanvasHeight} 
+        viewBox={`0 0 ${hybridConfig.effectiveCanvasWidth} ${hybridConfig.effectiveCanvasHeight}`}
+        className="bg-black"
+        style={{ maxWidth: '100%', maxHeight: '100%', overflow: 'hidden' }}
       >
         {/* Background grid */}
         <defs>

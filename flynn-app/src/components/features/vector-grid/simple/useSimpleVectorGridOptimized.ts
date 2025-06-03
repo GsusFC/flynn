@@ -177,6 +177,11 @@ export const useSimpleVectorGridOptimized = ({
   const lastRenderedFrameRef = useRef<SimpleVector[]>([]);
   const gridCacheRef = useRef<SimpleVector[] | null>(null);
   const configHashRef = useRef<string>('');
+  
+  // 🚀 Sincronizar prop isPaused con estado interno
+  useEffect(() => {
+    setState(prev => ({ ...prev, isPaused }));
+  }, [isPaused]);
 
   // 🔧 AÑADIDO: Estado de transición de rotación para compatibilidad
   const [rotationTransition, setRotationTransition] = useState<RotationTransition | null>(null);
@@ -187,20 +192,15 @@ export const useSimpleVectorGridOptimized = ({
     return animationProps;
   }, [animationProps]);
 
-  // 🚀 OPTIMIZACIÓN 4: Hash de configuración para evitar regeneración innecesaria
+  // 🚀 OPTIMIZACIÓN 4: Hash de configuración SOLO para posicionamiento (excluye vectorConfig.length)
   const configHash = useMemo(() => {
     return JSON.stringify({
-      gridConfig,
-      vectorConfig: {
-        length: vectorConfig.length,
-        width: vectorConfig.width,
-        color: typeof vectorConfig.color === 'string' ? vectorConfig.color : JSON.stringify(vectorConfig.color),
-        shape: vectorConfig.shape
-      },
-      width,
-      height
+      gridConfig, // rows, cols, spacing, margin
+      canvasDimensions: { width, height }, // Solo dimensiones del canvas
+      // 🔧 EXCLUIMOS vectorConfig.length para que el centrado sea estable
+      vectorShape: vectorConfig.shape // Solo shape puede afectar posicionamiento
     });
-  }, [gridConfig, vectorConfig, width, height]);
+  }, [gridConfig, width, height, vectorConfig.shape]);
 
   // 🚀 OPTIMIZACIÓN 5: Detección de cliente optimizada
   useEffect(() => {
@@ -227,7 +227,7 @@ export const useSimpleVectorGridOptimized = ({
     prevRotationOriginRef.current = vectorConfig.rotationOrigin;
   }, [vectorConfig.rotationOrigin, isPaused]);
 
-  // 🚀 OPTIMIZACIÓN 6: Grid generator con cache inteligente
+  // 🚀 OPTIMIZACIÓN 6: Grid generator con cache inteligente + sistema de centrado moderno
   const generateGrid = useCallback(() => {
     // Verificar si podemos usar cache
     if (gridCacheRef.current && configHashRef.current === configHash) {
@@ -237,11 +237,52 @@ export const useSimpleVectorGridOptimized = ({
     const { rows, cols, spacing, margin } = gridConfig;
     const { length, width: vectorWidth, color } = vectorConfig;
 
-    // 🚀 Pre-calcular valores para evitar cálculos repetidos en el loop
-    const totalWidth = cols * spacing;
-    const totalHeight = rows * spacing;
-    const startX = (width - totalWidth) / 2 + margin;
-    const startY = (height - totalHeight) / 2 + margin;
+    // 📐 SISTEMA DE CENTRADO MODERNO - Completamente independiente de vector length
+    // 🔧 ARREGLADO: Padding FIJO para centrado estable independiente de Length Max
+    const padding = Math.max(margin, 50); // Padding fijo de 50px (no depende de vector length)
+    
+    // Área de contenido disponible (una sola fuente de verdad)
+    const contentArea = {
+      x: padding,
+      y: padding,
+      width: width - 2 * padding,
+      height: height - 2 * padding,
+      centerX: width / 2,
+      centerY: height / 2
+    };
+    
+    // 🚀 Dimensiones del grid optimizadas para el contenido disponible
+    const gridWidth = (cols - 1) * spacing;
+    const gridHeight = (rows - 1) * spacing;
+    
+    // 🚀 Centrado automático perfecto dentro del área de contenido
+    const startX = contentArea.x + (contentArea.width - gridWidth) / 2;
+    const startY = contentArea.y + (contentArea.height - gridHeight) / 2;
+    
+    // 🔧 DEEP DEBUG: Rastrear exactamente qué causa el desplazamiento
+    if (debugMode) {
+      console.log('🔍 [MOVEMENT DEBUG] Tracking coordinate changes:', {
+        trigger: 'generateGrid called',
+        vectorLength: length,
+        margin: margin,
+        padding: padding,
+        canvasSize: { width, height },
+        contentArea: {
+          x: contentArea.x,
+          y: contentArea.y, 
+          width: contentArea.width,
+          height: contentArea.height
+        },
+        gridDimensions: { gridWidth, gridHeight },
+        gridStart: { startX, startY },
+        calculationCheck: {
+          'padding_formula': `max(${margin}, 50) = ${padding}`,
+          'contentArea_y': `${padding} (should be constant)`,
+          'startY_formula': `${contentArea.y} + (${contentArea.height} - ${gridHeight}) / 2 = ${startY}`,
+          'ISSUE': 'If startY changes, one of these values is changing when length changes'
+        }
+      });
+    }
     
     // 🚀 Usar Array.from con mapeo directo (más eficiente que bucles anidados)
     const vectors: SimpleVector[] = Array.from(
@@ -280,7 +321,8 @@ export const useSimpleVectorGridOptimized = ({
     onVectorCountChange?.(vectors.length);
 
     return vectors;
-  }, [gridConfig, vectorConfig, width, height, isClient, debugMode, onVectorCountChange, configHash]);
+  }, [gridConfig, width, height, isClient, debugMode, onVectorCountChange, configHash, 
+      vectorConfig.width, vectorConfig.color, vectorConfig.shape]); // 🔧 Solo props que afectan generación inicial
 
   // 🚀 OPTIMIZACIÓN 7: Inicialización lazy del grid solo en cliente
   useEffect(() => {
@@ -294,24 +336,50 @@ export const useSimpleVectorGridOptimized = ({
     }));
   }, [generateGrid, isClient]);
 
-  // 🚀 OPTIMIZACIÓN 8: Reset optimizado solo cuando cambian props relevantes
+  // 🚀 OPTIMIZACIÓN 8: Actualización de propiedades SIN afectar posiciones
   useEffect(() => {
     if (!isClient) return;
     
-    setState(prev => ({
-      ...prev,
-      vectors: prev.vectors.map(vector => ({
+    if (debugMode) {
+      console.log('🔍 [VECTOR UPDATE DEBUG] Length changed, updating vector properties:', {
+        trigger: 'vectorConfig.length changed',
+        newLength: vectorConfig.length,
+        note: 'This should NOT move the grid, only update visual properties'
+      });
+    }
+    
+    setState(prev => {
+      const updatedVectors = prev.vectors.map(vector => ({
         ...vector,
+        // 🔧 MANTENER posiciones originales, solo actualizar propiedades de render
         length: vectorConfig.length,
         width: vectorConfig.width,
-        color: vectorConfig.color
-      }))
-    }));
-  }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient]);
+        color: vectorConfig.color,
+        // Asegurar que x,y NO cambien
+        x: vector.originalX || vector.x,
+        y: vector.originalY || vector.y
+      }));
+      
+      if (debugMode && prev.vectors.length > 0) {
+        const firstVector = prev.vectors[0];
+        const updatedFirstVector = updatedVectors[0];
+        console.log('🔍 [POSITION CHECK] First vector position comparison:', {
+          before: { x: firstVector.x, y: firstVector.y, originalX: firstVector.originalX, originalY: firstVector.originalY },
+          after: { x: updatedFirstVector.x, y: updatedFirstVector.y },
+          positionChanged: firstVector.x !== updatedFirstVector.x || firstVector.y !== updatedFirstVector.y
+        });
+      }
+      
+      return {
+        ...prev,
+        vectors: updatedVectors
+      };
+    });
+  }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient, debugMode]);
 
   // 🚀 OPTIMIZACIÓN 9: Función de animación con menos garbage collection
   const animate = useCallback(() => {
-    if (isPaused || !isClient) {
+    if (state.isPaused || !isClient) {
       return;
     }
 
@@ -390,15 +458,15 @@ export const useSimpleVectorGridOptimized = ({
         // dynamicConfig: validatedDynamicConfig, // Eliminado ya que validatedDynamicConfig no existe
       };
     });
-  }, [isPaused, animationType, isClient, width, height, onPulseComplete, stableAnimationProps]);
+  }, [state.isPaused, animationType, isClient, width, height, onPulseComplete, stableAnimationProps, debugMode]);
 
   // 🚀 OPTIMIZACIÓN 10: Loop de animación con mejor timing
   useEffect(() => {
     if (debugMode) {
-      console.log('🚀 [LOOP-EFFECT] Condiciones:', { isPaused, isClient });
+      console.log('🚀 [LOOP-EFFECT] Condiciones:', { isPaused: state.isPaused, isClient });
     }
     
-    if (isPaused || !isClient) {
+    if (state.isPaused || !isClient) {
       if (debugMode) {
         console.log('❌ [LOOP-EFFECT] Loop cancelado por condiciones');
       }
@@ -419,7 +487,7 @@ export const useSimpleVectorGridOptimized = ({
       timeRef.current = newTime;
       animate();
       
-      if (!isPaused && isClient) {
+      if (!state.isPaused && isClient) {
         animationFrameRef.current = requestAnimationFrame(loop);
       }
     };
@@ -432,7 +500,7 @@ export const useSimpleVectorGridOptimized = ({
         animationFrameRef.current = 0;
       }
     };
-  }, [animate, isPaused, isClient, debugMode]);
+  }, [animate, state.isPaused, isClient, debugMode]);
 
   // Resto de funciones mantenidas igual pero optimizadas...
   const triggerPulse = useCallback((x?: number, y?: number) => {

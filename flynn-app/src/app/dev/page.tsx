@@ -1,652 +1,800 @@
 'use client';
 
-import { useState } from 'react';
+import './dev.css';
+import { useState, useCallback, useEffect } from 'react';
 import DemoVectorGrid from './DemoVectorGrid';
 import LengthDynamicsHelp from './LengthDynamicsHelp';
+import SliderWithInput from '../../components/features/vector-grid/components/SliderWithInput';
+import { useKeyboardControls } from '../../components/features/vector-grid/hooks/useKeyboardControls';
+import { GradientEditorModal } from '../../components/ui/GradientEditorModal';
+import { SimpleTabs } from '../../components/ui/SimpleTabs';
+import { useCustomGradients } from '../../lib/customGradients';
+import type { GradientColor } from '@/domain/color/types';
 
-type AnimationType = 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence';
+
+type AnimationType = 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
 type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden';
 
 interface PresetConfig {
-  name: string;
-  gridSize: number;
-  gridPattern: GridPattern;
-  animation: AnimationType;
-  speed: number;
-  intensity: number;
-  // New Color System
-  colorMode: 'solid' | 'gradient';
-  solidColor: string;
-  gradientPalette: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean';
-  // Dynamic Color Modulation (like Dipole Field)
-  dynamicColors: boolean;
-  colorIntensityMode: 'field' | 'velocity' | 'distance' | 'angle';
-  colorHueShift: number;
-  colorSaturation: number;
-  colorBrightness: number;
-  // Length Dynamics
-  lengthMin: number;
-  lengthMax: number;
-  oscillationFreq: number;
-  oscillationAmp: number;
-  pulseSpeed: number;
-  spatialFactor: number;
-  spatialMode: 'edge' | 'center' | 'mixed';
-  mouseInfluence: number;
-  mouseMode: 'attract' | 'repel' | 'stretch';
-  physicsMode: 'none' | 'velocity' | 'pressure' | 'field';
-  // Vector Shape System
-  vectorShape: 'straight' | 'wave' | 'bezier' | 'spiral' | 'arc' | 'organic';
-  showArrowheads: boolean;
-  curvatureIntensity: number;
-  waveFrequency: number;
-  spiralTightness: number;
-  organicNoise: number;
-
+    name: string;
+    gridSize: number;
+    gridPattern: GridPattern;
+    animation: AnimationType;
+    speed: number;
+    intensity: number;
+    // New Color System
+    colorMode: 'solid' | 'gradient' | 'dynamic';
+    solidColor: string;
+    gradientPalette: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean' | string; // string para custom gradients
+    // Dynamic Color Properties
+    colorIntensityMode: 'field' | 'velocity' | 'distance' | 'angle';
+    colorHueShift: number;
+    colorSaturation: number;
+    colorBrightness: number;
+    // Length Dynamics
+    lengthMin: number;
+    lengthMax: number;
+    oscillationFreq: number;
+    oscillationAmp: number;
+    pulseSpeed: number;
+    spatialFactor: number;
+    spatialMode: 'edge' | 'center' | 'mixed';
+    mouseInfluence: number;
+    mouseMode: 'attract' | 'repel' | 'stretch';
+    physicsMode: 'none' | 'velocity' | 'pressure' | 'field';
+    // Vector Shape System
+    vectorShape: 'straight' | 'wave' | 'bezier' | 'spiral' | 'arc' | 'organic';
+    showArrowheads: boolean;
+    curvatureIntensity: number;
+    waveFrequency: number;
+    spiralTightness: number;
+    organicNoise: number;
+    // Hybrid System
+    rows?: number;
+    cols?: number;
+    spacing?: number;
+    canvasWidth?: number;
+    canvasHeight?: number;
+    margin?: number;
+    // Animation Control
+    isPaused: boolean;
 }
 
 
 
 export default function DevPage() {
-  const [config, setConfig] = useState<PresetConfig>({
-    name: 'Custom', gridSize: 25, gridPattern: 'regular', animation: 'wave', speed: 1, intensity: 0.5, 
-    colorMode: 'solid', solidColor: '#3b82f6', gradientPalette: 'flow',
-    dynamicColors: false, colorIntensityMode: 'field', colorHueShift: 1, colorSaturation: 80, colorBrightness: 60,
-    lengthMin: 10, lengthMax: 25, oscillationFreq: 1, oscillationAmp: 0.3, pulseSpeed: 1, spatialFactor: 0.2, spatialMode: 'edge', mouseInfluence: 0, mouseMode: 'attract', physicsMode: 'none',
-    vectorShape: 'straight', showArrowheads: true, curvatureIntensity: 1, waveFrequency: 2, spiralTightness: 1, organicNoise: 0.5
-  });
-  const [showLengthHelp, setShowLengthHelp] = useState(false);
 
-  // Animation-specific Length Dynamics presets
-  const ANIMATION_LD_PRESETS: Record<string, Partial<PresetConfig>> = {
-    'static': {
-      oscillationFreq: 0.5, oscillationAmp: 0.2, physicsMode: 'none', spatialMode: 'edge',
-      vectorShape: 'straight', showArrowheads: true
-    },
-    'rotation': {
-      oscillationFreq: 1, oscillationAmp: 0.3, physicsMode: 'none', spatialMode: 'center',
-      vectorShape: 'straight', showArrowheads: true
-    },
-    'wave': {
-      oscillationFreq: 2, oscillationAmp: 0.6, physicsMode: 'velocity', spatialMode: 'mixed',
-      vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.2, waveFrequency: 1.5,
-      colorMode: 'gradient', gradientPalette: 'flow'
-    },
-    'spiral': {
-      oscillationFreq: 1.5, oscillationAmp: 0.4, physicsMode: 'field', spatialMode: 'center',
-      vectorShape: 'spiral', showArrowheads: false, spiralTightness: 1.8, curvatureIntensity: 1.1
-    },
-    'dipole': {
-      oscillationFreq: 2.5, oscillationAmp: 0.7, physicsMode: 'field', spatialMode: 'center',
-      vectorShape: 'arc', showArrowheads: false, curvatureIntensity: 1.3, mouseMode: 'stretch',
-      colorMode: 'gradient', gradientPalette: 'cosmic',
-      dynamicColors: true, colorIntensityMode: 'field', colorHueShift: 30, colorSaturation: 80, colorBrightness: 60
-    },
-    'vortex': {
-      oscillationFreq: 3, oscillationAmp: 0.8, physicsMode: 'velocity', spatialMode: 'mixed',
-      vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.5, mouseMode: 'repel',
-      colorMode: 'gradient', gradientPalette: 'rainbow'
-    },
-    'turbulence': {
-      oscillationFreq: 4, oscillationAmp: 1, physicsMode: 'pressure', spatialMode: 'mixed',
-      vectorShape: 'organic', showArrowheads: false, organicNoise: 1.3, curvatureIntensity: 1.6,
-      colorMode: 'gradient', gradientPalette: 'pulse'
-    }
-  };
+    const [config, setConfig] = useState<PresetConfig>({
+        name: 'Custom', gridSize: 25, gridPattern: 'regular', animation: 'wave', speed: 1, intensity: 0.5,
+        colorMode: 'solid', solidColor: '#3b82f6', gradientPalette: 'flow',
+        colorIntensityMode: 'field', colorHueShift: 1, colorSaturation: 80, colorBrightness: 60,
+        lengthMin: 10, lengthMax: 25, oscillationFreq: 1, oscillationAmp: 0.3, pulseSpeed: 1, spatialFactor: 0.2, spatialMode: 'edge', mouseInfluence: 0, mouseMode: 'attract', physicsMode: 'none',
+        vectorShape: 'straight', showArrowheads: true, curvatureIntensity: 1, waveFrequency: 2, spiralTightness: 1, organicNoise: 0.5,
+        isPaused: false
+    });
+    const [showLengthHelp, setShowLengthHelp] = useState(false);
+    const [showGradientEditor, setShowGradientEditor] = useState(false);
+
+    // Hook para gradientes personalizados
+    const { gradients: customGradients, refresh: refreshCustomGradients } = useCustomGradients();
+
+    // Refrescar gradientes al cargar el componente
+    useEffect(() => {
+        refreshCustomGradients();
+    }, [refreshCustomGradients]);
+
+    // Animation-specific Length Dynamics presets
+    const ANIMATION_LD_PRESETS: Record<string, Partial<PresetConfig>> = {
+        'static': {
+            oscillationFreq: 0.5, oscillationAmp: 0.2, physicsMode: 'none', spatialMode: 'edge',
+            vectorShape: 'straight', showArrowheads: true
+        },
+        'rotation': {
+            oscillationFreq: 1, oscillationAmp: 0.3, physicsMode: 'none', spatialMode: 'center',
+            vectorShape: 'straight', showArrowheads: true
+        },
+        'wave': {
+            oscillationFreq: 2, oscillationAmp: 0.6, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.2, waveFrequency: 1.5,
+            colorMode: 'gradient', gradientPalette: 'flow'
+        },
+        'spiral': {
+            oscillationFreq: 1.5, oscillationAmp: 0.4, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'spiral', showArrowheads: false, spiralTightness: 1.8, curvatureIntensity: 1.1
+        },
+        'dipole': {
+            oscillationFreq: 2.5, oscillationAmp: 0.7, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'arc', showArrowheads: false, curvatureIntensity: 1.3, mouseMode: 'stretch',
+            colorMode: 'dynamic', colorIntensityMode: 'field', colorHueShift: 30, colorSaturation: 80, colorBrightness: 60
+        },
+        'vortex': {
+            oscillationFreq: 3, oscillationAmp: 0.8, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.5, mouseMode: 'repel',
+            colorMode: 'gradient', gradientPalette: 'rainbow'
+        },
+        'turbulence': {
+            oscillationFreq: 4, oscillationAmp: 1, physicsMode: 'pressure', spatialMode: 'mixed',
+            vectorShape: 'organic', showArrowheads: false, organicNoise: 1.3, curvatureIntensity: 1.6,
+            colorMode: 'gradient', gradientPalette: 'pulse'
+        },
+        'pinwheels': {
+            oscillationFreq: 1.5, oscillationAmp: 0.4, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'straight', showArrowheads: true, mouseMode: 'attract',
+            colorMode: 'dynamic', colorIntensityMode: 'velocity'
+        },
+        'seaWaves': {
+            oscillationFreq: 1, oscillationAmp: 0.8, physicsMode: 'velocity', spatialMode: 'edge',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.5,
+            colorMode: 'dynamic', colorIntensityMode: 'velocity'
+        },
+        'geometricPattern': {
+            oscillationFreq: 2, oscillationAmp: 0.5, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'straight', showArrowheads: true,
+            colorMode: 'dynamic', colorIntensityMode: 'field'
+        },
+        'flowField': {
+            oscillationFreq: 2.5, oscillationAmp: 0.7, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'organic', showArrowheads: false, organicNoise: 1.2, curvatureIntensity: 1.4,
+            colorMode: 'dynamic', colorIntensityMode: 'velocity'
+        },
+        'curlNoise': {
+            oscillationFreq: 3, oscillationAmp: 0.8, physicsMode: 'pressure', spatialMode: 'mixed',
+            vectorShape: 'organic', showArrowheads: false, organicNoise: 1.5, curvatureIntensity: 1.6,
+            colorMode: 'dynamic', colorIntensityMode: 'field'
+        },
+        'rippleEffect': {
+            oscillationFreq: 1.5, oscillationAmp: 0.6, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'arc', showArrowheads: false, curvatureIntensity: 1.3,
+            colorMode: 'dynamic', colorIntensityMode: 'distance'
+        },
+        'perlinFlow': {
+            oscillationFreq: 2, oscillationAmp: 0.7, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.4,
+            colorMode: 'dynamic', colorIntensityMode: 'velocity'
+        },
+        'gaussianGradient': {
+            oscillationFreq: 1, oscillationAmp: 0.5, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'straight', showArrowheads: true, mouseMode: 'attract',
+            colorMode: 'dynamic', colorIntensityMode: 'field'
+        }
+    };
 
 
 
 
 
-  const exportSVG = () => {
-    console.log('Exporting SVG...', config);
-  };
+    const exportSVG = () => {
+        console.log('Exporting SVG...', config);
+    };
 
-  const exportAnimatedSVG = () => {
-    console.log('Exporting Animated SVG...', config);
-  };
+    const exportAnimatedSVG = () => {
+        console.log('Exporting Animated SVG...', config);
+    };
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="flex h-screen">
-        {/* Left Column - Behavior Controls */}
-        <div className="w-[15%] bg-gray-900/80 backdrop-blur-sm border-r border-gray-700/50 overflow-y-auto">
-          <div className="p-4">
-            <h1 className="text-lg font-bold mb-6 text-blue-400">⚡ Behavior</h1>
-            
-            {/* Animation Controls */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 text-gray-300">Animation Type</h2>
-              <select
-                value={config.animation}
-                onChange={(e) => {
-                  const newAnimation = e.target.value as AnimationType;
-                  const smartSettings = ANIMATION_LD_PRESETS[newAnimation];
-                  setConfig({...config, animation: newAnimation, ...smartSettings});
-                }}
-                className="w-full bg-gray-800/70 border border-gray-600/50 rounded-lg px-3 py-2 text-gray-100"
-              >
-                <option value="static">Static</option>
-                <option value="rotation">Rotation</option>
-                <option value="wave">Wave</option>
-                <option value="spiral">Spiral</option>
-                <option value="dipole">Dipole Field</option>
-                <option value="vortex">Vortex Flow</option>
-                <option value="turbulence">Turbulence</option>
-              </select>
-            </div>
+    // 🚀 Funciones para controles de animación
+    const handleTogglePause = useCallback(() => {
+        setConfig(prev => ({ ...prev, isPaused: !prev.isPaused }));
+    }, []);
 
-            {/* Length Dynamics Section */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-purple-400">🎛️ Length Dynamics</h2>
-                <button
-                  onClick={() => setShowLengthHelp(true)}
-                  className="w-5 h-5 bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 rounded-full flex items-center justify-center text-xs transition-colors"
-                  title="Show Length Dynamics Help"
-                >
-                  ?
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                {/* Base Length Range */}
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Min: {config.lengthMin}</label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="20"
-                      value={config.lengthMin}
-                      onChange={(e) => setConfig({...config, lengthMin: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Max: {config.lengthMax}</label>
-                    <input
-                      type="range"
-                      min="20"
-                      max="80"
-                      value={config.lengthMax}
-                      onChange={(e) => setConfig({...config, lengthMax: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                  </div>
+    const handleTriggerPulse = useCallback(() => {
+        // Placeholder para pulso (implementar más adelante)
+        console.log('Pulse triggered!');
+    }, []);
+
+    // 🚀 Funciones para gradientes personalizados
+    const handleGradientCreated = useCallback((id: string, name: string, gradient: GradientColor) => {
+        // Cambiar a usar el nuevo gradiente personalizado
+        setConfig(prev => ({
+            ...prev,
+            colorMode: 'gradient' as const,
+            gradientPalette: id
+        }));
+        refreshCustomGradients();
+    }, [refreshCustomGradients]);
+
+    // 🚀 Hook para controles de teclado global
+    useKeyboardControls({
+        onTogglePause: handleTogglePause,
+        onTriggerPulse: handleTriggerPulse,
+        isPaused: config.isPaused
+    });
+
+    return (
+        <div className="dev-environment">
+            <div className="flex h-screen">
+                {/* Left Column - Behavior Controls */}
+                <div className="w-[15%] dev-sidebar overflow-y-auto dev-scroll">
+                    <div className="p-4 space-y-6">
+
+                        {/* Animation Type Card */}
+                        <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
+                            <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Animation Type</h3>
+                            <select
+                                value={config.animation}
+                                onChange={(e) => {
+                                    const newAnimation = e.target.value as AnimationType;
+                                    const smartSettings = ANIMATION_LD_PRESETS[newAnimation];
+                                    setConfig({ ...config, animation: newAnimation, ...smartSettings });
+                                }}
+                                className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                            >
+                                <option value="static">Static</option>
+                                <option value="rotation">Rotation</option>
+                                <option value="wave">Wave</option>
+                                <option value="spiral">Spiral</option>
+                                <option value="dipole">Dipole Field</option>
+                                <option value="vortex">Vortex Flow</option>
+                                <option value="turbulence">Turbulence</option>
+                                <option value="pinwheels">🌀 Pinwheels</option>
+                                <option value="seaWaves">🌊 Sea Waves</option>
+                                <option value="geometricPattern">📐 Geometric Pattern</option>
+                                <option value="flowField">🌪️ Flow Field</option>
+                                <option value="curlNoise">🌀 Curl Noise</option>
+                                <option value="rippleEffect">💧 Ripple Effect</option>
+                                <option value="perlinFlow">🌊 Perlin Flow</option>
+                                <option value="gaussianGradient">🔘 Gaussian Gradient</option>
+                            </select>
+                        </div>
+
+                        {/* Length Dynamics Card */}
+                        <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-medium text-sidebar-foreground">Length Dynamics</h3>
+                                <button
+                                    onClick={() => setShowLengthHelp(true)}
+                                    className="w-5 h-5 bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 rounded-full flex items-center justify-center text-xs transition-colors"
+                                    title="Show Length Dynamics Help"
+                                >
+                                    ?
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {/* Base Length Range */}
+                                <div className="space-y-3">
+                                    <SliderWithInput
+                                        label="Length Min"
+                                        value={config.lengthMin}
+                                        min={1}
+                                        max={20}
+                                        step={1}
+                                        onChange={(value) => setConfig({ ...config, lengthMin: value })}
+                                        suffix="px"
+                                        inputWidth="sm"
+                                    />
+
+                                    <SliderWithInput
+                                        label="Length Max"
+                                        value={config.lengthMax}
+                                        min={20}
+                                        max={300}
+                                        step={1}
+                                        onChange={(value) => setConfig({ ...config, lengthMax: value })}
+                                        suffix="px"
+                                        inputWidth="sm"
+                                    />
+                                </div>
+
+                                {/* Oscillation */}
+                                <div className="space-y-3">
+                                    <SliderWithInput
+                                        label="Oscillation Frequency"
+                                        value={config.oscillationFreq}
+                                        min={0.1}
+                                        max={5}
+                                        step={0.1}
+                                        onChange={(value) => setConfig({ ...config, oscillationFreq: value })}
+                                        suffix="Hz"
+                                        inputWidth="sm"
+                                    />
+
+                                    <SliderWithInput
+                                        label="Oscillation Amplitude"
+                                        value={config.oscillationAmp}
+                                        min={0}
+                                        max={1}
+                                        step={0.1}
+                                        onChange={(value) => setConfig({ ...config, oscillationAmp: value })}
+                                        inputWidth="sm"
+                                    />
+                                </div>
+
+                                {/* Advanced */}
+                                <div className="space-y-3">
+                                    <SliderWithInput
+                                        label="Pulse Speed"
+                                        value={config.pulseSpeed}
+                                        min={0.1}
+                                        max={5}
+                                        step={0.1}
+                                        onChange={(value) => setConfig({ ...config, pulseSpeed: value })}
+                                        suffix="Hz"
+                                        inputWidth="sm"
+                                    />
+
+                                    <div>
+                                        <SliderWithInput
+                                            label="Spatial Factor"
+                                            value={config.spatialFactor}
+                                            min={0}
+                                            max={2}
+                                            step={0.1}
+                                            onChange={(value) => setConfig({ ...config, spatialFactor: value })}
+                                            inputWidth="sm"
+                                        />
+                                        <select
+                                            value={config.spatialMode}
+                                            onChange={(e) => setConfig({ ...config, spatialMode: e.target.value as any })}
+                                            className="w-full mt-2 bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                        >
+                                            <option value="edge">Edge Longer</option>
+                                            <option value="center">Center Longer</option>
+                                            <option value="mixed">Mixed Pattern</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <SliderWithInput
+                                            label="Mouse Influence"
+                                            value={config.mouseInfluence}
+                                            min={0}
+                                            max={1}
+                                            step={0.1}
+                                            onChange={(value) => setConfig({ ...config, mouseInfluence: value })}
+                                            inputWidth="sm"
+                                        />
+                                        <select
+                                            value={config.mouseMode}
+                                            onChange={(e) => setConfig({ ...config, mouseMode: e.target.value as any })}
+                                            className="w-full mt-2 bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                        >
+                                            <option value="attract">Attract (Grow Near)</option>
+                                            <option value="repel">Repel (Shrink Near)</option>
+                                            <option value="stretch">Stretch (Dynamic)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Physics Mode */}
+                                <div>
+                                    <label className="block text-xs font-medium mb-1 text-sidebar-foreground">Physics</label>
+                                    <select
+                                        value={config.physicsMode}
+                                        onChange={(e) => setConfig({ ...config, physicsMode: e.target.value as any })}
+                                        className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="velocity">Velocity</option>
+                                        <option value="pressure">Pressure</option>
+                                        <option value="field">Field</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Global Controls Card */}
+                        <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
+                            <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Global Controls</h3>
+                            <div className="space-y-3">
+                                <SliderWithInput
+                                    label="Speed"
+                                    value={config.speed}
+                                    min={0.1}
+                                    max={5}
+                                    step={0.1}
+                                    onChange={(speed) => setConfig({ ...config, speed })}
+                                />
+                                <SliderWithInput
+                                    label="Intensity"
+                                    value={config.intensity}
+                                    min={0.1}
+                                    max={5}
+                                    step={0.1}
+                                    onChange={(intensity) => setConfig({ ...config, intensity })}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Oscillation */}
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Osc Freq: {config.oscillationFreq}</label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="5"
-                      step="0.1"
-                      value={config.oscillationFreq}
-                      onChange={(e) => setConfig({...config, oscillationFreq: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Osc Amp: {config.oscillationAmp}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={config.oscillationAmp}
-                      onChange={(e) => setConfig({...config, oscillationAmp: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                  </div>
-                </div>
+                {/* Center Column - Main Visualization (70% width) */}
+                <div className="w-[70%] bg-black border-x border-gray-700/50 relative p-4">
+                    <DemoVectorGrid
+                        gridSize={config.gridSize}
+                        gridPattern={config.gridPattern}
+                        animation={config.animation}
+                        speed={config.speed}
+                        intensity={config.intensity}
+                        colorMode={config.colorMode}
+                        solidColor={config.solidColor}
+                        gradientPalette={config.gradientPalette}
+                        colorIntensityMode={config.colorIntensityMode}
+                        colorHueShift={config.colorHueShift}
+                        colorSaturation={config.colorSaturation}
+                        colorBrightness={config.colorBrightness}
+                        lengthMin={config.lengthMin}
+                        lengthMax={config.lengthMax}
+                        oscillationFreq={config.oscillationFreq}
+                        oscillationAmp={config.oscillationAmp}
+                        pulseSpeed={config.pulseSpeed}
+                        spatialFactor={config.spatialFactor}
+                        spatialMode={config.spatialMode}
+                        mouseInfluence={config.mouseInfluence}
+                        mouseMode={config.mouseMode}
+                        physicsMode={config.physicsMode}
+                        vectorShape={config.vectorShape}
+                        showArrowheads={config.showArrowheads}
+                        curvatureIntensity={config.curvatureIntensity}
+                        waveFrequency={config.waveFrequency}
+                        spiralTightness={config.spiralTightness}
+                        organicNoise={config.organicNoise}
+                        rows={config.rows}
+                        cols={config.cols}
+                        spacing={config.spacing}
+                        canvasWidth={config.canvasWidth}
+                        canvasHeight={config.canvasHeight}
+                        margin={config.margin}
+                        isPaused={config.isPaused}
 
-                {/* Advanced */}
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Pulse: {config.pulseSpeed}</label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="5"
-                      step="0.1"
-                      value={config.pulseSpeed}
-                      onChange={(e) => setConfig({...config, pulseSpeed: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Spatial: {config.spatialFactor}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={config.spatialFactor}
-                      onChange={(e) => setConfig({...config, spatialFactor: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                    <select
-                      value={config.spatialMode}
-                      onChange={(e) => setConfig({...config, spatialMode: e.target.value as any})}
-                      className="w-full mt-1 bg-gray-800/70 border border-gray-600/50 rounded px-2 py-1 text-xs text-gray-100"
+
+
+
+                    {/* Botón Pause/Play Flotante */}
+                    <button
+                        onClick={handleTogglePause}
+                        className="absolute bottom-4 right-4 w-12 h-12 bg-sidebar-accent/90 hover:bg-sidebar-accent border border-sidebar-border rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+                        title={config.isPaused ? 'Reanudar (Espacio)' : 'Pausar (Espacio)'}
                     >
-                      <option value="edge">Edge Longer</option>
-                      <option value="center">Center Longer</option>
-                      <option value="mixed">Mixed Pattern</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Mouse: {config.mouseInfluence}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={config.mouseInfluence}
-                      onChange={(e) => setConfig({...config, mouseInfluence: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-purple-500"
-                    />
-                    <select
-                      value={config.mouseMode}
-                      onChange={(e) => setConfig({...config, mouseMode: e.target.value as any})}
-                      className="w-full mt-1 bg-gray-800/70 border border-gray-600/50 rounded px-2 py-1 text-xs text-gray-100"
-                    >
-                      <option value="attract">Attract (Grow Near)</option>
-                      <option value="repel">Repel (Shrink Near)</option>
-                      <option value="stretch">Stretch (Dynamic)</option>
-                    </select>
-                  </div>
+                        {config.isPaused ? (
+                            <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                            </svg>
+                        )}
+                    </button>
                 </div>
 
-                {/* Physics Mode */}
-                <div>
-                  <label className="block text-xs font-medium mb-1 text-gray-300">Physics</label>
-                  <select
-                    value={config.physicsMode}
-                    onChange={(e) => setConfig({...config, physicsMode: e.target.value as any})}
-                    className="w-full bg-gray-800/70 border border-gray-600/50 rounded px-2 py-1 text-xs text-gray-100"
-                  >
-                    <option value="none">None</option>
-                    <option value="velocity">Velocity</option>
-                    <option value="pressure">Pressure</option>
-                    <option value="field">Field</option>
-                  </select>
+                {/* Right Column - Visual Controls & Export */}
+                <div className="w-[15%] dev-sidebar overflow-y-auto dev-scroll">
+                    <div className="p-4 space-y-6">
+
+                        {/* Grid Pattern Card */}
+                        <div className="bg-sidebar-accent border border-sidebar-border p-5 rounded-lg space-y-5">
+                            {/* Header */}
+                            <div className="text-center">
+                                <h3 className="text-sm font-medium text-sidebar-foreground mb-1">Grid Patterns</h3>
+                                <p className="text-xs text-sidebar-foreground/70">Vector layout and distribution</p>
+                            </div>
+
+                            {/* Vector Density Section */}
+                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-4">
+                                <label className="block text-xs font-medium mb-3 text-sidebar-foreground">Vector Density</label>
+                                <select
+                                    value={config.gridSize}
+                                    onChange={(e) => setConfig({ ...config, gridSize: parseInt(e.target.value) })}
+                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                >
+                                    <option value={16}>16 vectors ⚡ Fast</option>
+                                    <option value={25}>25 vectors ⚡ Fast</option>
+                                    <option value={49}>49 vectors ⚡ Fast</option>
+                                    <option value={100}>100 vectors 🚀 Good</option>
+                                    <option value={400}>400 vectors 🔥 Dense</option>
+                                    <option value={900}>900 vectors 🖥️ Canvas</option>
+                                </select>
+                                {config.gridSize >= 900 && (
+                                    <div className="mt-3 text-xs text-blue-400 bg-blue-950/20 border border-blue-500/20 rounded-lg p-2 text-center">
+                                        🖥️ Canvas rendering for optimal performance
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Pattern Type Section */}
+                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-4">
+                                <div className="mb-3">
+                                    <label className="block text-xs font-medium text-sidebar-foreground">Pattern Type</label>
+                                </div>
+                                
+                                <SimpleTabs
+                                    tabs={[
+                                        { id: 'grid', label: 'Grid' },
+                                        { id: 'organic', label: 'Organic' },
+                                        { id: 'math', label: 'Math' }
+                                    ]}
+                                    activeTab={
+                                        ['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) ? 'grid' :
+                                            ['voronoi', 'radial'].includes(config.gridPattern) ? 'organic' : 'math'
+                                    }
+                                    onChange={(tab) => {
+                                        const patterns = {
+                                            grid: 'regular',
+                                            organic: 'voronoi',
+                                            math: 'fibonacci'
+                                        };
+                                        setConfig({ ...config, gridPattern: patterns[tab as keyof typeof patterns] as GridPattern });
+                                    }}
+                                />
+
+                                <div className="mt-3">
+                                    {/* Grid Tab */}
+                                    {['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) && (
+                                        <select
+                                            value={config.gridPattern}
+                                            onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
+                                            className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="regular">Regular Grid</option>
+                                            <option value="staggered">Staggered Grid</option>
+                                            <option value="hexagonal">Hexagonal Grid</option>
+                                        </select>
+                                    )}
+
+                                    {/* Organic Tab */}
+                                    {['voronoi', 'radial'].includes(config.gridPattern) && (
+                                        <select
+                                            value={config.gridPattern}
+                                            onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
+                                            className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="voronoi">Random Distribution</option>
+                                            <option value="radial">Radial Pattern</option>
+                                        </select>
+                                    )}
+
+                                    {/* Math Tab */}
+                                    {['fibonacci', 'golden', 'triangular'].includes(config.gridPattern) && (
+                                        <select
+                                            value={config.gridPattern}
+                                            onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
+                                            className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="fibonacci">Fibonacci Spiral</option>
+                                            <option value="golden">Golden Ratio</option>
+                                            <option value="triangular">Triangular Lattice</option>
+                                        </select>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Advanced Controls */}
+                            {config.gridPattern === 'regular' && (
+                                <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-4">
+                                    <div className="mb-3">
+                                        <label className="block text-xs font-medium text-sidebar-foreground">Grid Settings</label>
+                                    </div>
+                                    <SliderWithInput
+                                        label="Spacing"
+                                        value={config.spacing || 80}
+                                        min={20}
+                                        max={200}
+                                        step={5}
+                                        onChange={(value) => setConfig({ ...config, spacing: value })}
+                                        suffix="px"
+                                        inputWidth="sm"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Colors Card */}
+                    <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded-lg space-y-4">
+                        <SimpleTabs
+                            tabs={[
+                                { id: 'solid', label: 'Solid' },
+                                { id: 'gradient', label: 'Gradient' },
+                                { id: 'dynamic', label: 'Dynamic' }
+                            ]}
+                            activeTab={config.colorMode}
+                            onChange={(mode) => setConfig({ ...config, colorMode: mode as 'solid' | 'gradient' | 'dynamic' })}
+                        />
+
+                        {config.colorMode === 'solid' && (
+                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3">
+                                <input
+                                    type="color"
+                                    value={config.solidColor}
+                                    onChange={(e) => setConfig({ ...config, solidColor: e.target.value })}
+                                    className="w-full h-12 border-2 border-sidebar-border rounded-lg cursor-pointer"
+                                />
+                                <div className="mt-2 text-xs text-sidebar-foreground/70 text-center">
+                                    {config.solidColor.toUpperCase()}
+                                </div>
+                            </div>
+                        )}
+
+                        {config.colorMode === 'gradient' && (
+                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3 space-y-3">
+                                <select
+                                    value={config.gradientPalette}
+                                    onChange={(e) => setConfig({ ...config, gradientPalette: e.target.value as any })}
+                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-xs rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                >
+                                    <optgroup label="Built-in Gradients">
+                                        <option value="flow">🌊 Flow</option>
+                                        <option value="rainbow">🌈 Rainbow</option>
+                                        <option value="cosmic">🌌 Cosmic</option>
+                                        <option value="pulse">💓 Pulse</option>
+                                        <option value="subtle">✨ Subtle</option>
+                                        <option value="sunset">🌅 Sunset</option>
+                                        <option value="ocean">🌊 Ocean</option>
+                                    </optgroup>
+                                    {customGradients.length > 0 && (
+                                        <optgroup label="Custom Gradients">
+                                            {customGradients.map(gradient => (
+                                                <option key={gradient.id} value={gradient.id}>
+                                                    🎨 {gradient.name}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                </select>
+
+                                <button
+                                    onClick={() => setShowGradientEditor(true)}
+                                    className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-lg transition-colors shadow-sm font-medium"
+                                >
+                                    ✨ Create Custom Gradient
+                                </button>
+                            </div>
+                        )}
+
+                        {config.colorMode === 'dynamic' && (
+                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3 space-y-3">
+                                <div>
+                                    <label className="block text-xs text-sidebar-foreground mb-1">Intensity Mode</label>
+                                    <select
+                                        value={config.colorIntensityMode}
+                                        onChange={(e) => setConfig({ ...config, colorIntensityMode: e.target.value as any })}
+                                        className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                    >
+                                        <option value="field">⚡ Field Strength</option>
+                                        <option value="velocity">💨 Velocity</option>
+                                        <option value="distance">📏 Distance</option>
+                                        <option value="angle">🔄 Angle</option>
+                                    </select>
+                                </div>
+
+                                <SliderWithInput
+                                    label="Hue Shift"
+                                    value={config.colorHueShift}
+                                    min={0}
+                                    max={360}
+                                    step={5}
+                                    onChange={(value) => setConfig({ ...config, colorHueShift: value })}
+                                    suffix="°"
+                                    inputWidth="sm"
+                                />
+
+                                <SliderWithInput
+                                    label="Saturation"
+                                    value={config.colorSaturation}
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    onChange={(value) => setConfig({ ...config, colorSaturation: value })}
+                                    suffix="%"
+                                    inputWidth="sm"
+                                />
+
+                                <SliderWithInput
+                                    label="Brightness"
+                                    value={config.colorBrightness}
+                                    min={20}
+                                    max={100}
+                                    step={5}
+                                    onChange={(value) => setConfig({ ...config, colorBrightness: value })}
+                                    suffix="%"
+                                    inputWidth="sm"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+
+
+
+
+                    {/* Vector Shapes Card */}
+                    <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
+                        <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Vector Shapes</h3>
+
+                        <div className="space-y-3">
+                            {/* Vector Shape Selector */}
+                            <div>
+                                <label className="block text-xs font-medium mb-1 text-sidebar-foreground">Shape</label>
+                                <select
+                                    value={config.vectorShape}
+                                    onChange={(e) => setConfig({ ...config, vectorShape: e.target.value as any })}
+                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                >
+                                    <option value="straight">Straight Lines</option>
+                                    <option value="wave">Wave Serpentine</option>
+                                    <option value="bezier">Smooth Curves</option>
+                                    <option value="spiral">Spiral Coils</option>
+                                    <option value="arc">Simple Arcs</option>
+                                    <option value="organic">Organic Forms</option>
+                                </select>
+                            </div>
+
+                            {/* Arrowheads Toggle */}
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="showArrowheads"
+                                    checked={config.showArrowheads}
+                                    onChange={(e) => setConfig({ ...config, showArrowheads: e.target.checked })}
+                                    className="w-3 h-3 accent-green-500"
+                                />
+                                <label htmlFor="showArrowheads" className="text-xs text-sidebar-foreground">Show Arrowheads</label>
+                            </div>
+
+                            {/* Curvature Intensity */}
+                            <SliderWithInput
+                                label="Curvature Intensity"
+                                value={config.curvatureIntensity}
+                                min={0.1}
+                                max={3}
+                                step={0.1}
+                                onChange={(value) => setConfig({ ...config, curvatureIntensity: value })}
+                                inputWidth="sm"
+                            />
+
+                            {/* Shape-specific controls */}
+                            {config.vectorShape === 'wave' && (
+                                <SliderWithInput
+                                    label="Wave Frequency"
+                                    value={config.waveFrequency}
+                                    min={0.5}
+                                    max={5}
+                                    step={0.1}
+                                    onChange={(value) => setConfig({ ...config, waveFrequency: value })}
+                                    suffix="Hz"
+                                    inputWidth="sm"
+                                />
+                            )}
+
+                            {config.vectorShape === 'spiral' && (
+                                <SliderWithInput
+                                    label="Spiral Tightness"
+                                    value={config.spiralTightness}
+                                    min={0.1}
+                                    max={3}
+                                    step={0.1}
+                                    onChange={(value) => setConfig({ ...config, spiralTightness: value })}
+                                    inputWidth="sm"
+                                />
+                            )}
+
+                            {config.vectorShape === 'organic' && (
+                                <SliderWithInput
+                                    label="Organic Noise"
+                                    value={config.organicNoise}
+                                    min={0}
+                                    max={2}
+                                    step={0.1}
+                                    onChange={(value) => setConfig({ ...config, organicNoise: value })}
+                                    inputWidth="sm"
+                                />
+                            )}
+                        </div>
+                    </div>
                 </div>
-              </div>
             </div>
+            {/* Length Dynamics Help Modal */}
+            <LengthDynamicsHelp
+                isOpen={showLengthHelp}
+                onClose={() => setShowLengthHelp(false)}
+            />
 
-            {/* Global Animation Controls */}
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-4 text-blue-400">⚡ Global Controls</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">Speed: {config.speed}</label>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value={config.speed}
-                    onChange={(e) => setConfig({...config, speed: parseFloat(e.target.value)})}
-                    className="w-full accent-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">Intensity: {config.intensity}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={config.intensity}
-                    onChange={(e) => setConfig({...config, intensity: parseFloat(e.target.value)})}
-                    className="w-full accent-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+            {/* Gradient Editor Modal */}
+            <GradientEditorModal
+                isOpen={showGradientEditor}
+                onClose={() => setShowGradientEditor(false)}
+                onGradientCreated={handleGradientCreated}
+            />
         </div>
-
-        {/* Center Column - Main Visualization (70% width) */}
-        <div className="w-[70%] bg-black border-x border-gray-700/50">
-          <DemoVectorGrid 
-            gridSize={config.gridSize}
-            gridPattern={config.gridPattern}
-            animation={config.animation}
-            speed={config.speed}
-            intensity={config.intensity}
-            colorMode={config.colorMode}
-            solidColor={config.solidColor}
-            gradientPalette={config.gradientPalette}
-            dynamicColors={config.dynamicColors}
-            colorIntensityMode={config.colorIntensityMode}
-            colorHueShift={config.colorHueShift}
-            colorSaturation={config.colorSaturation}
-            colorBrightness={config.colorBrightness}
-            lengthMin={config.lengthMin}
-            lengthMax={config.lengthMax}
-            oscillationFreq={config.oscillationFreq}
-            oscillationAmp={config.oscillationAmp}
-            pulseSpeed={config.pulseSpeed}
-            spatialFactor={config.spatialFactor}
-            spatialMode={config.spatialMode}
-            mouseInfluence={config.mouseInfluence}
-            mouseMode={config.mouseMode}
-            physicsMode={config.physicsMode}
-            vectorShape={config.vectorShape}
-            showArrowheads={config.showArrowheads}
-            curvatureIntensity={config.curvatureIntensity}
-            waveFrequency={config.waveFrequency}
-            spiralTightness={config.spiralTightness}
-            organicNoise={config.organicNoise}
-          />
-        </div>
-
-        {/* Right Column - Visual Controls & Export */}
-        <div className="w-[15%] bg-gray-900/80 backdrop-blur-sm overflow-y-auto">
-          <div className="p-4">
-            
-
-            
-            {/* Grid Configuration */}
-            <div className="mb-8 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Grid Size</label>
-                <select
-                  value={config.gridSize}
-                  onChange={(e) => setConfig({...config, gridSize: parseInt(e.target.value)})}
-                  className="w-full bg-gray-800/70 border border-gray-600/50 rounded-lg px-3 py-2 text-gray-100"
-                >
-                  <option value={16}>16 (4×4) - Smooth</option>
-                  <option value={25}>25 (5×5) - Smooth</option>
-                  <option value={36}>36 (6×6) - Smooth</option>
-                  <option value={49}>49 (7×7) - Smooth</option>
-                  <option value={64}>64 (8×8) - Good</option>
-                  <option value={100}>100 (10×10) - Good</option>
-                  <option value={400}>400 (20×20) - Medium</option>
-                  <option value={900}>900 (30×30) - Heavy</option>
-                  <option value={2500}>2500 (50×50) - Extreme</option>
-                  <option value={10000}>10000 (100×100) - APOCALYPSE</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Grid Pattern</label>
-                <select
-                  value={config.gridPattern}
-                  onChange={(e) => setConfig({...config, gridPattern: e.target.value as GridPattern})}
-                  className="w-full bg-gray-800/70 border border-gray-600/50 rounded-lg px-3 py-2 text-gray-100"
-                >
-                  <option value="regular">Regular Grid</option>
-                  <option value="hexagonal">Hexagonal</option>
-                  <option value="fibonacci">Fibonacci Spiral</option>
-                  <option value="radial">Radial Circles</option>
-                  <option value="staggered">Staggered Rows</option>
-                  <option value="triangular">Triangular</option>
-                  <option value="voronoi">Voronoi Random</option>
-                  <option value="golden">Golden Ratio</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Color Controls */}
-            <div className="mb-8 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-300">🎨 Colors</h2>
-              
-              {/* Color Mode Toggle */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Solid Color</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.colorMode === 'gradient'}
-                      onChange={(e) => setConfig({...config, colorMode: e.target.checked ? 'gradient' : 'solid'})}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                  <span className="text-sm text-gray-400">Gradient</span>
-                </div>
-
-                {/* Conditional Controls */}
-                {config.colorMode === 'solid' ? (
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-300">Color</label>
-                    <input
-                      type="color"
-                      value={config.solidColor}
-                      onChange={(e) => setConfig({...config, solidColor: e.target.value})}
-                      className="w-full h-10 bg-gray-800/70 border border-gray-600/50 rounded-lg"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-300">Gradient Palette</label>
-                    <select
-                      value={config.gradientPalette}
-                      onChange={(e) => setConfig({...config, gradientPalette: e.target.value as any})}
-                      className="w-full bg-gray-800/70 border border-gray-600/50 rounded-lg px-3 py-2 text-gray-100"
-                    >
-                      <option value="flow">🌊 Flow</option>
-                      <option value="rainbow">🌈 Rainbow</option>
-                      <option value="cosmic">🌌 Cosmic</option>
-                      <option value="pulse">💓 Pulse</option>
-                      <option value="subtle">✨ Subtle</option>
-                      <option value="sunset">🌅 Sunset</option>
-                      <option value="ocean">🌊 Ocean</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-               {/* Dynamic Color Modulation */}
-               <div className="space-y-3">
-                 <div className="flex items-center space-x-2">
-                     <input
-                     type="checkbox"
-                     id="dynamicColors"
-                     checked={config.dynamicColors}
-                     onChange={(e) => setConfig({...config, dynamicColors: e.target.checked})}
-                     className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                   />
-                   <label htmlFor="dynamicColors" className="text-sm font-medium text-gray-300">⚡ Dynamic Colors</label>
-                 </div>
-
-                 {config.dynamicColors && (
-                   <div className="ml-6 space-y-3 border-l-2 border-blue-500/30 pl-3">
-                     <div>
-                       <label className="block text-xs text-gray-400 mb-1">Intensity Mode</label>
-                       <select
-                         value={config.colorIntensityMode}
-                         onChange={(e) => setConfig({...config, colorIntensityMode: e.target.value as any})}
-                         className="w-full bg-gray-800/70 border border-gray-600/50 rounded px-2 py-1 text-xs text-gray-100"
-                       >
-                         <option value="field">⚡ Field Strength</option>
-                         <option value="velocity">💨 Velocity</option>
-                         <option value="distance">📏 Distance</option>
-                         <option value="angle">🔄 Angle</option>
-                       </select>
-                     </div>
-                     
-                     <div>
-                       <label className="block text-xs text-gray-400 mb-1">Hue Shift: {config.colorHueShift}</label>
-                       <input
-                         type="range"
-                         min="0"
-                         max="360"
-                         step="5"
-                         value={config.colorHueShift}
-                         onChange={(e) => setConfig({...config, colorHueShift: Number(e.target.value)})}
-                         className="w-full"
-                       />
-                     </div>
-                     
-                     <div>
-                       <label className="block text-xs text-gray-400 mb-1">Saturation: {config.colorSaturation}%</label>
-                       <input
-                         type="range"
-                         min="0"
-                         max="100"
-                         step="5"
-                         value={config.colorSaturation}
-                         onChange={(e) => setConfig({...config, colorSaturation: Number(e.target.value)})}
-                         className="w-full"
-                       />
-                     </div>
-                     
-                     <div>
-                       <label className="block text-xs text-gray-400 mb-1">Brightness: {config.colorBrightness}%</label>
-                       <input
-                         type="range"
-                         min="20"
-                         max="100"
-                         step="5"
-                         value={config.colorBrightness}
-                         onChange={(e) => setConfig({...config, colorBrightness: Number(e.target.value)})}
-                         className="w-full"
-                       />
-                     </div>
-                   </div>
-                 )}
-               </div>
-             </div>
-
-
-
-            {/* Vector Shape Section */}
-            <div className="mb-8">
-              <h2 className="text-sm font-semibold mb-3 text-green-400">🌊 Vector Shapes</h2>
-              
-              <div className="space-y-3">
-                {/* Vector Shape Selector */}
-                <div>
-                  <label className="block text-xs font-medium mb-1 text-gray-300">Shape</label>
-                  <select
-                    value={config.vectorShape}
-                    onChange={(e) => setConfig({...config, vectorShape: e.target.value as any})}
-                    className="w-full bg-gray-800/70 border border-gray-600/50 rounded px-2 py-1 text-xs text-gray-100"
-                  >
-                    <option value="straight">Straight Lines</option>
-                    <option value="wave">Wave Serpentine</option>
-                    <option value="bezier">Smooth Curves</option>
-                    <option value="spiral">Spiral Coils</option>
-                    <option value="arc">Simple Arcs</option>
-                    <option value="organic">Organic Forms</option>
-                  </select>
-                </div>
-
-                {/* Arrowheads Toggle */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="showArrowheads"
-                    checked={config.showArrowheads}
-                    onChange={(e) => setConfig({...config, showArrowheads: e.target.checked})}
-                    className="w-3 h-3 accent-green-500"
-                  />
-                  <label htmlFor="showArrowheads" className="text-xs text-gray-300">Show Arrowheads</label>
-                </div>
-
-                {/* Curvature Intensity */}
-                <div>
-                  <label className="block text-xs font-medium mb-1 text-gray-300">Intensity: {config.curvatureIntensity}</label>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="3"
-                    step="0.1"
-                    value={config.curvatureIntensity}
-                    onChange={(e) => setConfig({...config, curvatureIntensity: parseFloat(e.target.value)})}
-                    className="w-full h-1 accent-green-500"
-                  />
-                </div>
-
-                {/* Shape-specific controls */}
-                {config.vectorShape === 'wave' && (
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Wave Freq: {config.waveFrequency}</label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="5"
-                      step="0.1"
-                      value={config.waveFrequency}
-                      onChange={(e) => setConfig({...config, waveFrequency: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-green-500"
-                    />
-                  </div>
-                )}
-
-                {config.vectorShape === 'spiral' && (
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Tightness: {config.spiralTightness}</label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="3"
-                      step="0.1"
-                      value={config.spiralTightness}
-                      onChange={(e) => setConfig({...config, spiralTightness: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-green-500"
-                    />
-                  </div>
-                )}
-
-                {config.vectorShape === 'organic' && (
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-300">Noise: {config.organicNoise}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={config.organicNoise}
-                      onChange={(e) => setConfig({...config, organicNoise: parseFloat(e.target.value)})}
-                      className="w-full h-1 accent-green-500"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Export Section */}
-            <div>
-              <h2 className="text-sm font-semibold mb-3 text-orange-400">Export Tools</h2>
-              <div className="space-y-2">
-                <button
-                  onClick={exportSVG}
-                  className="w-full bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                >
-                  Static SVG
-                </button>
-                <button
-                  onClick={exportAnimatedSVG}
-                  className="w-full bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                >
-                  Animated SVG
-                </button>
-                <div className="pt-1 text-xs text-gray-500 space-y-1">
-                  <p>• Static: Current frame</p>
-                  <p>• Animated: SMIL loops</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Length Dynamics Help Modal */}
-      <LengthDynamicsHelp 
-        isOpen={showLengthHelp}
-        onClose={() => setShowLengthHelp(false)}
-      />
-    </div>
-  );
+    );
 }
