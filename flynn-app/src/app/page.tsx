@@ -70,6 +70,7 @@ export default function DevPage() {
         colorIntensityMode: 'field', colorHueShift: 1, colorSaturation: 80, colorBrightness: 60,
         lengthMin: 10, lengthMax: 25, oscillationFreq: 1, oscillationAmp: 0.3, pulseSpeed: 1, spatialFactor: 0.2, spatialMode: 'edge', mouseInfluence: 0, mouseMode: 'attract', physicsMode: 'none',
         vectorShape: 'straight', showArrowheads: true, curvatureIntensity: 1, waveFrequency: 2, spiralTightness: 1, organicNoise: 0.5,
+        spacing: 80,
         isPaused: false
     });
     const [showLengthHelp, setShowLengthHelp] = useState(false);
@@ -484,11 +485,25 @@ export default function DevPage() {
                                         ['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) ? 'grid' : 'math'
                                     }
                                     onChange={(tab) => {
-                                        const patterns = {
-                                            grid: 'regular',
-                                            math: 'fibonacci'
-                                        };
-                                        setConfig({ ...config, gridPattern: patterns[tab as keyof typeof patterns] as GridPattern });
+                                        if (tab === 'grid') {
+                                            // Cambio a Grid: usar rows/cols, limpiar gridSize automático
+                                            setConfig({ 
+                                                ...config, 
+                                                gridPattern: 'regular',
+                                                rows: config.rows || 5,
+                                                cols: config.cols || 5,
+                                                gridSize: (config.rows || 5) * (config.cols || 5)
+                                            });
+                                        } else {
+                                            // Cambio a Math: usar gridSize, limpiar rows/cols
+                                            setConfig({ 
+                                                ...config, 
+                                                gridPattern: 'fibonacci',
+                                                rows: undefined,
+                                                cols: undefined,
+                                                gridSize: config.gridSize || 25
+                                            });
+                                        }
                                     }}
                                 />
 
@@ -510,20 +525,26 @@ export default function DevPage() {
                                             <div className="space-y-3">
                                                 <SliderWithInput
                                                     label="Rows"
-                                                    value={config.rows || Math.sqrt(config.gridSize)}
+                                                    value={config.rows || 5}
                                                     min={4}
                                                     max={50}
                                                     step={1}
-                                                    onChange={(value) => setConfig({ ...config, rows: value, cols: value, gridSize: value * value })}
+                                                    onChange={(value) => {
+                                                        const cols = config.cols || 5;
+                                                        setConfig({ ...config, rows: value, gridSize: value * cols });
+                                                    }}
                                                     inputWidth="sm"
                                                 />
                                                 <SliderWithInput
                                                     label="Columns"
-                                                    value={config.cols || Math.sqrt(config.gridSize)}
+                                                    value={config.cols || 5}
                                                     min={4}
                                                     max={50}
                                                     step={1}
-                                                    onChange={(value) => setConfig({ ...config, cols: value, rows: value, gridSize: value * value })}
+                                                    onChange={(value) => {
+                                                        const rows = config.rows || 5;
+                                                        setConfig({ ...config, cols: value, gridSize: rows * value });
+                                                    }}
                                                     inputWidth="sm"
                                                 />
                                                 <SliderWithInput
@@ -548,7 +569,12 @@ export default function DevPage() {
                                                 <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Vector Density</label>
                                                 <select
                                                     value={config.gridSize}
-                                                    onChange={(e) => setConfig({ ...config, gridSize: parseInt(e.target.value) })}
+                                                    onChange={(e) => setConfig({ 
+                                                        ...config, 
+                                                        gridSize: parseInt(e.target.value),
+                                                        rows: undefined,
+                                                        cols: undefined
+                                                    })}
                                                     className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                 >
                                                     <option value={16}>16 vectors ⚡ Fast</option>
