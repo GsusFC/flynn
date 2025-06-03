@@ -3,9 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DemoVectorGrid from '@/app/dev/DemoVectorGrid';
-import type { 
-  AnimationType
-} from '@/components/features/vector-grid/simple/simpleTypes';
+
 
 type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
 
@@ -29,6 +27,30 @@ function ViewContent() {
   const [colorMode, setColorMode] = useState<'solid' | 'gradient' | 'dynamic'>('solid');
   const [solidColor, setSolidColor] = useState('#3b82f6');
   const [gradientPalette, setGradientPalette] = useState<'flow' | 'rainbow' | 'pulse' | 'sunset' | 'ocean' | 'forest' | 'fire' | 'electric' | 'cosmic' | 'aurora'>('flow');
+  const [colorIntensityMode, setColorIntensityMode] = useState<'field' | 'velocity' | 'distance' | 'angle'>('velocity');
+  const [colorHueShift, setColorHueShift] = useState(0);
+  const [colorSaturation, setColorSaturation] = useState(70);
+  const [colorBrightness, setColorBrightness] = useState(70);
+  
+  // Length and animation settings
+  const [lengthMin, setLengthMin] = useState(10);
+  const [lengthMax, setLengthMax] = useState(40);
+  const [oscillationFreq, setOscillationFreq] = useState(1);
+  const [oscillationAmp, setOscillationAmp] = useState(0.3);
+  const [pulseSpeed, setPulseSpeed] = useState(1);
+  const [spatialFactor, setSpatialFactor] = useState(0.2);
+  const [spatialMode, setSpatialMode] = useState<'edge' | 'center' | 'mixed'>('edge');
+  const [mouseInfluence, setMouseInfluence] = useState(0);
+  const [mouseMode, setMouseMode] = useState<'attract' | 'repel' | 'stretch'>('attract');
+  const [physicsMode, setPhysicsMode] = useState<'none' | 'velocity' | 'pressure' | 'field'>('none');
+  
+  // Vector shape settings
+  const [vectorShape, setVectorShape] = useState<'straight' | 'wave' | 'bezier' | 'spiral' | 'arc' | 'organic'>('straight');
+  const [showArrowheads, setShowArrowheads] = useState(true);
+  const [curvatureIntensity, setCurvatureIntensity] = useState(1);
+  const [waveFrequency, setWaveFrequency] = useState(2);
+  const [spiralTightness, setSpiralTightness] = useState(1);
+  const [organicNoise, setOrganicNoise] = useState(0.5);
 
   useEffect(() => {
     // Load configuration from URL parameters
@@ -64,6 +86,69 @@ function ViewContent() {
     
     const gradientPaletteParam = searchParams.get('gradientPalette') as 'flow' | 'rainbow' | 'pulse' | 'sunset' | 'ocean' | 'forest' | 'fire' | 'electric' | 'cosmic' | 'aurora';
     if (gradientPaletteParam) setGradientPalette(gradientPaletteParam);
+    
+    // Color dynamics
+    const colorIntensityModeParam = searchParams.get('colorIntensityMode') as 'field' | 'velocity' | 'distance' | 'angle';
+    if (colorIntensityModeParam) setColorIntensityMode(colorIntensityModeParam);
+    
+    const colorHueShiftParam = searchParams.get('colorHueShift');
+    if (colorHueShiftParam) setColorHueShift(parseFloat(colorHueShiftParam));
+    
+    const colorSaturationParam = searchParams.get('colorSaturation');
+    if (colorSaturationParam) setColorSaturation(parseInt(colorSaturationParam));
+    
+    const colorBrightnessParam = searchParams.get('colorBrightness');
+    if (colorBrightnessParam) setColorBrightness(parseInt(colorBrightnessParam));
+    
+    // Length and animation settings
+    const lengthMinParam = searchParams.get('lengthMin');
+    if (lengthMinParam) setLengthMin(parseInt(lengthMinParam));
+    
+    const lengthMaxParam = searchParams.get('lengthMax');
+    if (lengthMaxParam) setLengthMax(parseInt(lengthMaxParam));
+    
+    const oscillationFreqParam = searchParams.get('oscillationFreq');
+    if (oscillationFreqParam) setOscillationFreq(parseFloat(oscillationFreqParam));
+    
+    const oscillationAmpParam = searchParams.get('oscillationAmp');
+    if (oscillationAmpParam) setOscillationAmp(parseFloat(oscillationAmpParam));
+    
+    const pulseSpeedParam = searchParams.get('pulseSpeed');
+    if (pulseSpeedParam) setPulseSpeed(parseFloat(pulseSpeedParam));
+    
+    const spatialFactorParam = searchParams.get('spatialFactor');
+    if (spatialFactorParam) setSpatialFactor(parseFloat(spatialFactorParam));
+    
+    const spatialModeParam = searchParams.get('spatialMode') as 'edge' | 'center' | 'mixed';
+    if (spatialModeParam) setSpatialMode(spatialModeParam);
+    
+    const mouseInfluenceParam = searchParams.get('mouseInfluence');
+    if (mouseInfluenceParam) setMouseInfluence(parseFloat(mouseInfluenceParam));
+    
+    const mouseModeParam = searchParams.get('mouseMode') as 'attract' | 'repel' | 'stretch';
+    if (mouseModeParam) setMouseMode(mouseModeParam);
+    
+    const physicsModeParam = searchParams.get('physicsMode') as 'none' | 'velocity' | 'pressure' | 'field';
+    if (physicsModeParam) setPhysicsMode(physicsModeParam);
+    
+    // Vector shape settings
+    const vectorShapeParam = searchParams.get('vectorShape') as 'straight' | 'wave' | 'bezier' | 'spiral' | 'arc' | 'organic';
+    if (vectorShapeParam) setVectorShape(vectorShapeParam);
+    
+    const showArrowheadsParam = searchParams.get('showArrowheads');
+    if (showArrowheadsParam) setShowArrowheads(showArrowheadsParam === 'true');
+    
+    const curvatureIntensityParam = searchParams.get('curvatureIntensity');
+    if (curvatureIntensityParam) setCurvatureIntensity(parseFloat(curvatureIntensityParam));
+    
+    const waveFrequencyParam = searchParams.get('waveFrequency');
+    if (waveFrequencyParam) setWaveFrequency(parseFloat(waveFrequencyParam));
+    
+    const spiralTightnessParam = searchParams.get('spiralTightness');
+    if (spiralTightnessParam) setSpiralTightness(parseFloat(spiralTightnessParam));
+    
+    const organicNoiseParam = searchParams.get('organicNoise');
+    if (organicNoiseParam) setOrganicNoise(parseFloat(organicNoiseParam));
   }, [searchParams]);
 
   // Generate edit URL with current parameters
@@ -80,6 +165,26 @@ function ViewContent() {
     params.set('colorMode', colorMode);
     params.set('solidColor', encodeURIComponent(solidColor));
     params.set('gradientPalette', gradientPalette);
+    params.set('colorIntensityMode', colorIntensityMode);
+    params.set('colorHueShift', colorHueShift.toString());
+    params.set('colorSaturation', colorSaturation.toString());
+    params.set('colorBrightness', colorBrightness.toString());
+    params.set('lengthMin', lengthMin.toString());
+    params.set('lengthMax', lengthMax.toString());
+    params.set('oscillationFreq', oscillationFreq.toString());
+    params.set('oscillationAmp', oscillationAmp.toString());
+    params.set('pulseSpeed', pulseSpeed.toString());
+    params.set('spatialFactor', spatialFactor.toString());
+    params.set('spatialMode', spatialMode);
+    params.set('mouseInfluence', mouseInfluence.toString());
+    params.set('mouseMode', mouseMode);
+    params.set('physicsMode', physicsMode);
+    params.set('vectorShape', vectorShape);
+    params.set('showArrowheads', showArrowheads.toString());
+    params.set('curvatureIntensity', curvatureIntensity.toString());
+    params.set('waveFrequency', waveFrequency.toString());
+    params.set('spiralTightness', spiralTightness.toString());
+    params.set('organicNoise', organicNoise.toString());
     
     return `${window.location.origin}/?${params.toString()}`;
   };
@@ -110,12 +215,26 @@ function ViewContent() {
           colorMode={colorMode}
           solidColor={solidColor}
           gradientPalette={gradientPalette}
-          colorIntensityMode="velocity"
-          colorHueShift={0}
-          colorSaturation={70}
-          colorBrightness={70}
-          lengthMin={10}
-          lengthMax={40}
+          colorIntensityMode={colorIntensityMode}
+          colorHueShift={colorHueShift}
+          colorSaturation={colorSaturation}
+          colorBrightness={colorBrightness}
+          lengthMin={lengthMin}
+          lengthMax={lengthMax}
+          oscillationFreq={oscillationFreq}
+          oscillationAmp={oscillationAmp}
+          pulseSpeed={pulseSpeed}
+          spatialFactor={spatialFactor}
+          spatialMode={spatialMode}
+          mouseInfluence={mouseInfluence}
+          mouseMode={mouseMode}
+          physicsMode={physicsMode}
+          vectorShape={vectorShape}
+          showArrowheads={showArrowheads}
+          curvatureIntensity={curvatureIntensity}
+          waveFrequency={waveFrequency}
+          spiralTightness={spiralTightness}
+          organicNoise={organicNoise}
         />
       </div>
       

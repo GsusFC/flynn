@@ -114,6 +114,28 @@ export default function DevPage() {
             if (urlParams.get('cols')) urlConfig.cols = parseInt(urlParams.get('cols')!);
             if (urlParams.get('spacing')) urlConfig.spacing = parseInt(urlParams.get('spacing')!);
             
+            // Cargar parámetros avanzados
+            if (urlParams.get('colorIntensityMode')) urlConfig.colorIntensityMode = urlParams.get('colorIntensityMode') as 'field' | 'velocity' | 'distance' | 'angle';
+            if (urlParams.get('colorHueShift')) urlConfig.colorHueShift = parseFloat(urlParams.get('colorHueShift')!);
+            if (urlParams.get('colorSaturation')) urlConfig.colorSaturation = parseInt(urlParams.get('colorSaturation')!);
+            if (urlParams.get('colorBrightness')) urlConfig.colorBrightness = parseInt(urlParams.get('colorBrightness')!);
+            if (urlParams.get('lengthMin')) urlConfig.lengthMin = parseInt(urlParams.get('lengthMin')!);
+            if (urlParams.get('lengthMax')) urlConfig.lengthMax = parseInt(urlParams.get('lengthMax')!);
+            if (urlParams.get('oscillationFreq')) urlConfig.oscillationFreq = parseFloat(urlParams.get('oscillationFreq')!);
+            if (urlParams.get('oscillationAmp')) urlConfig.oscillationAmp = parseFloat(urlParams.get('oscillationAmp')!);
+            if (urlParams.get('pulseSpeed')) urlConfig.pulseSpeed = parseFloat(urlParams.get('pulseSpeed')!);
+            if (urlParams.get('spatialFactor')) urlConfig.spatialFactor = parseFloat(urlParams.get('spatialFactor')!);
+            if (urlParams.get('spatialMode')) urlConfig.spatialMode = urlParams.get('spatialMode') as 'edge' | 'center' | 'mixed';
+            if (urlParams.get('mouseInfluence')) urlConfig.mouseInfluence = parseFloat(urlParams.get('mouseInfluence')!);
+            if (urlParams.get('mouseMode')) urlConfig.mouseMode = urlParams.get('mouseMode') as 'attract' | 'repel' | 'stretch';
+            if (urlParams.get('physicsMode')) urlConfig.physicsMode = urlParams.get('physicsMode') as 'none' | 'velocity' | 'pressure' | 'field';
+            if (urlParams.get('vectorShape')) urlConfig.vectorShape = urlParams.get('vectorShape') as 'straight' | 'wave' | 'bezier' | 'spiral' | 'arc' | 'organic';
+            if (urlParams.get('showArrowheads')) urlConfig.showArrowheads = urlParams.get('showArrowheads') === 'true';
+            if (urlParams.get('curvatureIntensity')) urlConfig.curvatureIntensity = parseFloat(urlParams.get('curvatureIntensity')!);
+            if (urlParams.get('waveFrequency')) urlConfig.waveFrequency = parseFloat(urlParams.get('waveFrequency')!);
+            if (urlParams.get('spiralTightness')) urlConfig.spiralTightness = parseFloat(urlParams.get('spiralTightness')!);
+            if (urlParams.get('organicNoise')) urlConfig.organicNoise = parseFloat(urlParams.get('organicNoise')!);
+            
             // Aplicar configuración cargada
             if (Object.keys(urlConfig).length > 0) {
                 setConfig(prev => ({ ...prev, ...urlConfig }));
@@ -250,6 +272,26 @@ export default function DevPage() {
                 colorMode: config.colorMode,
                 solidColor: config.solidColor,
                 gradientPalette: config.gradientPalette,
+                colorIntensityMode: config.colorIntensityMode,
+                colorHueShift: config.colorHueShift.toString(),
+                colorSaturation: config.colorSaturation.toString(),
+                colorBrightness: config.colorBrightness.toString(),
+                lengthMin: config.lengthMin.toString(),
+                lengthMax: config.lengthMax.toString(),
+                oscillationFreq: config.oscillationFreq.toString(),
+                oscillationAmp: config.oscillationAmp.toString(),
+                pulseSpeed: config.pulseSpeed.toString(),
+                spatialFactor: config.spatialFactor.toString(),
+                spatialMode: config.spatialMode,
+                mouseInfluence: config.mouseInfluence.toString(),
+                mouseMode: config.mouseMode,
+                physicsMode: config.physicsMode,
+                vectorShape: config.vectorShape,
+                showArrowheads: config.showArrowheads.toString(),
+                curvatureIntensity: config.curvatureIntensity.toString(),
+                waveFrequency: config.waveFrequency.toString(),
+                spiralTightness: config.spiralTightness.toString(),
+                organicNoise: config.organicNoise.toString(),
                 ...(config.rows && { rows: config.rows.toString() }),
                 ...(config.cols && { cols: config.cols.toString() }),
                 ...(config.spacing && { spacing: config.spacing.toString() })
