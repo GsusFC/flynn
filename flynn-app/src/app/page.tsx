@@ -74,6 +74,9 @@ export default function DevPage() {
         lengthMin: 10, lengthMax: 25, oscillationFreq: 1, oscillationAmp: 0.3, pulseSpeed: 1, spatialFactor: 0.2, spatialMode: 'edge', mouseInfluence: 0, mouseMode: 'attract', physicsMode: 'none',
         vectorShape: 'straight', showArrowheads: true, curvatureIntensity: 1, waveFrequency: 2, spiralTightness: 1, organicNoise: 0.5,
         spacing: 80,
+        canvasWidth: 800,
+        canvasHeight: 600,
+        margin: 20,
         isPaused: false
     });
     const [showLengthHelp, setShowLengthHelp] = useState(false);
