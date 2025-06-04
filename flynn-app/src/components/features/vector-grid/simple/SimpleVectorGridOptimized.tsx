@@ -1,9 +1,19 @@
+/**
+ * ⚠️ DEPRECATED: SimpleVectorGridOptimized
+ * 
+ * 🚨 THIS COMPONENT IS DEPRECATED - DO NOT USE
+ * Uses deprecated useSimpleVectorGridOptimized hook with infinite loop issues
+ * 
+ * ✅ Use instead: FlynnHookTest or create new component with useFlynnHook
+ * @deprecated Since 2025-01-04
+ */
+
 'use client';
 
 import React, { forwardRef, useImperativeHandle, useCallback, useRef, useState } from 'react';
 import { throttle } from 'lodash';
 // import { useSimpleVectorGrid } from './useSimpleVectorGrid'; // Hook básico (ROLLBACK disponible)
-import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized'; // 🚀 Hook optimizado ACTIVADO
+import { useSimpleVectorGridOptimized } from './useSimpleVectorGridOptimized'; // ⚠️ DEPRECATED HOOK
 import { HybridRenderer } from '../renderers/HybridRenderer';
 // Performance monitor removed - using simplified type
 type RenderMode = 'svg' | 'canvas' | 'hybrid';

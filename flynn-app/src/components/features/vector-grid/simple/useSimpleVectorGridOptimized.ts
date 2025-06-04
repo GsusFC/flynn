@@ -1,3 +1,20 @@
+/**
+ * ⚠️ DEPRECATED: useSimpleVectorGridOptimized
+ * 
+ * 🚨 THIS HOOK IS DEPRECATED AND SHOULD NOT BE USED
+ * 
+ * ❌ Issues:
+ * - Infinite loops with useEffect dependencies
+ * - "Maximum update depth exceeded" errors
+ * - Unstable state management
+ * 
+ * ✅ Use instead: useFlynnHook
+ * @see flynn-app/src/components/features/vector-grid/flynn/useFlynnHook.ts
+ * 
+ * @deprecated Since 2025-01-04 - Use useFlynnHook instead
+ * @todo Remove this file after migration is complete
+ */
+
 // Hook optimizado que unifica grid + animaciones + estado + vectores dinámicos + exportación
 // Versión optimizada con mejoras de performance para carga inicial
 
@@ -12,7 +29,8 @@ import type {
   AnimationCycle,
   SimpleVectorGridRef,
   RotationTransition, // 🔧 AÑADIDO para compatibilidad
-  RotationOrigin // 🔧 AÑADIDO para compatibilidad
+  RotationOrigin, // 🔧 AÑADIDO para compatibilidad
+  VectorShape
 } from './simpleTypes';
 // import { type AnimationProps as CorrectAnimationProps } from './animations/types';
 import { applyAnimation } from './simpleAnimations';
@@ -124,14 +142,65 @@ const generateGIFFromVectors = async (
   });
 };
 
+// Unified Props Interface - supports both Hook style and FlynVectorGrid style
 interface UseSimpleVectorGridProps {
-  gridConfig: GridConfig;
-  vectorConfig: VectorConfig;
-  animationType: AnimationType;
-  animationProps: Record<string, unknown>;
+  // === LEGACY HOOK STYLE (keep for backward compatibility) ===
+  gridConfig?: GridConfig;
+  vectorConfig?: VectorConfig;
+  animationType?: AnimationType;
+  animationProps?: Record<string, unknown>;
+  
+  // === FLYNVECTORGRID DIRECT STYLE (new unified approach) ===
+  // Grid Control
+  gridSize?: number;
+  rows?: number;
+  cols?: number;
+  spacing?: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  margin?: number;
+  gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
+  
+  // Animation
+  animation?: AnimationType;
+  speed?: number;
+  intensity?: number;
+  
+  // Vector Shape
+  vectorShape?: VectorShape;
+  showArrowheads?: boolean;
+  curvatureIntensity?: number;
+  waveFrequency?: number;
+  spiralTightness?: number;
+  organicNoise?: number;
+  
+  // Color System
+  colorMode?: 'solid' | 'gradient' | 'dynamic';
+  solidColor?: string;
+  gradientPalette?: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean' | string;
+  colorIntensityMode?: 'field' | 'velocity' | 'distance' | 'angle';
+  colorHueShift?: number;
+  colorSaturation?: number;
+  colorBrightness?: number;
+  
+  // Length Dynamics
+  lengthMin?: number;
+  lengthMax?: number;
+  oscillationFreq?: number;
+  oscillationAmp?: number;
+  pulseSpeed?: number;
+  spatialFactor?: number;
+  spatialMode?: 'edge' | 'center' | 'mixed';
+  
+  // Physics & Interaction
+  mouseInfluence?: number;
+  mouseMode?: 'attract' | 'repel' | 'stretch';
+  physicsMode?: 'none' | 'velocity' | 'pressure' | 'field';
+  
+  // === CORE HOOK REQUIREMENTS ===
   width: number;
   height: number;
-  canvasRef: React.RefObject<HTMLCanvasElement | null>; // 🔧 ARREGLADO: permitir null
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
   isPaused?: boolean;
   debugMode?: boolean;
   onVectorCountChange?: (count: number) => void;
@@ -139,25 +208,133 @@ interface UseSimpleVectorGridProps {
   onExportProgress?: (progress: number) => void;
 }
 
-export const useSimpleVectorGridOptimized = ({
-  gridConfig,
-  vectorConfig,
-  animationType,
-  animationProps,
-  width,
-  height,
-  canvasRef, // Added canvasRef
-  isPaused = false,
-  debugMode = false,
-  onVectorCountChange,
-  onPulseComplete,
-  onExportProgress
-}: UseSimpleVectorGridProps) => {
-  // 🚀 OPTIMIZACIÓN 1: Estado inicial vacío para evitar cálculos en hidratación
+/**
+ * @deprecated Use useFlynnHook instead - this hook has infinite loop issues
+ */
+export const useSimpleVectorGridOptimized = (props: UseSimpleVectorGridProps) => {
+  console.warn(
+    '⚠️ DEPRECATED: useSimpleVectorGridOptimized is deprecated due to infinite loop issues. Use useFlynnHook instead.'
+  );
+  // Destructure core requirements
+  const { 
+    width, 
+    height, 
+    canvasRef, 
+    isPaused = false, 
+    debugMode = false,
+    onVectorCountChange,
+    onPulseComplete,
+    onExportProgress
+  } = props;
+  
+  // ✨ UNIFIED PROPS PROCESSING - Convert FlynVectorGrid style to Hook style
+  const processedProps = useMemo(() => {
+    // Check if legacy hook style (gridConfig + vectorConfig) is used
+    const isLegacyStyle = props.gridConfig && props.vectorConfig && props.animationType;
+    
+    if (isLegacyStyle) {
+      // Use existing props directly (backward compatibility)
+      return {
+        gridConfig: props.gridConfig!,
+        vectorConfig: props.vectorConfig!,
+        animationType: props.animationType!,
+        animationProps: props.animationProps || {}
+      };
+    }
+    
+    // Convert FlynVectorGrid direct props to Hook format
+    const gridConfig: GridConfig = {
+      rows: props.rows || (props.gridSize ? Math.sqrt(props.gridSize) : 25),
+      cols: props.cols || (props.gridSize ? Math.sqrt(props.gridSize) : 25),
+      spacing: props.spacing || 30,
+      margin: props.margin || 50,
+      // Extended grid properties
+      gridSize: props.gridSize,
+      canvasWidth: props.canvasWidth,
+      canvasHeight: props.canvasHeight,
+      gridPattern: props.gridPattern || 'regular',
+      mouseInfluence: props.mouseInfluence || 0,
+      mouseMode: props.mouseMode || 'attract',
+      physicsMode: props.physicsMode || 'none'
+    };
+    
+    const vectorConfig: VectorConfig = {
+      shape: props.vectorShape || 'line',
+      length: props.lengthMax || 25,
+      width: 2,
+      color: props.solidColor || '#3b82f6',
+      opacity: 1,
+      rotationOrigin: 'center',
+      strokeLinecap: 'round',
+      // Extended color system
+      colorMode: props.colorMode || 'solid',
+      solidColor: props.solidColor,
+      gradientPalette: props.gradientPalette,
+      colorIntensityMode: props.colorIntensityMode,
+      colorHueShift: props.colorHueShift,
+      colorSaturation: props.colorSaturation,
+      colorBrightness: props.colorBrightness,
+      // Length dynamics
+      lengthMin: props.lengthMin,
+      lengthMax: props.lengthMax,
+      oscillationFreq: props.oscillationFreq,
+      oscillationAmp: props.oscillationAmp,
+      pulseSpeed: props.pulseSpeed,
+      spatialFactor: props.spatialFactor,
+      spatialMode: props.spatialMode,
+      // Complex shape properties
+      showArrowheads: props.showArrowheads,
+      curvatureIntensity: props.curvatureIntensity,
+      waveFrequency: props.waveFrequency,
+      spiralTightness: props.spiralTightness,
+      organicNoise: props.organicNoise
+    };
+    
+    const animationType: AnimationType = props.animation || props.animationType || 'none';
+    const animationProps = {
+      speed: props.speed || 1,
+      intensity: props.intensity || 0.5,
+      ...props.animationProps
+    };
+    
+    return { gridConfig, vectorConfig, animationType, animationProps };
+  }, [
+    // Use JSON stringify for deep comparison to avoid infinite loops
+    JSON.stringify({
+      gridConfig: props.gridConfig,
+      vectorConfig: props.vectorConfig,
+      animationType: props.animationType,
+      animationProps: props.animationProps,
+      gridSize: props.gridSize,
+      rows: props.rows,
+      cols: props.cols,
+      spacing: props.spacing,
+      margin: props.margin,
+      canvasWidth: props.canvasWidth,
+      canvasHeight: props.canvasHeight,
+      gridPattern: props.gridPattern,
+      animation: props.animation,
+      speed: props.speed,
+      intensity: props.intensity,
+      vectorShape: props.vectorShape,
+      colorMode: props.colorMode,
+      solidColor: props.solidColor,
+      gradientPalette: props.gradientPalette,
+      lengthMin: props.lengthMin,
+      lengthMax: props.lengthMax,
+      mouseInfluence: props.mouseInfluence,
+      physicsMode: props.physicsMode
+    })
+  ]);
+  
+  // Extract processed values
+  const { gridConfig, vectorConfig, animationType, animationProps } = processedProps;
+  
+  // 🚀 FIXED: Estado sin isPaused - usar prop directamente
   const [state, setState] = useState<VectorGridState>(() => ({
     vectors: [],
     mousePosition: { x: null, y: null },
-    isPaused: false,
+    isPaused: false, // Mantener para compatibilidad con VectorGridState pero no usar
     time: 0, // 🔧 AÑADIDO para compatibilidad con VectorGridState
     frameCount: 0, // 🔧 AÑADIDO para compatibilidad con VectorGridState
     lastUpdateTime: 0,
@@ -178,19 +355,32 @@ export const useSimpleVectorGridOptimized = ({
   const gridCacheRef = useRef<SimpleVector[] | null>(null);
   const configHashRef = useRef<string>('');
   
-  // 🚀 Sincronizar prop isPaused con estado interno
-  useEffect(() => {
-    setState(prev => ({ ...prev, isPaused }));
-  }, [isPaused]);
+  // 🚀 REMOVED: Sincronización que causaba conflictos en el loop
+  // Usar prop isPaused directamente en lugar de state.isPaused
 
   // 🔧 AÑADIDO: Estado de transición de rotación para compatibilidad
   const [rotationTransition, setRotationTransition] = useState<RotationTransition | null>(null);
   const prevRotationOriginRef = useRef<RotationOrigin>(vectorConfig.rotationOrigin);
 
-  // 🚀 OPTIMIZACIÓN 3.5: Estabilizar animationProps para evitar recreaciones del useCallback
-  const stableAnimationProps = useMemo(() => {
-    return animationProps;
-  }, [animationProps]);
+  // 🚀 REFS for stable access in animate callback
+  const animationTypeRef = useRef(animationType);
+  const animationPropsRef = useRef(animationProps);
+  const debugModeRef = useRef(debugMode);
+  const widthRef = useRef(width);
+  const heightRef = useRef(height);
+  const isPausedRef = useRef(isPaused);
+  const isClientRef = useRef(isClient);
+  
+  // Update refs when values change
+  useEffect(() => {
+    animationTypeRef.current = animationType;
+    animationPropsRef.current = animationProps;
+    debugModeRef.current = debugMode;
+    widthRef.current = width;
+    heightRef.current = height;
+    isPausedRef.current = isPaused;
+    isClientRef.current = isClient;
+  }, [animationType, animationProps, debugMode, width, height, isPaused, isClient]);
 
   // 🚀 OPTIMIZACIÓN 4: Hash de configuración SOLO para posicionamiento (excluye vectorConfig.length)
   const configHash = useMemo(() => {
@@ -317,12 +507,14 @@ export const useSimpleVectorGridOptimized = ({
     gridCacheRef.current = vectors;
     configHashRef.current = configHash;
 
-    // Notificar cambio de conteo si existe el callback
-    onVectorCountChange?.(vectors.length);
-
     return vectors;
-  }, [gridConfig, width, height, isClient, debugMode, onVectorCountChange, configHash, 
-      vectorConfig.width, vectorConfig.color, vectorConfig.shape]); // 🔧 Solo props que afectan generación inicial
+  }, [
+    // Stable dependencies only - avoid functions that change on every render
+    gridConfig.rows, gridConfig.cols, gridConfig.spacing, gridConfig.margin,
+    width, height, isClient, debugMode,
+    vectorConfig.width, vectorConfig.color, vectorConfig.shape,
+    // Remove configHash and onVectorCountChange to prevent infinite loops
+  ]);
 
   // 🚀 OPTIMIZACIÓN 7: Inicialización lazy del grid solo en cliente
   useEffect(() => {
@@ -334,7 +526,10 @@ export const useSimpleVectorGridOptimized = ({
       vectors,
       lastUpdateTime: performance.now()
     }));
-  }, [generateGrid, isClient]);
+    
+    // Notify vector count change in separate effect to avoid dependency issues
+    onVectorCountChange?.(vectors.length);
+  }, [generateGrid, isClient, onVectorCountChange]);
 
   // 🚀 OPTIMIZACIÓN 8: Actualización de propiedades SIN afectar posiciones
   useEffect(() => {
@@ -377,9 +572,13 @@ export const useSimpleVectorGridOptimized = ({
     });
   }, [vectorConfig.length, vectorConfig.width, vectorConfig.color, isClient, debugMode]);
 
-  // 🚀 OPTIMIZACIÓN 9: Función de animación con menos garbage collection
-  const animate = useCallback(() => {
-    if (state.isPaused || !isClient) {
+  // 🚀 ULTRA-STABLE: Minimal animate function that just calls setState
+  const animateRef = useRef<() => void>(() => {});
+  
+  // Update animate function via ref
+  animateRef.current = () => {
+    // Use refs for all values to make callback stable
+    if (isPausedRef.current || !isClientRef.current) {
       return;
     }
 
@@ -392,22 +591,27 @@ export const useSimpleVectorGridOptimized = ({
       }
       
       // Combinar animationType con animationProps para el sistema modular
+      // Usar refs para acceso estable
+      const currentAnimationType = animationTypeRef.current;
+      const currentAnimationProps = animationPropsRef.current;
+      const currentDebugMode = debugModeRef.current;
+      
       // Asegurar que tenemos un tipo válido antes de continuar
-      if (!animationType || typeof animationType !== 'string') {
-        console.error('AnimationType inválido:', animationType);
+      if (!currentAnimationType || typeof currentAnimationType !== 'string') {
+        console.error('AnimationType inválido:', currentAnimationType);
         return { ...prev, lastUpdateTime: currentTime };
       }
 
       const combinedAnimationProps = { 
-        type: animationType, 
-        ...stableAnimationProps 
+        type: currentAnimationType, 
+        ...currentAnimationProps 
       } as AnimationProps;
       
       // DEBUG TEMPORAL: Ver props que llegan - con más detalle
-      if (debugMode) {
+      if (currentDebugMode) {
         console.log('🔧 [DEBUG] Animation props construction:', {
-          animationType,
-          stableAnimationProps,
+          animationType: currentAnimationType,
+          animationProps: currentAnimationProps,
           combinedAnimationProps,
           hasType: typeof combinedAnimationProps.type === 'string',
           typeValue: combinedAnimationProps.type
@@ -422,26 +626,26 @@ export const useSimpleVectorGridOptimized = ({
         currentTime,
         prev.pulseCenter,
         prev.pulseStartTime,
-        width,
-        height
+        widthRef.current,
+        heightRef.current
       );
 
       // Limpiar pulso si ha expirado (optimizado)
       let newPulseCenter = prev.pulseCenter;
       let newPulseStartTime = prev.pulseStartTime;
       
-      if (animationProps.type === 'centerPulse' && prev.pulseStartTime) {
+      if ((currentAnimationProps as any).type === 'centerPulse' && prev.pulseStartTime) {
         const elapsed = currentTime - prev.pulseStartTime;
         
         // 🚀 Cache del cálculo de duración
-        const maxDistance = Math.sqrt(width * width + height * height);
-        const pulseSpeed = (animationProps as any).pulseSpeed || 0.008;
+        const maxDistance = Math.sqrt(widthRef.current * widthRef.current + heightRef.current * heightRef.current);
+        const pulseSpeed = (currentAnimationProps as any).pulseSpeed || 0.008;
         const pulseDuration = Math.max(1500, Math.min(8000, (maxDistance / (pulseSpeed * 1000) * 1.5) * 1000));
         
         if (elapsed > pulseDuration) {
           newPulseCenter = null;
           newPulseStartTime = null;
-          onPulseComplete?.();
+          // Remove onPulseComplete to avoid dependency issues
         }
       }
       
@@ -458,16 +662,25 @@ export const useSimpleVectorGridOptimized = ({
         // dynamicConfig: validatedDynamicConfig, // Eliminado ya que validatedDynamicConfig no existe
       };
     });
-  }, [state.isPaused, animationType, isClient, width, height, onPulseComplete, stableAnimationProps, debugMode]);
+  };
 
-  // 🚀 OPTIMIZACIÓN 10: Loop de animación con mejor timing
+  // Ultra-stable animate callback that never changes
+  const animate = useCallback(() => {
+    animateRef.current?.();
+  }, []); // This will NEVER change
+
+  // 🚀 FIXED: Loop de animación completamente estable usando refs
   useEffect(() => {
-    if (debugMode) {
-      console.log('🚀 [LOOP-EFFECT] Condiciones:', { isPaused: state.isPaused, isClient });
+    const currentDebugMode = debugModeRef.current;
+    const currentIsPaused = isPausedRef.current;
+    const currentIsClient = isClientRef.current;
+    
+    if (currentDebugMode) {
+      console.log('🚀 [LOOP-EFFECT] Condiciones:', { isPaused: currentIsPaused, isClient: currentIsClient });
     }
     
-    if (state.isPaused || !isClient) {
-      if (debugMode) {
+    if (currentIsPaused || !currentIsClient) {
+      if (currentDebugMode) {
         console.log('❌ [LOOP-EFFECT] Loop cancelado por condiciones');
       }
       if (animationFrameRef.current) {
@@ -477,17 +690,22 @@ export const useSimpleVectorGridOptimized = ({
       return;
     }
     
-    if (debugMode) {
+    if (currentDebugMode) {
       console.log('✅ [LOOP-EFFECT] Iniciando loop de animación');
     }
 
     const loop = () => {
+      // Check current state via refs
+      const currentIsPaused = isPausedRef.current;
+      const currentIsClient = isClientRef.current;
+      
       // Usar Date.now() para consistencia con animaciones
       const newTime = Date.now();
       timeRef.current = newTime;
       animate();
       
-      if (!state.isPaused && isClient) {
+      // Continue loop if not paused and client is ready
+      if (!currentIsPaused && currentIsClient) {
         animationFrameRef.current = requestAnimationFrame(loop);
       }
     };
@@ -500,7 +718,7 @@ export const useSimpleVectorGridOptimized = ({
         animationFrameRef.current = 0;
       }
     };
-  }, [animate, state.isPaused, isClient, debugMode]);
+  }, [animate]); // Only animate callback as dependency - all other values via refs
 
   // Resto de funciones mantenidas igual pero optimizadas...
   const triggerPulse = useCallback((x?: number, y?: number) => {
@@ -806,6 +1024,7 @@ export const useSimpleVectorGridOptimized = ({
   return {
     // Vectores y estados principales
     vectors: state.vectors,
+    vectorCount: state.vectors.length, // 🔧 AÑADIDO para compatibilidad
     mousePosition: state.mousePosition,
     gridInfo,
     
@@ -814,9 +1033,11 @@ export const useSimpleVectorGridOptimized = ({
     updateMousePosition,
     resetVectors,
     togglePause,
+    getCurrentVectors, // 🔧 AÑADIDO para compatibilidad
     
     // Funciones de exportación  
     exportSVG,
+    generateStaticSVG, // 🔧 AÑADIDO para compatibilidad
     exportAnimatedSVG,
     exportGIF,
     detectAnimationCycle: detectAnimationCycleForExport, // 🔧 AÑADIDO

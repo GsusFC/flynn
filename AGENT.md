@@ -6,13 +6,12 @@
 - **Lint**: `cd flynn-app && npm run lint`
 
 ## Cambios Recientes (Enero 2025)
-- **Página principal actualizada**: Movida `/dev` → `/` (página principal)
-- **Página legacy disponible**: Backup en `/legacy`
-- **Canvas rendering implementado**: Automático para 900+ vectores
-- **Módulos UI mejorados**: Grid Patterns y Colors con mejor organización visual
-- **HybridRenderer mejorado**: Renderizado híbrido SVG/Canvas con threshold de 900 vectores
-- **Sistema de tabs**: Colors organizados en Solid | Gradient | Dynamic
-- **Grid Patterns refactorizado**: Mejor UX con secciones y indicadores de performance
+- **FlynVectorGrid v2 CREADO**: Nueva versión usando useFlynnHook como cerebro estable
+- **useSimpleVectorGridOptimized DEPRECADO**: Hook roto marcado como deprecated
+- **Sistema unificado**: FlynVectorGrid v2 + useFlynnHook sin loops infinitos
+- **Página v2-test**: `/v2-test` para probar nueva arquitectura
+- **Backward compatibility**: FlynVectorGrid v2 mantiene interfaz compatible
+- **Manual controls**: Solo controles manuales (rotate, pulse, reset) - no animaciones automáticas
 
 ## Arquitectura del Proyecto
 

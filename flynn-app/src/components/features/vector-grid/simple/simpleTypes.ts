@@ -4,8 +4,9 @@
 import type { ExtendedVectorColorValue } from '../types/gradientTypes';
 import type { GlobalAnimationControls } from '../utils'; // Para AnimationContext
 
-// SOLO ANIMACIONES CON GRACIA - expandido con nuevas animaciones
+// Unified AnimationType - merges Hook + FlynVectorGrid animations
 export type AnimationType = 
+  // Original Hook animations
   | 'none'
   | 'smoothWaves'
   | 'mouseInteraction'
@@ -21,12 +22,37 @@ export type AnimationType =
   | 'rippleEffect'
   | 'jitter'
   | 'flowField'
-| 'curlNoise'
-| 'gaussianGradient'
-| 'dipoleField'
-| 'testRotation';
+  | 'curlNoise'
+  | 'gaussianGradient'
+  | 'dipoleField'
+  | 'testRotation'
+  // FlynVectorGrid animations (aliases and new ones)
+  | 'static'        // alias for 'none'
+  | 'rotation'      // new FlynVectorGrid animation
+  | 'wave'          // alias for 'smoothWaves'
+  | 'spiral'        // new FlynVectorGrid animation
+  | 'dipole'        // alias for 'dipoleField'
+  | 'turbulence'    // new FlynVectorGrid animation
+  | 'pulse'         // new FlynVectorGrid animation
+  | 'pathFlow'      // new FlynVectorGrid animation  
+  | 'flocking'      // new complex animation
+  | 'cellularAutomata' // new complex animation
+  | 'oceanCurrents' // new complex animation
 
-export type VectorShape = 'line' | 'curve' | 'circle' | 'circle-wave';
+// Unified VectorShape - supports both simple and complex shapes
+export type VectorShape = 
+  // Original Hook shapes
+  | 'line' 
+  | 'curve' 
+  | 'circle' 
+  | 'circle-wave'
+  // FlynVectorGrid complex shapes
+  | 'straight'   // alias for 'line'
+  | 'wave'
+  | 'bezier'
+  | 'spiral'
+  | 'arc'
+  | 'organic';
 
 // Tipo para el punto de rotaciรณn de los vectores
 export type RotationOrigin = 'center' | 'start' | 'end' | 'tail';
@@ -98,20 +124,30 @@ export interface AnimatedVectorItem {
   animationData: Record<string, unknown>; // Cambiado de 'any' a 'unknown' para mayor seguridad de tipos
 }
 
-// Configuraciรณn del grid - simple y directo
+// Unified GridConfig - supports both auto and manual modes
 export interface GridConfig {
+  // Basic grid properties
   rows: number;
   cols: number;
   spacing: number;
   margin: number;
+  
+  // === GRID CONTROL (from FlynVectorGrid) ===
+  gridSize?: number;                    // Auto mode alternative
+  canvasWidth?: number;
+  canvasHeight?: number;
+  gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
+  
+  // === PHYSICS & INTERACTION (from FlynVectorGrid) ===
+  mouseInfluence?: number;
+  mouseMode?: 'attract' | 'repel' | 'stretch';
+  physicsMode?: 'none' | 'velocity' | 'pressure' | 'field';
 }
 
 // Configuraciรณn de vectores - simple (ahora soporta degradados, dinรกmicos y rotaciรณn)
 
 export interface VectorConfig {
-  // TODO: Considerar si ValidatedVectorConfig debe tener campos opcionales como requeridos
-  // o si debe fusionarse con otros tipos. Por ahora, es un alias.
-
+  // Basic vector properties
   shape: VectorShape;
   length: number;
   width: number;
@@ -119,6 +155,31 @@ export interface VectorConfig {
   opacity?: number;
   rotationOrigin: RotationOrigin; // Nueva propiedad para punto de rotaciรณn
   strokeLinecap: 'butt' | 'round' | 'square'; // Terminaciones de línea
+  
+  // === UNIFIED COLOR SYSTEM (from FlynVectorGrid) ===
+  colorMode?: 'solid' | 'gradient' | 'dynamic';
+  solidColor?: string;
+  gradientPalette?: 'flow' | 'rainbow' | 'cosmic' | 'pulse' | 'subtle' | 'sunset' | 'ocean' | string;
+  colorIntensityMode?: 'field' | 'velocity' | 'distance' | 'angle';
+  colorHueShift?: number;
+  colorSaturation?: number;
+  colorBrightness?: number;
+  
+  // === LENGTH DYNAMICS (from FlynVectorGrid) ===
+  lengthMin?: number;
+  lengthMax?: number;
+  oscillationFreq?: number;
+  oscillationAmp?: number;
+  pulseSpeed?: number;
+  spatialFactor?: number;
+  spatialMode?: 'edge' | 'center' | 'mixed';
+  
+  // === COMPLEX SHAPE PROPERTIES (from FlynVectorGrid) ===
+  showArrowheads?: boolean;
+  curvatureIntensity?: number;
+  waveFrequency?: number;
+  spiralTightness?: number;
+  organicNoise?: number;
 }
 
 // Configuraciones validadas (actualmente alias, podrían evolucionar)

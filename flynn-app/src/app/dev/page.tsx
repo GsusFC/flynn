@@ -2,7 +2,7 @@
 
 import './dev.css';
 import { useState, useCallback, useEffect } from 'react';
-import DemoVectorGrid from './DemoVectorGrid';
+import FlynVectorGrid from './FlynVectorGrid';
 import LengthDynamicsHelp from './LengthDynamicsHelp';
 import SliderWithInput from '../../components/features/vector-grid/components/SliderWithInput';
 import { useKeyboardControls } from '../../components/features/vector-grid/hooks/useKeyboardControls';
@@ -398,7 +398,7 @@ export default function DevPage() {
 
                 {/* Center Column - Main Visualization (70% width) */}
                 <div className="w-[70%] bg-black border-x border-gray-700/50 relative p-4">
-                    <DemoVectorGrid
+                    <FlynVectorGrid
                         gridSize={config.gridSize}
                         gridPattern={config.gridPattern}
                         animation={config.animation}

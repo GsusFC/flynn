@@ -2,7 +2,7 @@
 
 import './dev/dev.css';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import DemoVectorGrid from './dev/DemoVectorGrid';
+import FlynVectorGrid from './dev/FlynVectorGrid';
 import LengthDynamicsHelp from './dev/LengthDynamicsHelp';
 import SliderWithInput from '@/components/features/vector-grid/components/SliderWithInput';
 import { useKeyboardControls } from '@/components/features/vector-grid/hooks/useKeyboardControls';
@@ -15,8 +15,8 @@ import { GifExportModal } from '@/components/features/vector-grid/components/Gif
 import type { AnimationType as ExportAnimationType } from '@/components/features/vector-grid/simple/simpleTypes';
 
 
-type AnimationType = 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
-type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
+type AnimationType = 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pulse' | 'jitter' | 'pathFlow' | 'flocking' | 'cellularAutomata' | 'oceanCurrents' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
+type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar' | 'logSpiral' | 'concentricSquares';
 
 interface PresetConfig {
     name: string;
@@ -34,6 +34,8 @@ interface PresetConfig {
     colorHueShift: number;
     colorSaturation: number;
     colorBrightness: number;
+    // Background
+    backgroundColor: string;
     // Length Dynamics
     lengthMin: number;
     lengthMax: number;
@@ -71,6 +73,7 @@ export default function DevPage() {
         name: 'Custom', gridSize: 25, gridPattern: 'regular', animation: 'wave', speed: 1, intensity: 0.5,
         colorMode: 'solid', solidColor: '#3b82f6', gradientPalette: 'flow',
         colorIntensityMode: 'field', colorHueShift: 1, colorSaturation: 80, colorBrightness: 60,
+        backgroundColor: '#000000',
         lengthMin: 10, lengthMax: 25, oscillationFreq: 1, oscillationAmp: 0.3, pulseSpeed: 1, spatialFactor: 0.2, spatialMode: 'edge', mouseInfluence: 0, mouseMode: 'attract', physicsMode: 'none',
         vectorShape: 'straight', showArrowheads: true, curvatureIntensity: 1, waveFrequency: 2, spiralTightness: 1, organicNoise: 0.5,
         spacing: 80,
@@ -80,9 +83,9 @@ export default function DevPage() {
     const [showGradientEditor, setShowGradientEditor] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [showGifExportModal, setShowGifExportModal] = useState(false);
-    
-    // Ref dummy para los modales de exportación (temporal)
-    const gridRef = useRef(null);
+
+    // Ref para FlynVectorGrid
+    const gridRef = useRef<any>(null);
 
     // Hook para gradientes personalizados
     const { gradients: customGradients, refresh: refreshCustomGradients } = useCustomGradients();
@@ -95,12 +98,12 @@ export default function DevPage() {
     // Cargar configuración desde URL al montar el componente
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        
+
         if (urlParams.size > 0) {
             console.log('🔗 Cargando configuración desde URL...');
-            
+
             const urlConfig: Partial<PresetConfig> = {};
-            
+
             // Cargar parámetros básicos
             if (urlParams.get('animation')) urlConfig.animation = urlParams.get('animation') as AnimationType;
             if (urlParams.get('gridPattern')) urlConfig.gridPattern = urlParams.get('gridPattern') as GridPattern;
@@ -113,7 +116,7 @@ export default function DevPage() {
             if (urlParams.get('rows')) urlConfig.rows = parseInt(urlParams.get('rows')!);
             if (urlParams.get('cols')) urlConfig.cols = parseInt(urlParams.get('cols')!);
             if (urlParams.get('spacing')) urlConfig.spacing = parseInt(urlParams.get('spacing')!);
-            
+
             // Cargar parámetros avanzados
             if (urlParams.get('colorIntensityMode')) urlConfig.colorIntensityMode = urlParams.get('colorIntensityMode') as 'field' | 'velocity' | 'distance' | 'angle';
             if (urlParams.get('colorHueShift')) urlConfig.colorHueShift = parseFloat(urlParams.get('colorHueShift')!);
@@ -135,12 +138,12 @@ export default function DevPage() {
             if (urlParams.get('waveFrequency')) urlConfig.waveFrequency = parseFloat(urlParams.get('waveFrequency')!);
             if (urlParams.get('spiralTightness')) urlConfig.spiralTightness = parseFloat(urlParams.get('spiralTightness')!);
             if (urlParams.get('organicNoise')) urlConfig.organicNoise = parseFloat(urlParams.get('organicNoise')!);
-            
+
             // Aplicar configuración cargada
             if (Object.keys(urlConfig).length > 0) {
                 setConfig(prev => ({ ...prev, ...urlConfig }));
                 console.log('✅ Configuración cargada desde URL:', urlConfig);
-                
+
                 // Limpiar URL después de cargar (opcional)
                 // window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -180,6 +183,36 @@ export default function DevPage() {
             oscillationFreq: 4, oscillationAmp: 1, physicsMode: 'pressure', spatialMode: 'mixed',
             vectorShape: 'organic', showArrowheads: false, organicNoise: 1.3, curvatureIntensity: 1.6,
             colorMode: 'gradient', gradientPalette: 'pulse'
+        },
+        'pulse': {
+            oscillationFreq: 1.2, oscillationAmp: 0.9, physicsMode: 'field', spatialMode: 'center',
+            vectorShape: 'straight', showArrowheads: true, pulseSpeed: 2, spatialFactor: 1.5,
+            colorMode: 'dynamic', colorIntensityMode: 'distance', colorHueShift: 15, colorSaturation: 85, colorBrightness: 70
+        },
+        'jitter': {
+            oscillationFreq: 3, oscillationAmp: 0.6, physicsMode: 'none', spatialMode: 'mixed',
+            vectorShape: 'straight', showArrowheads: true,
+            colorMode: 'solid', solidColor: '#ffffff'
+        },
+        'pathFlow': {
+            oscillationFreq: 1.5, oscillationAmp: 0.7, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.3,
+            colorMode: 'gradient', gradientPalette: 'flow'
+        },
+        'flocking': {
+            oscillationFreq: 2, oscillationAmp: 0.5, physicsMode: 'velocity', spatialMode: 'mixed',
+            vectorShape: 'straight', showArrowheads: true, mouseMode: 'attract', mouseInfluence: 0.4,
+            colorMode: 'dynamic', colorIntensityMode: 'velocity', colorHueShift: 20, colorSaturation: 90
+        },
+        'cellularAutomata': {
+            oscillationFreq: 1, oscillationAmp: 0.3, physicsMode: 'field', spatialMode: 'mixed',
+            vectorShape: 'straight', showArrowheads: true,
+            colorMode: 'dynamic', colorIntensityMode: 'field', colorHueShift: 0, colorSaturation: 80
+        },
+        'oceanCurrents': {
+            oscillationFreq: 1.2, oscillationAmp: 0.8, physicsMode: 'velocity', spatialMode: 'edge',
+            vectorShape: 'bezier', showArrowheads: false, curvatureIntensity: 1.4, mouseMode: 'attract',
+            colorMode: 'gradient', gradientPalette: 'ocean'
         },
         'pinwheels': {
             oscillationFreq: 1.5, oscillationAmp: 0.4, physicsMode: 'field', spatialMode: 'center',
@@ -227,13 +260,7 @@ export default function DevPage() {
 
 
 
-    const exportSVG = () => {
-        setShowExportModal(true);
-    };
 
-    const exportAnimatedSVG = () => {
-        setShowGifExportModal(true);
-    };
 
     // 🚀 Funciones para controles de animación
     const handleTogglePause = useCallback(() => {
@@ -258,38 +285,67 @@ export default function DevPage() {
 
     // 🚀 Función para compartir configuración actual
     const handleShareConfig = useCallback(async () => {
-        console.log('🔗 Iniciando proceso de compartir...');
-        console.log('📋 Configuración actual:', config);
-        
         try {
-        // Crear URL comprimida con la configuración actual (incluyendo dimensiones)
-        const configToShare = {
-            ...config,
-            // Asegurar que las dimensiones del canvas estén incluidas
-                 canvasWidth: config.canvasWidth || 800,
-                 canvasHeight: config.canvasHeight || 600,
-                 margin: config.margin || 20
-             };
-             const { createCompressedShareUrl } = await import('@/utils/urlCompression');
-             const shareUrl = createCompressedShareUrl(configToShare, window.location.origin);
-             console.log('🌐 URL comprimida generada:', shareUrl);
+            // Crear URL con la configuración actual para /view
+            const params = new URLSearchParams();
             
-            // Verificar si el navegador soporta clipboard API
-            if (!navigator.clipboard) {
-                console.warn('⚠️ Clipboard API no disponible, usando fallback');
-                // Fallback: mostrar la URL para copiar manualmente
-                alert(`URL para compartir:\n\n${shareUrl}`);
-                return;
+            // Parámetros básicos
+            params.set('animation', config.animation);
+            params.set('gridPattern', config.gridPattern);
+            params.set('gridSize', config.gridSize.toString());
+            params.set('speed', config.speed.toString());
+            params.set('intensity', config.intensity.toString());
+            
+            // Colores
+            params.set('colorMode', config.colorMode);
+            params.set('solidColor', config.solidColor);
+            params.set('gradientPalette', config.gradientPalette);
+            params.set('colorIntensityMode', config.colorIntensityMode);
+            params.set('colorHueShift', config.colorHueShift.toString());
+            params.set('colorSaturation', config.colorSaturation.toString());
+            params.set('colorBrightness', config.colorBrightness.toString());
+            params.set('backgroundColor', config.backgroundColor);
+            
+            // Grid
+            if (config.rows) params.set('rows', config.rows.toString());
+            if (config.cols) params.set('cols', config.cols.toString());
+            if (config.spacing) params.set('spacing', config.spacing.toString());
+            
+            // Length Dynamics
+            params.set('lengthMin', config.lengthMin.toString());
+            params.set('lengthMax', config.lengthMax.toString());
+            params.set('oscillationFreq', config.oscillationFreq.toString());
+            params.set('oscillationAmp', config.oscillationAmp.toString());
+            params.set('pulseSpeed', config.pulseSpeed.toString());
+            params.set('spatialFactor', config.spatialFactor.toString());
+            params.set('spatialMode', config.spatialMode);
+            params.set('mouseInfluence', config.mouseInfluence.toString());
+            params.set('mouseMode', config.mouseMode);
+            params.set('physicsMode', config.physicsMode);
+            
+            // Vector Shapes
+            params.set('vectorShape', config.vectorShape);
+            params.set('showArrowheads', config.showArrowheads.toString());
+            params.set('curvatureIntensity', config.curvatureIntensity.toString());
+            params.set('waveFrequency', config.waveFrequency.toString());
+            params.set('spiralTightness', config.spiralTightness.toString());
+            params.set('organicNoise', config.organicNoise.toString());
+            
+            const shareUrl = `${window.location.origin}/view?${params.toString()}`;
+            
+            // Intentar copiar al portapapeles
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                console.log('✅ URL copiada al portapapeles!');
+                alert('✅ ¡URL de configuración copiada al portapapeles!');
+            } catch (clipboardError) {
+                // Fallback: mostrar URL para copiar manualmente
+                prompt('Copia esta URL para compartir tu configuración:', shareUrl);
             }
             
-            // Copiar al portapapeles
-            await navigator.clipboard.writeText(shareUrl);
-            
-            console.log('✅ URL copiada al portapapeles exitosamente!');
-            alert('✅ ¡Configuración copiada al portapapeles!');
         } catch (error) {
             console.error('❌ Error compartiendo configuración:', error);
-            alert('❌ Error al copiar. Revisa la consola para más detalles.');
+            alert('❌ Error generando URL de compartir.');
         }
     }, [config]);
 
@@ -326,14 +382,20 @@ export default function DevPage() {
                                 <option value="dipole">Dipole Field</option>
                                 <option value="vortex">Vortex Flow</option>
                                 <option value="turbulence">Turbulence</option>
-                                <option value="pinwheels">🌀 Pinwheels</option>
-                                <option value="seaWaves">🌊 Sea Waves</option>
-                                <option value="geometricPattern">📐 Geometric Pattern</option>
-                                <option value="flowField">🌪️ Flow Field</option>
-                                <option value="curlNoise">🌀 Curl Noise</option>
-                                <option value="rippleEffect">💧 Ripple Effect</option>
-                                <option value="perlinFlow">🌊 Perlin Flow</option>
-                                <option value="gaussianGradient">🔘 Gaussian Gradient</option>
+                                <option value="pulse">Pulse</option>
+                                <option value="jitter">Jitter</option>
+                                <option value="pathFlow">Path Flow</option>
+                                <option value="flocking">Flocking</option>
+                                <option value="cellularAutomata">Cellular Automata</option>
+                                <option value="oceanCurrents">Ocean Currents</option>
+                                <option value="pinwheels">Pinwheels</option>
+                                <option value="seaWaves">Sea Waves</option>
+                                <option value="geometricPattern">Geometric Pattern</option>
+                                <option value="flowField">Flow Field</option>
+                                <option value="curlNoise">Curl Noise</option>
+                                <option value="rippleEffect">Ripple Effect</option>
+                                <option value="perlinFlow">Perlin Flow</option>
+                                <option value="gaussianGradient">Gaussian Gradient</option>
                             </select>
                         </div>
 
@@ -499,7 +561,8 @@ export default function DevPage() {
 
                 {/* Center Column - Main Visualization (70% width) */}
                 <div className="w-[70%] bg-black border-x border-gray-700/50 relative p-4">
-                    <DemoVectorGrid
+                    <FlynVectorGrid
+                        ref={gridRef}
                         gridSize={config.gridSize}
                         gridPattern={config.gridPattern}
                         animation={config.animation}
@@ -512,6 +575,7 @@ export default function DevPage() {
                         colorHueShift={config.colorHueShift}
                         colorSaturation={config.colorSaturation}
                         colorBrightness={config.colorBrightness}
+                        backgroundColor={config.backgroundColor}
                         lengthMin={config.lengthMin}
                         lengthMax={config.lengthMax}
                         oscillationFreq={config.oscillationFreq}
@@ -540,22 +604,89 @@ export default function DevPage() {
 
 
 
-                    {/* Botón Pause/Play Flotante */}
-                    <button
-                        onClick={handleTogglePause}
-                        className="absolute bottom-4 right-4 w-12 h-12 bg-sidebar-accent/90 hover:bg-sidebar-accent border border-sidebar-border rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg backdrop-blur-sm"
+                    {/* Bottom Toolbar */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-sidebar-accent/95 backdrop-blur-sm border border-sidebar-border rounded-lg shadow-lg p-3">
+                    <div className="flex items-center gap-3">
+                        {/* Play/Pause */}
+                        <button
+                                onClick={handleTogglePause}
+                            className="flex items-center justify-center w-10 h-10 bg-sidebar hover:bg-sidebar-accent/60 border border-sidebar-border rounded-lg transition-all hover:scale-105"
                         title={config.isPaused ? 'Reanudar (Espacio)' : 'Pausar (Espacio)'}
                     >
                         {config.isPaused ? (
-                            <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
-                            </svg>
+                        </svg>
                         ) : (
-                            <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                            </svg>
-                        )}
-                    </button>
+                                <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                                     </svg>
+                                 )}
+                             </button>
+
+                             <div className="w-px h-6 bg-sidebar-border"></div>
+
+                             {/* Reset */}
+                             <button
+                                 onClick={() => {
+                                     setConfig({
+                                         ...config,
+                                         animation: 'static',
+                                         colorMode: 'solid',
+                                         solidColor: '#ffffff',
+                                         isPaused: false
+                                     });
+                                 }}
+                                 className="flex items-center justify-center w-10 h-10 bg-sidebar hover:bg-sidebar-accent/60 border border-sidebar-border rounded-lg transition-all hover:scale-105"
+                                 title="Reset to default"
+                             >
+                                 <svg className="w-5 h-5 text-sidebar-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                 </svg>
+                             </button>
+
+                             <div className="w-px h-6 bg-sidebar-border"></div>
+
+                             {/* Export SVG */}
+                             <button
+                                 onClick={async () => {
+                                     if (gridRef.current) {
+                                         try {
+                                             const svgData = await gridRef.current.exportSVG();
+                                             const blob = new Blob([svgData.data], { type: 'image/svg+xml' });
+                                             const url = URL.createObjectURL(blob);
+                                             const a = document.createElement('a');
+                                             a.href = url;
+                                             a.download = svgData.filename;
+                                             a.click();
+                                             URL.revokeObjectURL(url);
+                                             console.log('✅ SVG descargado:', svgData.filename);
+                                         } catch (error) {
+                                             console.error('❌ Error exportando SVG:', error);
+                                             alert('Error exportando SVG');
+                                         }
+                                     }
+                                 }}
+                                 className="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded-lg transition-all hover:scale-105"
+                                 title="Descargar SVG"
+                             >
+                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                 </svg>
+                             </button>
+
+                             {/* Share */}
+                             <button
+                                 onClick={handleShareConfig}
+                                 className="flex items-center justify-center w-10 h-10 bg-green-600 hover:bg-green-700 border border-green-500 rounded-lg transition-all hover:scale-105"
+                                 title="Share Configuration"
+                             >
+                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                                 </svg>
+                             </button>
+                         </div>
+                     </div>
                 </div>
 
                 {/* Right Column - Visual Controls & Export */}
@@ -564,267 +695,287 @@ export default function DevPage() {
 
                         {/* Grid Pattern Card */}
                         <div className="bg-sidebar-accent border border-sidebar-border p-5 rounded-lg space-y-5">
-                            {/* Header */}
-                            <div className="text-center">
-                                <h3 className="text-sm font-medium text-sidebar-foreground mb-1">Grid Patterns</h3>
-                                <p className="text-xs text-sidebar-foreground/70">Vector layout and distribution</p>
+                            {/* Pattern Type Section */}
+                            <div className="mb-3">
+                                <label className="block text-xs font-medium text-sidebar-foreground">Pattern Type</label>
                             </div>
 
-                            {/* Pattern Type Section */}
-                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-4">
-                                <div className="mb-3">
-                                    <label className="block text-xs font-medium text-sidebar-foreground">Pattern Type</label>
-                                </div>
-                                
-                                <SimpleTabs
-                                    tabs={[
-                                        { id: 'grid', label: 'Grid' },
-                                        { id: 'math', label: 'Math' }
-                                    ]}
-                                    activeTab={
-                                        ['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) ? 'grid' : 'math'
+                            <SimpleTabs
+                                tabs={[
+                                    { id: 'grid', label: 'Grid' },
+                                    { id: 'math', label: 'Math' }
+                                ]}
+                                activeTab={
+                                    ['regular', 'staggered'].includes(config.gridPattern) ? 'grid' : 'math'
+                                }
+                                onChange={(tab) => {
+                                    if (tab === 'grid') {
+                                        // Cambio a Grid: usar rows/cols, limpiar gridSize automático
+                                        setConfig({
+                                            ...config,
+                                            gridPattern: 'regular',
+                                            rows: config.rows || 5,
+                                            cols: config.cols || 5,
+                                            gridSize: (config.rows || 5) * (config.cols || 5)
+                                        });
+                                    } else {
+                                        // Cambio a Math: usar gridSize, limpiar rows/cols
+                                        setConfig({
+                                            ...config,
+                                            gridPattern: 'fibonacci',
+                                            rows: undefined,
+                                            cols: undefined,
+                                            gridSize: config.gridSize || 25
+                                        });
                                     }
-                                    onChange={(tab) => {
-                                        if (tab === 'grid') {
-                                            // Cambio a Grid: usar rows/cols, limpiar gridSize automático
-                                            setConfig({ 
-                                                ...config, 
-                                                gridPattern: 'regular',
-                                                rows: config.rows || 5,
-                                                cols: config.cols || 5,
-                                                gridSize: (config.rows || 5) * (config.cols || 5)
-                                            });
-                                        } else {
-                                            // Cambio a Math: usar gridSize, limpiar rows/cols
-                                            setConfig({ 
-                                                ...config, 
-                                                gridPattern: 'fibonacci',
-                                                rows: undefined,
-                                                cols: undefined,
-                                                gridSize: config.gridSize || 25
-                                            });
-                                        }
-                                    }}
-                                />
+                                }}
+                            />
 
-                                <div className="mt-3">
-                                    {/* Grid Tab */}
-                                    {['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) && (
+                            <div className="mt-3">
+                                {/* Grid Tab */}
+                                {['regular', 'staggered'].includes(config.gridPattern) && (
+                                    <div className="space-y-3">
+                                        <select
+                                            value={config.gridPattern}
+                                            onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
+                                            className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                        >
+                                            <option value="regular">Regular Grid</option>
+                                            <option value="staggered">Staggered Grid</option>
+                                        </select>
+
+                                        {/* Grid Controls */}
                                         <div className="space-y-3">
+                                            <SliderWithInput
+                                                label="Rows"
+                                                value={config.rows || 5}
+                                                min={4}
+                                                max={50}
+                                                step={1}
+                                                onChange={(value) => {
+                                                    const cols = config.cols || 5;
+                                                    setConfig({ ...config, rows: value, gridSize: value * cols });
+                                                }}
+                                                inputWidth="sm"
+                                            />
+                                            <SliderWithInput
+                                                label="Columns"
+                                                value={config.cols || 5}
+                                                min={4}
+                                                max={50}
+                                                step={1}
+                                                onChange={(value) => {
+                                                    const rows = config.rows || 5;
+                                                    setConfig({ ...config, cols: value, gridSize: rows * value });
+                                                }}
+                                                inputWidth="sm"
+                                            />
+                                            <SliderWithInput
+                                                label="Spacing"
+                                                value={config.spacing || 80}
+                                                min={20}
+                                                max={200}
+                                                step={5}
+                                                onChange={(value) => setConfig({ ...config, spacing: value })}
+                                                suffix="px"
+                                                inputWidth="sm"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Math Tab */}
+                                {!['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) && (
+                                    <div className="space-y-3">
+                                        {/* Vector Density - Solo para Math */}
+                                        <div>
+                                            <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Vector Density</label>
+                                            <select
+                                                value={config.gridSize}
+                                                onChange={(e) => setConfig({
+                                                    ...config,
+                                                    gridSize: parseInt(e.target.value),
+                                                    rows: undefined,
+                                                    cols: undefined
+                                                })}
+                                                className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            >
+                                                <option value={16}>16 vectors ⚡ Fast</option>
+                                                <option value={25}>25 vectors ⚡ Fast</option>
+                                                <option value={49}>49 vectors ⚡ Fast</option>
+                                                <option value={100}>100 vectors 🚀 Good</option>
+                                                <option value={400}>400 vectors 🔥 Dense</option>
+                                                <option value={900}>900 vectors 🖥️ Canvas</option>
+                                            </select>
+
+                                        </div>
+
+                                        {/* Math Pattern Selector */}
+                                        <div>
+                                            <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Math Pattern</label>
                                             <select
                                                 value={config.gridPattern}
                                                 onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
                                                 className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                             >
-                                                <option value="regular">Regular Grid</option>
-                                                <option value="staggered">Staggered Grid</option>
-                                                <option value="hexagonal">Hexagonal Grid</option>
+                                                <option value="fibonacci">📐 Fibonacci Spiral</option>
+                                                <option value="logSpiral">🌀 Log Spiral</option>
+                                                <option value="concentricSquares">🔲 Concentric Squares</option>
+                                                <option value="hexagonal">⬡ Hexagonal Grid</option>
+                                                <option value="polar">🎯 Polar Grid (Dartboard)</option>
+                                                <option value="triangular">🔺 Triangular Lattice</option>
+                                                <option value="voronoi">🌿 Random Distribution</option>
+                                                <option value="radial">🎯 Radial Pattern</option>
                                             </select>
-                                            
-                                            {/* Grid Controls */}
-                                            <div className="space-y-3">
-                                                <SliderWithInput
-                                                    label="Rows"
-                                                    value={config.rows || 5}
-                                                    min={4}
-                                                    max={50}
-                                                    step={1}
-                                                    onChange={(value) => {
-                                                        const cols = config.cols || 5;
-                                                        setConfig({ ...config, rows: value, gridSize: value * cols });
-                                                    }}
-                                                    inputWidth="sm"
-                                                />
-                                                <SliderWithInput
-                                                    label="Columns"
-                                                    value={config.cols || 5}
-                                                    min={4}
-                                                    max={50}
-                                                    step={1}
-                                                    onChange={(value) => {
-                                                        const rows = config.rows || 5;
-                                                        setConfig({ ...config, cols: value, gridSize: rows * value });
-                                                    }}
-                                                    inputWidth="sm"
-                                                />
-                                                <SliderWithInput
-                                                    label="Spacing"
-                                                    value={config.spacing || 80}
-                                                    min={20}
-                                                    max={200}
-                                                    step={5}
-                                                    onChange={(value) => setConfig({ ...config, spacing: value })}
-                                                    suffix="px"
-                                                    inputWidth="sm"
-                                                />
-                                            </div>
                                         </div>
-                                    )}
-
-                                    {/* Math Tab */}
-                                    {!['regular', 'staggered', 'hexagonal'].includes(config.gridPattern) && (
-                                        <div className="space-y-3">
-                                            {/* Vector Density - Solo para Math */}
-                                            <div>
-                                                <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Vector Density</label>
-                                                <select
-                                                    value={config.gridSize}
-                                                    onChange={(e) => setConfig({ 
-                                                        ...config, 
-                                                        gridSize: parseInt(e.target.value),
-                                                        rows: undefined,
-                                                        cols: undefined
-                                                    })}
-                                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                                >
-                                                    <option value={16}>16 vectors ⚡ Fast</option>
-                                                    <option value={25}>25 vectors ⚡ Fast</option>
-                                                    <option value={49}>49 vectors ⚡ Fast</option>
-                                                    <option value={100}>100 vectors 🚀 Good</option>
-                                                    <option value={400}>400 vectors 🔥 Dense</option>
-                                                    <option value={900}>900 vectors 🖥️ Canvas</option>
-                                                </select>
-                                                {config.gridSize >= 900 && (
-                                                    <div className="mt-2 text-xs text-blue-400 bg-blue-950/20 border border-blue-500/20 rounded-lg p-2 text-center">
-                                                        🖥️ Canvas rendering for optimal performance
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Math Pattern Selector */}
-                                            <div>
-                                                <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Math Pattern</label>
-                                                <select
-                                                    value={config.gridPattern}
-                                                    onChange={(e) => setConfig({ ...config, gridPattern: e.target.value as GridPattern })}
-                                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                                >
-                                                    <option value="fibonacci">📐 Fibonacci Spiral</option>
-                                                    <option value="polar">🎯 Polar Grid (Dartboard)</option>
-                                                    <option value="triangular">🔺 Triangular Lattice</option>
-                                                    <option value="voronoi">🌿 Random Distribution</option>
-                                                    <option value="radial">🎯 Radial Pattern</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Colors Card */}
                         <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded-lg space-y-4">
-                        <SimpleTabs
-                            tabs={[
-                                { id: 'solid', label: 'Solid' },
-                                { id: 'gradient', label: 'Gradient' },
-                                { id: 'dynamic', label: 'Dynamic' }
-                            ]}
-                            activeTab={config.colorMode}
-                            onChange={(mode) => setConfig({ ...config, colorMode: mode as 'solid' | 'gradient' | 'dynamic' })}
-                        />
-
-                        {config.colorMode === 'solid' && (
-                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3">
+                        
+                        {/* Background Color */}
+                        <div>
+                            <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Background</label>
+                            <div className="relative">
                                 <input
                                     type="color"
-                                    value={config.solidColor}
-                                    onChange={(e) => setConfig({ ...config, solidColor: e.target.value })}
-                                    className="w-full h-12 border-2 border-sidebar-border rounded-lg cursor-pointer"
+                                    value={config.backgroundColor}
+                                    onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
+                                    className="w-full h-10 border-2 border-sidebar-border rounded-lg cursor-pointer"
                                 />
-                                <div className="mt-2 text-xs text-sidebar-foreground/70 text-center">
-                                    {config.solidColor.toUpperCase()}
-                                </div>
-                            </div>
-                        )}
-
-                        {config.colorMode === 'gradient' && (
-                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3 space-y-3">
-                                <select
-                                    value={config.gradientPalette}
-                                    onChange={(e) => setConfig({ ...config, gradientPalette: e.target.value as any })}
-                                    className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-xs rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                >
-                                    <optgroup label="Built-in Gradients">
-                                        <option value="flow">🌊 Flow</option>
-                                        <option value="rainbow">🌈 Rainbow</option>
-                                        <option value="cosmic">🌌 Cosmic</option>
-                                        <option value="pulse">💓 Pulse</option>
-                                        <option value="subtle">✨ Subtle</option>
-                                        <option value="sunset">🌅 Sunset</option>
-                                        <option value="ocean">🌊 Ocean</option>
-                                    </optgroup>
-                                    {customGradients.length > 0 && (
-                                        <optgroup label="Custom Gradients">
-                                            {customGradients.map(gradient => (
-                                                <option key={gradient.id} value={gradient.id}>
-                                                    🎨 {gradient.name}
-                                                </option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
-
-                                <button
-                                    onClick={() => setShowGradientEditor(true)}
-                                    className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-lg transition-colors shadow-sm font-medium"
-                                >
-                                    ✨ Create Custom Gradient
-                                </button>
-                            </div>
-                        )}
-
-                        {config.colorMode === 'dynamic' && (
-                            <div className="bg-sidebar-accent/40 border border-sidebar-border rounded-lg p-3 space-y-3">
-                                <div>
-                                    <label className="block text-xs text-sidebar-foreground mb-1">Intensity Mode</label>
-                                    <select
-                                        value={config.colorIntensityMode}
-                                        onChange={(e) => setConfig({ ...config, colorIntensityMode: e.target.value as any })}
-                                        className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                <div className="mt-2 flex items-center justify-between">
+                                    <span className="text-xs text-sidebar-foreground/70 font-mono">
+                                        {config.backgroundColor.toUpperCase()}
+                                    </span>
+                                    <button
+                                        onClick={() => setConfig({ ...config, backgroundColor: '#000000' })}
+                                        className="text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+                                        title="Reset to black"
                                     >
-                                        <option value="field">⚡ Field Strength</option>
-                                        <option value="velocity">💨 Velocity</option>
-                                        <option value="distance">📏 Distance</option>
-                                        <option value="angle">🔄 Angle</option>
-                                    </select>
+                                        ↺
+                                    </button>
                                 </div>
-
-                                <SliderWithInput
-                                    label="Hue Shift"
-                                    value={config.colorHueShift}
-                                    min={0}
-                                    max={360}
-                                    step={5}
-                                    onChange={(value) => setConfig({ ...config, colorHueShift: value })}
-                                    suffix="°"
-                                    inputWidth="sm"
-                                />
-
-                                <SliderWithInput
-                                    label="Saturation"
-                                    value={config.colorSaturation}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    onChange={(value) => setConfig({ ...config, colorSaturation: value })}
-                                    suffix="%"
-                                    inputWidth="sm"
-                                />
-
-                                <SliderWithInput
-                                    label="Brightness"
-                                    value={config.colorBrightness}
-                                    min={20}
-                                    max={100}
-                                    step={5}
-                                    onChange={(value) => setConfig({ ...config, colorBrightness: value })}
-                                    suffix="%"
-                                    inputWidth="sm"
-                                />
                             </div>
-                        )}
-                    </div>
+                        </div>
+                        
+                        {/* Vector Color */}
+                        <div>
+                            <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Vector Color</label>
+                            <SimpleTabs
+                                tabs={[
+                                    { id: 'solid', label: 'Solid' },
+                                    { id: 'gradient', label: 'Gradient' },
+                                    { id: 'dynamic', label: 'Dynamic' }
+                                ]}
+                                activeTab={config.colorMode}
+                                onChange={(mode) => setConfig({ ...config, colorMode: mode as 'solid' | 'gradient' | 'dynamic' })}
+                            />
+                        </div>
+
+                            {config.colorMode === 'solid' && (
+                                <div>
+                                    <input
+                                        type="color"
+                                        value={config.solidColor}
+                                        onChange={(e) => setConfig({ ...config, solidColor: e.target.value })}
+                                        className="w-full h-12 border-2 border-sidebar-border rounded-lg cursor-pointer"
+                                    />
+                                    <div className="mt-2 text-xs text-sidebar-foreground/70 text-center">
+                                        {config.solidColor.toUpperCase()}
+                                    </div>
+                                </div>
+                            )}
+
+                            {config.colorMode === 'gradient' && (
+                                <div className="space-y-3">
+                                    <select
+                                        value={config.gradientPalette}
+                                        onChange={(e) => setConfig({ ...config, gradientPalette: e.target.value as any })}
+                                        className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-xs rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    >
+                                        <optgroup label="Built-in Gradients">
+                                            <option value="flow">🌊 Flow</option>
+                                            <option value="rainbow">🌈 Rainbow</option>
+                                            <option value="cosmic">🌌 Cosmic</option>
+                                            <option value="pulse">💓 Pulse</option>
+                                            <option value="subtle">✨ Subtle</option>
+                                            <option value="sunset">🌅 Sunset</option>
+                                            <option value="ocean">🌊 Ocean</option>
+                                        </optgroup>
+                                        {customGradients.length > 0 && (
+                                            <optgroup label="Custom Gradients">
+                                                {customGradients.map(gradient => (
+                                                    <option key={gradient.id} value={gradient.id}>
+                                                        🎨 {gradient.name}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        )}
+                                    </select>
+
+                                    <button
+                                        onClick={() => setShowGradientEditor(true)}
+                                        className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-lg transition-colors shadow-sm font-medium"
+                                    >
+                                        ✨ Create Custom Gradient
+                                    </button>
+                                </div>
+                            )}
+
+                            {config.colorMode === 'dynamic' && (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs text-sidebar-foreground mb-1">Intensity Mode</label>
+                                        <select
+                                            value={config.colorIntensityMode}
+                                            onChange={(e) => setConfig({ ...config, colorIntensityMode: e.target.value as any })}
+                                            className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2 text-xs rounded focus:ring-2 focus:ring-sidebar-ring"
+                                        >
+                                            <option value="field">⚡ Field Strength</option>
+                                            <option value="velocity">💨 Velocity</option>
+                                            <option value="distance">📏 Distance</option>
+                                            <option value="angle">🔄 Angle</option>
+                                        </select>
+                                    </div>
+
+                                    <SliderWithInput
+                                        label="Hue Shift"
+                                        value={config.colorHueShift}
+                                        min={0}
+                                        max={360}
+                                        step={5}
+                                        onChange={(value) => setConfig({ ...config, colorHueShift: value })}
+                                        suffix="°"
+                                        inputWidth="sm"
+                                    />
+
+                                    <SliderWithInput
+                                        label="Saturation"
+                                        value={config.colorSaturation}
+                                        min={0}
+                                        max={100}
+                                        step={5}
+                                        onChange={(value) => setConfig({ ...config, colorSaturation: value })}
+                                        suffix="%"
+                                        inputWidth="sm"
+                                    />
+
+                                    <SliderWithInput
+                                        label="Brightness"
+                                        value={config.colorBrightness}
+                                        min={20}
+                                        max={100}
+                                        step={5}
+                                        onChange={(value) => setConfig({ ...config, colorBrightness: value })}
+                                        suffix="%"
+                                        inputWidth="sm"
+                                    />
+                                </div>
+                            )}
+                        </div>
 
 
 
@@ -915,41 +1066,20 @@ export default function DevPage() {
                             </div>
                         </div>
 
-                        {/* Export Card */}
+                        {/* GIF Export (keeping only this one) */}
                         <div className="bg-sidebar-accent border border-sidebar-border p-4 rounded">
-                            <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Export & Share</h3>
-                            
+                            <h3 className="text-sm font-medium text-sidebar-foreground mb-3">Advanced Export</h3>
+
                             <div className="space-y-3">
                                 <button
-                                    onClick={exportSVG}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>Export SVG/Code</span>
-                                </button>
-
-                                <button
-                                    onClick={exportAnimatedSVG}
+                                    onClick={() => setShowGifExportModal(true)}
                                     className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
-                                    title="GIF Export requiere integración con SimpleVectorGridOptimized"
+                                    title="GIF Export"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10v4a2 2 0 002 2h2a2 2 0 002-2v-4M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1" />
                                     </svg>
                                     <span>Export GIF (Beta)</span>
-                                </button>
-
-                                <button
-                                    onClick={handleShareConfig}
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors flex items-center justify-center space-x-2"
-                                    title="Copiar URL con configuración actual al portapapeles"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                                    </svg>
-                                    <span>Share Config</span>
                                 </button>
                             </div>
                         </div>

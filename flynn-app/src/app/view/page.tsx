@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import DemoVectorGrid from '@/app/dev/DemoVectorGrid';
+import FlynVectorGrid from '@/app/dev/FlynVectorGrid';
 
 
 type GridPattern = 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
@@ -31,6 +31,7 @@ function ViewContent() {
   const [colorHueShift, setColorHueShift] = useState(0);
   const [colorSaturation, setColorSaturation] = useState(70);
   const [colorBrightness, setColorBrightness] = useState(70);
+  const [backgroundColor, setBackgroundColor] = useState('#000000');
   
   // Length and animation settings
   const [lengthMin, setLengthMin] = useState(10);
@@ -159,6 +160,9 @@ function ViewContent() {
     const colorBrightnessParam = searchParams.get('colorBrightness');
     if (colorBrightnessParam) setColorBrightness(parseInt(colorBrightnessParam));
     
+    const backgroundColorParam = searchParams.get('backgroundColor');
+    if (backgroundColorParam) setBackgroundColor(decodeURIComponent(backgroundColorParam));
+    
     // Length and animation settings
     const lengthMinParam = searchParams.get('lengthMin');
     if (lengthMinParam) setLengthMin(parseInt(lengthMinParam));
@@ -271,7 +275,7 @@ function ViewContent() {
       
       {/* Full screen vector grid */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <DemoVectorGrid
+        <FlynVectorGrid
           animation={animation}
           speed={speed}
           intensity={intensity}
@@ -287,6 +291,7 @@ function ViewContent() {
           colorHueShift={colorHueShift}
           colorSaturation={colorSaturation}
           colorBrightness={colorBrightness}
+          backgroundColor={backgroundColor}
           lengthMin={lengthMin}
           lengthMax={lengthMax}
           oscillationFreq={oscillationFreq}

@@ -116,14 +116,103 @@ export const VectorGrid = () => {
 
   // Funciones de utilidad
   const handleCopy = async () => {
+    const code = getCurrentCode();
+    
     try {
-      await navigator.clipboard.writeText(getCurrentCode());
-      setCopySuccess(`${activeTab.toUpperCase()} copiado!`);
-      setTimeout(() => setCopySuccess(null), 2000);
+      // Intentar usar Clipboard API moderna primero
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+        setCopySuccess(`${activeTab.toUpperCase()} copiado!`);
+        setTimeout(() => setCopySuccess(null), 2000);
+        return;
+      }
+      
+      // Fallback: crear elemento temporal y usar execCommand
+      const textArea = document.createElement('textarea');
+      textArea.value = code;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '-9999px';
+      textArea.style.left = '-9999px';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        setCopySuccess(`${activeTab.toUpperCase()} copiado!`);
+        setTimeout(() => setCopySuccess(null), 2000);
+      } else {
+        throw new Error('execCommand failed');
+      }
+      
     } catch (err) {
       console.error('Error al copiar:', err);
-      setCopySuccess('Error al copiar');
-      setTimeout(() => setCopySuccess(null), 2000);
+      // Último recurso: mostrar modal con el texto
+      setCopySuccess('Clipboard no disponible - usa Ctrl+C para copiar');
+      
+      // Crear modal simple para mostrar el código
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        z-index: 10000;
+        max-width: 80vw;
+        max-height: 80vh;
+        overflow: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      `;
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      textarea.style.cssText = `
+        width: 100%;
+        height: 300px;
+        font-family: monospace;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 10px;
+      `;
+      textarea.readOnly = true;
+      
+      const title = document.createElement('h3');
+      title.textContent = `Código ${activeTab.toUpperCase()} - Selecciona y copia (Ctrl+C)`;
+      title.style.margin = '0 0 10px 0';
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Cerrar';
+      closeBtn.style.cssText = `
+        margin-top: 10px;
+        padding: 8px 16px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      `;
+      
+      closeBtn.onclick = () => document.body.removeChild(modal);
+      
+      modal.appendChild(title);
+      modal.appendChild(textarea);
+      modal.appendChild(closeBtn);
+      document.body.appendChild(modal);
+      
+      // Auto-seleccionar el texto
+      textarea.focus();
+      textarea.select();
+      
+      setTimeout(() => setCopySuccess(null), 5000);
     }
   };
 

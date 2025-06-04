@@ -102,6 +102,63 @@ const ANIMATION_CYCLE_CONFIGS: Record<AnimationType, AnimationCycle> = {
     duration: 4000,
     frameCount: 120,
     isDetected: true
+  },
+  // FlynVectorGrid basic animations
+  static: {
+    duration: 1000,
+    frameCount: 1,
+    isDetected: true
+  },
+  rotation: {
+    duration: 2000,
+    frameCount: 60,
+    isDetected: true
+  },
+  wave: {
+    duration: 4000,
+    frameCount: 120,
+    isDetected: true
+  },
+  spiral: {
+    duration: 3000,
+    frameCount: 90,
+    isDetected: true
+  },
+  dipole: {
+    duration: 5000,
+    frameCount: 150,
+    isDetected: true
+  },
+  turbulence: {
+    duration: 8000,
+    frameCount: 240,
+    isDetected: false
+  },
+  pulse: {
+    duration: 2000,
+    frameCount: 60,
+    isDetected: true
+  },
+  pathFlow: {
+    duration: 6000,
+    frameCount: 180,
+    isDetected: true
+  },
+  // New complex animations
+  flocking: {
+    duration: 10000,
+    frameCount: 300,
+    isDetected: false // Depends on neighbor interactions
+  },
+  cellularAutomata: {
+    duration: 5000,
+    frameCount: 150,
+    isDetected: true
+  },
+  oceanCurrents: {
+    duration: 12000,
+    frameCount: 360,
+    isDetected: false // Dynamic eddies
   }
 };
 

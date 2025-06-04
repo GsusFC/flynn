@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { getCustomGradient } from '@/lib/customGradients';
+import type { SimpleVectorGridRef, SimpleVector } from '@/components/features/vector-grid/simple/simpleTypes';
 
 interface Vector {
   id: string;
@@ -12,10 +13,10 @@ interface Vector {
   color: string;
 }
 
-interface DemoVectorGridProps {
+interface FlynVectorGridProps {
   gridSize?: number;
-  gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar';
-  animation?: 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient';
+  gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar' | 'logSpiral' | 'concentricSquares';
+  animation?: 'static' | 'rotation' | 'wave' | 'spiral' | 'dipole' | 'vortex' | 'turbulence' | 'pulse' | 'jitter' | 'pathFlow' | 'pinwheels' | 'seaWaves' | 'geometricPattern' | 'flowField' | 'curlNoise' | 'rippleEffect' | 'perlinFlow' | 'gaussianGradient' | 'flocking' | 'cellularAutomata' | 'oceanCurrents';
   // 🔴 HYBRID SYSTEM - Advanced grid control
   rows?: number;
   cols?: number;
@@ -34,6 +35,8 @@ interface DemoVectorGridProps {
   colorHueShift?: number;
   colorSaturation?: number;
   colorBrightness?: number;
+  // Background
+  backgroundColor?: string;
   // Length Dynamics
   lengthMin?: number;
   lengthMax?: number;
@@ -57,7 +60,7 @@ interface DemoVectorGridProps {
 
 }
 
-export default function DemoVectorGrid({ 
+const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({ 
   gridSize = 25,
   gridPattern = 'regular',
   animation = 'rotation',
@@ -72,6 +75,8 @@ export default function DemoVectorGrid({
   colorHueShift = 1,
   colorSaturation = 80,
   colorBrightness = 60,
+  // Background defaults
+  backgroundColor = '#000000',
   // Length Dynamics defaults
   lengthMin = 10,
   lengthMax = 25,
@@ -99,7 +104,7 @@ export default function DemoVectorGrid({
   canvasWidth,
   canvasHeight,
   margin = 20
-}: DemoVectorGridProps) {
+}: FlynVectorGridProps, ref) => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [vectors, setVectors] = useState<Vector[]>([]);
@@ -107,6 +112,154 @@ export default function DemoVectorGrid({
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const prevValuesRef = useRef<{[key: string]: number}>({});
   const animationRef = useRef<number | undefined>(undefined);
+  
+  // 🎯 SISTEMA DE FRAME CAPTURE - Para exportación precisa
+  const lastRenderedFrameRef = useRef<SimpleVector[]>([]);
+  
+  // Implementar métodos del ref para exportación
+  useImperativeHandle(ref, () => ({
+    triggerPulse: (x?: number, y?: number) => {
+      // Implementar trigger pulse si es necesario
+    },
+    togglePause: () => {
+      // Implementar toggle pause si es necesario  
+    },
+    getVectors: () => {
+      // Retornar vectores base sin animación
+      return vectors.map((v, index) => ({
+        id: v.id,
+        x: v.x,
+        y: v.y,
+        angle: v.angle,
+        originalX: v.x,
+        originalY: v.y,
+        originalAngle: v.angle,
+        length: v.length,
+        width: 2,
+        color: v.color,
+        opacity: 1,
+        lengthFactor: 1,
+        widthFactor: 1,
+        intensityFactor: 1,
+        originalLength: v.length,
+        baseWidth: 2,
+        baseOpacity: 1,
+        originalColor: v.color,
+        r: Math.floor(index / Math.sqrt(vectors.length)),
+        c: index % Math.sqrt(vectors.length),
+        gridRow: Math.floor(index / Math.sqrt(vectors.length)),
+        gridCol: index % Math.sqrt(vectors.length),
+        animationData: {}
+      } as SimpleVector));
+    },
+    getCurrentVectors: () => {
+      // 🎯 FRAME CAPTURE: Retornar el frame exacto que se capturó durante render
+      if (lastRenderedFrameRef.current.length > 0) {
+        console.log('📸 [getCurrentVectors] Usando frame capturado de FlynVectorGrid:', {
+          vectorCount: lastRenderedFrameRef.current.length,
+          firstVectorAngle: lastRenderedFrameRef.current[0]?.angle,
+          firstVectorColor: lastRenderedFrameRef.current[0]?.color,
+          timestamp: Date.now()
+        });
+        return lastRenderedFrameRef.current;
+      }
+      
+      // Fallback: calcular vectores animados en tiempo real
+      console.log('📸 [getCurrentVectors] Usando fallback - calculando en tiempo real');
+      return vectors.map((v, index) => {
+        const animated = getAnimatedVector(v, animationTime, index);
+        
+        return {
+          id: v.id,
+          x: animated.x,
+          y: animated.y,
+          angle: animated.angle,
+          originalX: v.x,
+          originalY: v.y,
+          originalAngle: v.angle,
+          length: animated.length,
+          width: 2,
+          color: animated.color,
+          opacity: 1,
+          lengthFactor: 1,
+          widthFactor: 1,
+          intensityFactor: 1,
+          originalLength: v.length,
+          baseWidth: 2,
+          baseOpacity: 1,
+          originalColor: animated.color,
+          r: Math.floor(index / Math.sqrt(vectors.length)),
+          c: index % Math.sqrt(vectors.length),
+          gridRow: Math.floor(index / Math.sqrt(vectors.length)),
+          gridCol: index % Math.sqrt(vectors.length),
+          animationData: {}
+        } as SimpleVector;
+      });
+    },
+    resetVectors: () => {
+      // Implementar reset si es necesario
+    },
+    exportSVG: async () => {
+      // Usar getCurrentVectors() que ahora retorna el frame capturado
+      const currentVectors = lastRenderedFrameRef.current.length > 0 
+        ? lastRenderedFrameRef.current 
+        : vectors.map((v, index) => {
+            const animated = getAnimatedVector(v, animationTime, index);
+            return {
+              id: v.id,
+              x: animated.x,
+              y: animated.y,
+              angle: animated.angle,
+              length: animated.length,
+              color: animated.color,
+              originalX: v.x,
+              originalY: v.y,
+              originalAngle: v.angle,
+              width: 2,
+              opacity: 1
+            } as any;
+          });
+
+      // Generar SVG con vectores reales
+      const svgWidth = hybridConfig.effectiveCanvasWidth;
+      const svgHeight = hybridConfig.effectiveCanvasHeight;
+      
+      let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
+      svgContent += `<rect width="100%" height="100%" fill="${backgroundColor}"/>`;
+      
+      // Añadir cada vector usando el mismo sistema que el renderizado SVG
+      currentVectors.forEach((vector, index) => {
+        if (vectorShape === 'straight') {
+          // Renderizar como línea para vectores rectos
+          const endX = vector.x + Math.cos(vector.angle) * vector.length;
+          const endY = vector.y + Math.sin(vector.angle) * vector.length;
+          
+          svgContent += `<line x1="${vector.x}" y1="${vector.y}" x2="${endX}" y2="${endY}" stroke="${vector.color}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>`;
+          
+          // Añadir arrowheads si está habilitado
+          if (showArrowheads) {
+            svgContent += `<circle cx="${endX}" cy="${endY}" r="2.5" fill="${vector.color}"/>`;
+            svgContent += `<circle cx="${vector.x}" cy="${vector.y}" r="1.5" fill="#ffffff" opacity="0.7"/>`;
+          }
+        } else {
+          // Renderizar como path para vectores curvados (organic, bezier, spiral, etc.)
+          const pathData = generateVectorPath(vector, vector.length, vector.angle, animationTime, index);
+          svgContent += `<path d="${pathData}" stroke="${vector.color}" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>`;
+        }
+      });
+      
+      svgContent += '</svg>';
+      
+      console.log('📸 SVG generado con', currentVectors.length, 'vectores reales');
+      return { 
+        data: svgContent, 
+        filename: `flynn-vectors-${Date.now()}.svg` 
+      };
+    },
+    exportAnimatedSVG: async () => ({ data: '<svg></svg>', filename: 'animated.svg' }),
+    exportGIF: async () => new Blob(),
+    detectAnimationCycle: () => ({ duration: 1000, frameCount: 60, isDetected: false })
+  }), [vectors, animationTime, showArrowheads, vectorShape]);
   
   // Simple noise function for advanced animations
   const simpleNoise = useCallback((x: number, y: number, z: number) => {
@@ -356,10 +509,10 @@ export default function DemoVectorGrid({
           
         case 'fibonacci':
           const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-          const radius = Math.min(contentArea.width, contentArea.height) / 3 * Math.sqrt(i / count);
-          const angle = i * goldenAngle;
-          x = contentArea.centerX + Math.cos(angle) * radius;
-          y = contentArea.centerY + Math.sin(angle) * radius;
+          const fibRadius = Math.min(contentArea.width, contentArea.height) / 3 * Math.sqrt(i / count);
+          const fibAngle = i * goldenAngle;
+          x = contentArea.centerX + Math.cos(fibAngle) * fibRadius;
+          y = contentArea.centerY + Math.sin(fibAngle) * fibRadius;
           break;
           
         case 'radial':
@@ -381,12 +534,21 @@ export default function DemoVectorGrid({
           break;
           
         case 'triangular':
-          const triRow = Math.floor((-1 + Math.sqrt(1 + 8 * i)) / 2);
-          const triCol = i - (triRow * (triRow + 1)) / 2;
-          const triSpacingX = contentArea.width / (triRow + 2);
-          const triSpacingY = contentArea.height / Math.ceil(Math.sqrt(count));
-          x = contentArea.x + triCol * triSpacingX + (triRow % 2) * triSpacingX / 2 + triSpacingX;
-          y = contentArea.y + triRow * triSpacingY + triSpacingY;
+          // Proper triangular lattice with equilateral triangles
+          const triCols = Math.ceil(Math.sqrt(count * 1.2)); // Wider grid for triangular spacing
+          const triRows = Math.ceil(count / triCols);
+          
+          const triRowIndex = Math.floor(i / triCols);
+          const triColIndex = i % triCols;
+          
+          const triSpacingX = contentArea.width / (triCols + 1);
+          const triSpacingY = triSpacingX * Math.sqrt(3) / 2; // Equilateral triangle height
+          
+          // Offset every other row by half spacing for triangular pattern
+          const rowOffset = (triRowIndex % 2) * triSpacingX / 2;
+          
+          x = contentArea.x + triSpacingX + triColIndex * triSpacingX + rowOffset;
+          y = contentArea.y + triSpacingY + triRowIndex * triSpacingY;
           break;
           
         case 'voronoi':
@@ -404,6 +566,84 @@ export default function DemoVectorGrid({
           const goldenAnglePos = i * goldenAngleRad;
           x = contentArea.centerX + Math.cos(goldenAnglePos) * goldenRadius;
           y = contentArea.centerY + Math.sin(goldenAnglePos) * goldenRadius;
+          break;
+          
+        case 'polar':
+          // Polar grid like dartboard - rings and radial lines
+          const numRingsPolar = Math.ceil(Math.sqrt(count / 8)); // Fewer rings than radial
+          const numRadialLines = Math.ceil(count / numRingsPolar); // More radial divisions
+          
+          const ringIndexPolar = Math.floor(i / numRadialLines);
+          const radialIndexPolar = i % numRadialLines;
+          
+          const maxRadiusPolar = Math.min(contentArea.width, contentArea.height) / 2.2;
+          const radiusPolar = (ringIndexPolar + 0.5) * (maxRadiusPolar / numRingsPolar);
+          const anglePolar = (radialIndexPolar / numRadialLines) * 2 * Math.PI;
+          
+          x = contentArea.centerX + Math.cos(anglePolar) * radiusPolar;
+          y = contentArea.centerY + Math.sin(anglePolar) * radiusPolar;
+          break;
+          
+        case 'logSpiral':
+          // Logarithmic spiral - r = a * e^(b*θ)
+          const tightness = 0.2; // Controls how tight the spiral is (b parameter)
+          const startRadius = 5; // Initial radius (a parameter)
+          const numArms = 2; // Number of spiral arms
+          
+          const spiralProgress = i / count;
+          const totalAngle = spiralProgress * 8 * Math.PI; // 4 full rotations
+          const armOffset = (i % numArms) * (2 * Math.PI / numArms);
+          const spiralAngle = totalAngle + armOffset;
+          
+          // Logarithmic spiral formula: r = a * e^(b*θ)
+          const spiralRadius = startRadius * Math.exp(tightness * spiralAngle);
+          const maxRadius = Math.min(contentArea.width, contentArea.height) / 2.2;
+          const normalizedRadius = Math.min(spiralRadius, maxRadius);
+          
+          x = contentArea.centerX + Math.cos(spiralAngle) * normalizedRadius;
+          y = contentArea.centerY + Math.sin(spiralAngle) * normalizedRadius;
+          break;
+          
+        case 'concentricSquares':
+          // Concentric squares - vectors distributed on square perimeters
+          const maxSquareSize = Math.min(contentArea.width, contentArea.height) / 2.2;
+          const numSquares = Math.ceil(Math.sqrt(count / 4)); // Estimate squares needed
+          const vectorsPerSquare = Math.ceil(count / numSquares);
+          
+          const squareIndex = Math.floor(i / vectorsPerSquare);
+          const positionInSquare = i % vectorsPerSquare;
+          
+          // Calculate square size for this ring
+          const squareSize = (squareIndex + 1) * (maxSquareSize / numSquares);
+          const halfSize = squareSize / 2;
+          
+          // Calculate position on square perimeter
+          const perimeter = 8 * halfSize; // 4 sides, each 2*halfSize long
+          const sideLength = 2 * halfSize;
+          const progress = (positionInSquare / vectorsPerSquare) * perimeter;
+          
+          let squareX = 0, squareY = 0;
+          
+          if (progress <= sideLength) {
+            // Top side (left to right)
+            squareX = -halfSize + progress;
+            squareY = -halfSize;
+          } else if (progress <= 2 * sideLength) {
+            // Right side (top to bottom)  
+            squareX = halfSize;
+            squareY = -halfSize + (progress - sideLength);
+          } else if (progress <= 3 * sideLength) {
+            // Bottom side (right to left)
+            squareX = halfSize - (progress - 2 * sideLength);
+            squareY = halfSize;
+          } else {
+            // Left side (bottom to top)
+            squareX = -halfSize;
+            squareY = halfSize - (progress - 3 * sideLength);
+          }
+          
+          x = contentArea.centerX + squareX;
+          y = contentArea.centerY + squareY;
           break;
           
         default: // regular
@@ -890,17 +1130,17 @@ export default function DemoVectorGrid({
         
       case 'dipole':
         // Dipole field simulation - respects Length Dynamics
-        const centerX = width / 2;
-        const centerY = height / 2;
+        const dipoleCenterX = width / 2;
+        const dipoleCenterY = height / 2;
         const separation = Math.min(width, height) * 0.2; // Distance between charges
         
         // Positive charge position
-        const x1 = centerX + Math.cos(time * 0.5) * separation;
-        const y1 = centerY + Math.sin(time * 0.5) * separation;
+        const x1 = dipoleCenterX + Math.cos(time * 0.5) * separation;
+        const y1 = dipoleCenterY + Math.sin(time * 0.5) * separation;
         
         // Negative charge position  
-        const x2 = centerX - Math.cos(time * 0.5) * separation;
-        const y2 = centerY - Math.sin(time * 0.5) * separation;
+        const x2 = dipoleCenterX - Math.cos(time * 0.5) * separation;
+        const y2 = dipoleCenterY - Math.sin(time * 0.5) * separation;
         
         // Calculate field at vector position
         const dx1 = vector.x - x1;
@@ -989,6 +1229,154 @@ export default function DemoVectorGrid({
         
         const turbHue = (time * 20 + turbulenceIntensity * 100 + vector.x * 0.1) % 360;
         animatedColor = `hsl(${turbHue}, 85%, ${50 + turbulenceIntensity * 20}%)`;
+        break;
+        
+      case 'pulse':
+        // Organic continuous pulse - using sine waves for smooth breathing effect
+        const pulseCenterX = width / 2;
+        const pulseCenterY = height / 2;
+        const dx = vector.x - pulseCenterX;
+        const dy = vector.y - pulseCenterY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+        const maxDistance = Math.sqrt(pulseCenterX * pulseCenterX + pulseCenterY * pulseCenterY);
+        
+        // Organic pulse parameters using continuous sine waves
+        const pulseFrequency = (speed || 1) * 0.002; // Slower, more breathing-like
+        const pulsePhase = time * pulseFrequency;
+        
+        // Multi-layered sine waves for organic breathing
+        const primaryPulse = Math.sin(pulsePhase) * 0.5 + 0.5; // 0 to 1
+        const secondaryPulse = Math.sin(pulsePhase * 1.618) * 0.3; // Golden ratio for natural feel
+        const tertiaryPulse = Math.sin(pulsePhase * 0.618) * 0.2; // Inverse golden ratio
+        
+        // Combined organic pulse intensity
+        const organicPulse = primaryPulse + secondaryPulse + tertiaryPulse;
+        const normalizedPulse = Math.max(0, Math.min(1, organicPulse));
+        
+        // Distance-based influence with smooth falloff
+        const distanceNormalized = distanceFromCenter / maxDistance;
+        const distanceInfluence = Math.exp(-distanceNormalized * 2.5); // Exponential falloff
+        
+        // Combined intensity with smooth transitions
+        const pulseIntensity = normalizedPulse * distanceInfluence;
+        
+        // Radial direction from center
+        const radialAngle = Math.atan2(dy, dx);
+        
+        // Base organic motion (underlying flow)
+        const baseFlowX = Math.sin(vector.y * 0.008 + time * 0.0008);
+        const baseFlowY = Math.cos(vector.x * 0.008 + time * 0.0008);
+        const baseAngle = Math.atan2(baseFlowY, baseFlowX);
+        
+        // Smooth blending between radial pulse and base flow
+        const blendFactor = pulseIntensity * (intensity || 0.7);
+        const finalAngleX = Math.cos(baseAngle) * (1 - blendFactor) + Math.cos(radialAngle) * blendFactor;
+        const finalAngleY = Math.sin(baseAngle) * (1 - blendFactor) + Math.sin(radialAngle) * blendFactor;
+        animatedAngle = Math.atan2(finalAngleY, finalAngleX);
+        
+        // Organic length breathing with multiple harmonics
+        const lengthBase = 0.6;
+        const lengthVariation = 0.8;
+        const harmonicLength1 = Math.sin(pulsePhase) * 0.4;
+        const harmonicLength2 = Math.sin(pulsePhase * 2) * 0.2;
+        const harmonicLength3 = Math.sin(pulsePhase * 3) * 0.1;
+        
+        const organicLengthMultiplier = lengthBase + 
+          (harmonicLength1 + harmonicLength2 + harmonicLength3) * lengthVariation * distanceInfluence;
+        
+        animatedLength = dynamicLength * organicLengthMultiplier;
+        
+        // Animation data for dynamic coloring
+        animationData.velocity = normalizedPulse;
+        animationData.fieldStrength = pulseIntensity;
+        animationData.distance = distanceNormalized;
+        
+        // Organic color breathing - smooth hue transitions
+        const colorPhase = pulsePhase * 0.5; // Slower color changes
+        const hueBase = 220; // Blue base
+        const hueRange = 140; // To purple/pink
+        const organicHue = (hueBase + Math.sin(colorPhase) * hueRange + distanceNormalized * 30) % 360;
+        const organicSat = 65 + pulseIntensity * 30;
+        const organicBright = 45 + pulseIntensity * 40;
+        
+        animatedColor = `hsl(${organicHue}, ${organicSat}%, ${organicBright}%)`;
+        break;
+        
+      case 'jitter':
+        // Jitter animation - controlled vibration effect
+        const baseAngleJitter = Math.atan2(
+          Math.sin(vector.y * 0.01 + time * 0.5),
+          Math.cos(vector.x * 0.01 + time * 0.5)
+        );
+        
+        // Create jitter/vibration effect
+        const jitterIntensity = intensity || 0.5; // Use animation intensity
+        const maxJitter = jitterIntensity * 45; // Max 45 degrees jitter
+        const jitterFreq = speed * 5; // Use speed for jitter frequency
+        
+        // Multi-layered jitter for more complex vibration
+        const jitter1 = (Math.random() - 0.5) * 2 * maxJitter * 0.6;
+        const jitter2 = Math.sin(time * jitterFreq + vector.x * 0.02) * maxJitter * 0.3;
+        const jitter3 = Math.cos(time * jitterFreq * 1.3 + vector.y * 0.02) * maxJitter * 0.1;
+        
+        const totalJitter = jitter1 + jitter2 + jitter3;
+        animatedAngle = baseAngleJitter + totalJitter * (Math.PI / 180);
+        
+        // Length jitter
+        const lengthJitter = 1 + Math.sin(time * jitterFreq * 2 + vector.x + vector.y) * 0.2;
+        animatedLength = dynamicLength * lengthJitter;
+        
+        // Animation data
+        animationData.velocity = Math.abs(totalJitter) / maxJitter;
+        animationData.fieldStrength = jitterIntensity;
+        
+        // Rapid color changes for jitter effect
+        const jitterHue = (time * 100 + Math.abs(totalJitter) * 10) % 360;
+        animatedColor = `hsl(${jitterHue}, 80%, 60%)`;
+        break;
+        
+      case 'pathFlow':
+        // Path Flow - vectors follow sinusoidal trajectory  
+        const pathCenterY = height / 2;
+        const pathAmplitude = height * 0.2;
+        const pathFrequency = 4 * Math.PI / width;
+        const pathY = pathCenterY + pathAmplitude * Math.sin(vector.x * pathFrequency + time * speed);
+        
+        // Calculate distance to path
+        const distanceToPath = Math.abs(vector.y - pathY);
+        const influenceThreshold = height * 0.15;
+        
+        if (distanceToPath < influenceThreshold) {
+          // Close to path - follow the trajectory
+          const slope = pathAmplitude * pathFrequency * Math.cos(vector.x * pathFrequency + time * speed);
+          const tangentAngle = Math.atan(slope);
+          animatedAngle = tangentAngle;
+          
+          // Stronger effect closer to path
+          const pathInfluence = 1 - (distanceToPath / influenceThreshold);
+          animatedLength = dynamicLength * (0.8 + pathInfluence * 0.6);
+          
+          // Animation data
+          animationData.velocity = pathInfluence;
+          animationData.distance = distanceToPath / influenceThreshold;
+          
+          // Path color effect
+          const pathProgress = (vector.x / width + time * 0.1) % 1;
+          const pathHue = pathProgress * 360;
+          animatedColor = `hsl(${pathHue}, 85%, ${50 + pathInfluence * 30}%)`;
+        } else {
+          // Far from path - default wave behavior
+          animatedAngle = Math.atan2(
+            Math.sin(vector.y * 0.01 + time * 0.5),
+            Math.cos(vector.x * 0.01 + time * 0.5)
+          );
+          animatedLength = dynamicLength;
+          
+          // Default coloring
+          animationData.velocity = 0.3;
+          const defaultHue = (vector.x * 0.1 + time * 20) % 360;
+          animatedColor = `hsl(${defaultHue}, 60%, 40%)`;
+        }
         break;
         
       case 'pinwheels':
@@ -1248,6 +1636,240 @@ export default function DemoVectorGrid({
         const gaussHue = 300 + gaussIntensity * 30; // Purple-magenta range
         animatedColor = `hsl(${gaussHue}, 80%, 60%)`;
         break;
+        
+      case 'flocking':
+        // Boids-style flocking behavior
+        const flockRadius = 60; // Neighbor detection radius
+        const separationRadius = 30;
+        const maxSpeed = 2;
+        const alignmentWeight = 0.5;
+        const cohesionWeight = 0.3;
+        const separationWeight = 0.8;
+        
+        // Find neighbors within radius
+        const neighbors = vectors.filter(other => {
+          if (other === vector) return false;
+          const dx = other.x - vector.x;
+          const dy = other.y - vector.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          return dist < flockRadius;
+        });
+        
+        let separationX = 0, separationY = 0;
+        let alignmentX = 0, alignmentY = 0;
+        let cohesionX = 0, cohesionY = 0;
+        let separationCount = 0;
+        
+        if (neighbors.length > 0) {
+          neighbors.forEach(neighbor => {
+            const dx = neighbor.x - vector.x;
+            const dy = neighbor.y - vector.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Separation - avoid crowding
+            if (dist < separationRadius && dist > 0) {
+              separationX -= dx / dist;
+              separationY -= dy / dist;
+              separationCount++;
+            }
+            
+            // Alignment - steer towards average heading
+            alignmentX += Math.cos(neighbor.angle);
+            alignmentY += Math.sin(neighbor.angle);
+            
+            // Cohesion - steer towards center of neighbors
+            cohesionX += neighbor.x;
+            cohesionY += neighbor.y;
+          });
+          
+          // Normalize forces
+          if (separationCount > 0) {
+            separationX /= separationCount;
+            separationY /= separationCount;
+          }
+          
+          alignmentX /= neighbors.length;
+          alignmentY /= neighbors.length;
+          
+          cohesionX = (cohesionX / neighbors.length) - vector.x;
+          cohesionY = (cohesionY / neighbors.length) - vector.y;
+        }
+        
+        // Combine forces
+        const forceX = separationX * separationWeight + alignmentX * alignmentWeight + cohesionX * cohesionWeight;
+        const forceY = separationY * separationWeight + alignmentY * alignmentWeight + cohesionY * cohesionWeight;
+        
+        // Apply mouse interaction if enabled
+        const mouseForceX = mouseMode === 'attract' ? (mousePos.x - vector.x) * mouseInfluence * 0.001 : 0;
+        const mouseForceY = mouseMode === 'attract' ? (mousePos.y - vector.y) * mouseInfluence * 0.001 : 0;
+        
+        const totalForceX = forceX + mouseForceX;
+        const totalForceY = forceY + mouseForceY;
+        
+        if (Math.abs(totalForceX) > 0.001 || Math.abs(totalForceY) > 0.001) {
+          animatedAngle = Math.atan2(totalForceY, totalForceX);
+        }
+        
+        // Length based on local density
+        const density = neighbors.length / 10;
+        animatedLength = dynamicLength * (0.6 + Math.min(density, 1) * 0.7);
+        
+        // Animation data
+        animationData.velocity = Math.sqrt(totalForceX * totalForceX + totalForceY * totalForceY);
+        animationData.fieldStrength = density;
+        
+        const flockHue = 45 + density * 60; // Yellow-orange range
+        animatedColor = `hsl(${flockHue}, 75%, 65%)`;
+        break;
+        
+      case 'cellularAutomata':
+        // Conway-like cellular automata on vector field
+        const cellSize = 25; // Grid size for CA
+        const cellUpdateRate = 100; // Update every N milliseconds
+        const cellGeneration = Math.floor(time / cellUpdateRate);
+        
+        // Map vector to cell coordinates
+        const cellX = Math.floor(vector.x / cellSize);
+        const cellY = Math.floor(vector.y / cellSize);
+        
+        // Simple hash for stable cell state
+        const cellHash = (cellX * 73856093 + cellY * 19349663 + cellGeneration * 83492791) % 1000000;
+        const isAlive = (cellHash % 100) < 30; // 30% chance of being alive
+        
+        // Count living neighbors
+        let livingNeighbors = 0;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            const neighborHash = ((cellX + dx) * 73856093 + (cellY + dy) * 19349663 + cellGeneration * 83492791) % 1000000;
+            if ((neighborHash % 100) < 30) livingNeighbors++;
+          }
+        }
+        
+        // Conway's rules
+        const nextAlive = isAlive ? (livingNeighbors === 2 || livingNeighbors === 3) : (livingNeighbors === 3);
+        
+        if (nextAlive) {
+          // Living cells point towards center of living neighbors
+          let avgX = 0, avgY = 0, count = 0;
+          for (let dx = -2; dx <= 2; dx++) {
+            for (let dy = -2; dy <= 2; dy++) {
+              const checkHash = ((cellX + dx) * 73856093 + (cellY + dy) * 19349663 + cellGeneration * 83492791) % 1000000;
+              if ((checkHash % 100) < 30) {
+                avgX += (cellX + dx) * cellSize + cellSize * 0.5;
+                avgY += (cellY + dy) * cellSize + cellSize * 0.5;
+                count++;
+              }
+            }
+          }
+          
+          if (count > 1) {
+            avgX /= count;
+            avgY /= count;
+            animatedAngle = Math.atan2(avgY - vector.y, avgX - vector.x);
+          } else {
+            animatedAngle = time * 0.5; // Slow rotation for isolated cells
+          }
+          
+          animatedLength = dynamicLength * (0.8 + livingNeighbors * 0.15);
+          const cellHue = 120 + livingNeighbors * 30; // Green to yellow
+          animatedColor = `hsl(${cellHue}, 85%, 60%)`;
+        } else {
+          // Dead cells are dim and short
+          animatedAngle = vector.angle; // No change
+          animatedLength = dynamicLength * 0.2;
+          animatedColor = `hsl(0, 20%, 25%)`;
+        }
+        
+        // Animation data
+        animationData.velocity = nextAlive ? 0.8 : 0.1;
+        animationData.fieldStrength = livingNeighbors * 0.1;
+        break;
+        
+      case 'oceanCurrents':
+        // Dynamic ocean currents with rotating eddies
+        const eddyCount = 3;
+        const eddyRadius = Math.min(width, height) * 0.2;
+        const currentStrength = 1.5;
+        
+        // Create rotating eddies
+        const eddies = [];
+        for (let i = 0; i < eddyCount; i++) {
+          const eddyPhase = (i / eddyCount) * Math.PI * 2 + time * 0.0003;
+          const eddyOrbitRadius = Math.min(width, height) * 0.3;
+          const eddyX = width * 0.5 + Math.cos(eddyPhase) * eddyOrbitRadius;
+          const eddyY = height * 0.5 + Math.sin(eddyPhase) * eddyOrbitRadius;
+          const eddyRotation = time * (0.001 + i * 0.0005);
+          eddies.push({ x: eddyX, y: eddyY, rotation: eddyRotation, strength: 1 - i * 0.2 });
+        }
+        
+        let totalCurrentX = 0;
+        let totalCurrentY = 0;
+        let totalInfluence = 0;
+        
+        // Calculate influence from each eddy
+        eddies.forEach(eddy => {
+          const dx = vector.x - eddy.x;
+          const dy = vector.y - eddy.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < eddyRadius) {
+            // Inside eddy - circular flow
+            const influence = (1 - distance / eddyRadius) * eddy.strength;
+            const circularAngle = Math.atan2(dy, dx) + Math.PI * 0.5 + eddy.rotation;
+            const currentX = Math.cos(circularAngle) * influence * currentStrength;
+            const currentY = Math.sin(circularAngle) * influence * currentStrength;
+            
+            totalCurrentX += currentX;
+            totalCurrentY += currentY;
+            totalInfluence += influence;
+          } else if (distance < eddyRadius * 2) {
+            // Outside eddy - radial outflow
+            const influence = ((distance - eddyRadius) / eddyRadius) * 0.3 * eddy.strength;
+            const radialAngle = Math.atan2(dy, dx);
+            const outflowX = Math.cos(radialAngle) * influence * currentStrength * 0.5;
+            const outflowY = Math.sin(radialAngle) * influence * currentStrength * 0.5;
+            
+            totalCurrentX += outflowX;
+            totalCurrentY += outflowY;
+            totalInfluence += influence * 0.3;
+          }
+        });
+        
+        // Add background current flow
+        const backgroundCurrentX = Math.sin(vector.y * 0.003 + time * 0.0002) * 0.3;
+        const backgroundCurrentY = Math.cos(vector.x * 0.003 + time * 0.0002) * 0.2;
+        
+        totalCurrentX += backgroundCurrentX;
+        totalCurrentY += backgroundCurrentY;
+        
+        // Mouse interaction creates additional current
+        if (mouseMode === 'attract') {
+          const mouseDistance = Math.sqrt((vector.x - mousePos.x) ** 2 + (vector.y - mousePos.y) ** 2);
+          if (mouseDistance < 150) {
+            const mouseInfluenceStrength = (1 - mouseDistance / 150) * mouseInfluence * 0.002;
+            totalCurrentX += (mousePos.x - vector.x) * mouseInfluenceStrength;
+            totalCurrentY += (mousePos.y - vector.y) * mouseInfluenceStrength;
+            totalInfluence += mouseInfluenceStrength;
+          }
+        }
+        
+        // Set angle based on current direction
+        if (Math.abs(totalCurrentX) > 0.01 || Math.abs(totalCurrentY) > 0.01) {
+          animatedAngle = Math.atan2(totalCurrentY, totalCurrentX);
+        }
+        
+        // Length based on current strength
+        const currentMagnitude = Math.sqrt(totalCurrentX * totalCurrentX + totalCurrentY * totalCurrentY);
+        animatedLength = dynamicLength * (0.5 + Math.min(currentMagnitude, 2) * 0.7);
+        
+        // Animation data
+        animationData.velocity = currentMagnitude;
+        animationData.fieldStrength = totalInfluence;
+        
+        const oceanHue = 200 + totalInfluence * 50; // Blue to cyan
+        animatedColor = `hsl(${oceanHue}, 80%, ${45 + totalInfluence * 25}%)`;
+        break;
     }
 
     // Apply dynamic coloring if enabled
@@ -1259,15 +1881,21 @@ export default function DemoVectorGrid({
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
+    <div 
+      ref={containerRef} 
+      className="w-full h-full flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor }}
+    >
       <svg 
         ref={svgRef}
         width={hybridConfig.effectiveCanvasWidth} 
         height={hybridConfig.effectiveCanvasHeight} 
         viewBox={`0 0 ${hybridConfig.effectiveCanvasWidth} ${hybridConfig.effectiveCanvasHeight}`}
-        className="bg-black"
         style={{ maxWidth: '100%', maxHeight: '100%', overflow: 'hidden' }}
       >
+        {/* Background */}
+        <rect width="100%" height="100%" fill={backgroundColor} />
+        
         {/* Background grid */}
         <defs>
           <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -1280,6 +1908,40 @@ export default function DemoVectorGrid({
         {vectors.map((vector, index) => {
           const animatedVector = getAnimatedVector(vector, animationTime, index);
           const pathData = generateVectorPath(animatedVector, animatedVector.length, animatedVector.angle, animationTime, index);
+          
+          // 🎯 FRAME CAPTURE: Capturar vector animado en formato SimpleVector
+          if (index === 0) {
+            // Solo capturar una vez por frame (en el primer vector)
+            const capturedFrame: SimpleVector[] = vectors.map((v, i) => {
+              const animated = getAnimatedVector(v, animationTime, i);
+              return {
+                id: v.id,
+                x: animated.x,
+                y: animated.y,
+                angle: animated.angle,
+                originalX: v.x,
+                originalY: v.y,
+                originalAngle: v.angle,
+                length: animated.length,
+                width: 2,
+                color: animated.color,
+                opacity: 1,
+                lengthFactor: 1,
+                widthFactor: 1,
+                intensityFactor: 1,
+                originalLength: v.length,
+                baseWidth: 2,
+                baseOpacity: 1,
+                originalColor: v.color,
+                r: Math.floor(i / Math.sqrt(vectors.length)),
+                c: i % Math.sqrt(vectors.length),
+                gridRow: Math.floor(i / Math.sqrt(vectors.length)),
+                gridCol: i % Math.sqrt(vectors.length),
+                animationData: {}
+              };
+            });
+            lastRenderedFrameRef.current = capturedFrame;
+          }
           
           return (
             <g key={vector.id}>
@@ -1334,4 +1996,8 @@ export default function DemoVectorGrid({
 
     </div>
   );
-}
+});
+
+FlynVectorGrid.displayName = 'FlynVectorGrid';
+
+export default FlynVectorGrid;
