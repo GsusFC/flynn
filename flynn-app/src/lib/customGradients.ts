@@ -1,3 +1,4 @@
+import React from 'react';
 // Sistema de almacenamiento para gradientes personalizados
 import type { GradientColor } from '@/domain/color/types';
 
@@ -180,5 +181,22 @@ export const useCustomGradients = () => {
   };
 };
 
-// React import for hook
-import React from 'react';
+// Definición del gradiente de aurora boreal (colores: #05051f, #97f7f3, #76f6bd, #aaebc9, #69c1ff, #cb304f)
+export const auroraBorealGradient: GradientColor = {
+  type: 'gradient',
+  variant: 'linear',
+  angle: 0, // (se puede ajustar en el editor)
+  stops: [
+    { offset: 0, color: '#05051f' },
+    { offset: 0.2, color: '#69c1ff' },
+    { offset: 0.4, color: '#97f7f3' },
+    { offset: 0.6, color: '#76f6bd' },
+    { offset: 0.8, color: '#aaebc9' },
+    { offset: 1, color: '#cb304f' }
+  ]
+};
+
+// (Opcional) Función para crear un gradiente de aurora boreal (por ejemplo, si se desea variar el ángulo o el orden de los stops)
+export const createAuroraBorealGradient = (angle?: number) => {
+  return { ...auroraBorealGradient, angle: (angle ?? auroraBorealGradient.angle) };
+};

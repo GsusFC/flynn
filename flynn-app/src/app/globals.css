@@ -3,57 +3,76 @@
 @tailwind utilities;
 
 :root {
-  /* Solo modo oscuro - usando los valores dark como únicos */
-  --background: 0 0% 3.9216%;
-  --foreground: 0 0% 98.0392%;
-  --card: 0 0% 9.8039%;
-  --card-foreground: 0 0% 98.0392%;
-  --popover: 0 0% 14.9020%;
-  --popover-foreground: 0 0% 98.0392%;
-  --primary: 0 0% 45.0980%;
-  --primary-foreground: 0 0% 98.0392%;
-  --secondary: 0 0% 14.9020%;
-  --secondary-foreground: 0 0% 98.0392%;
-  --muted: 0 0% 14.9020%;
-  --muted-foreground: 0 0% 63.1373%;
-  --accent: 0 0% 25.0980%;
-  --accent-foreground: 0 0% 98.0392%;
-  --destructive: 358.8387 100% 69.6078%;
-  --destructive-foreground: 0 0% 14.9020%;
-  --border: 0 0% 21.9608%;
-  --input: 0 0% 32.1569%;
-  --ring: 0 0% 45.0980%;
-  --chart-1: 0 0% 45.0980%;
-  --chart-2: 0 0% 45.0980%;
-  --chart-3: 0 0% 45.0980%;
-  --chart-4: 0 0% 45.0980%;
-  --chart-5: 0 0% 45.0980%;
-  --sidebar: 0 0% 9.0196%;
-  --sidebar-foreground: 0 0% 98.0392%;
-  --sidebar-primary: 0 0% 98.0392%;
-  --sidebar-primary-foreground: 0 0% 9.0196%;
-  --sidebar-accent: 0 0% 14.9020%;
-  --sidebar-accent-foreground: 0 0% 98.0392%;
-  --sidebar-border: 0 0% 21.9608%;
-  --sidebar-ring: 0 0% 32.1569%;
-  --font-sans: Geist Mono, monospace;
-  --font-serif: Geist Mono, monospace;
-  --font-mono: Geist Mono, monospace;
-  --radius: 0rem;
+  /* Paleta Dark Refinada */
+  --background: 240 10% 3.9%; /* #0A0A0A */
+  --foreground: 0 0% 98%; /* #FAFAFA */
+
+  --muted: 240 5% 34%; /* #52525B */
+  --muted-foreground: 240 5% 65%; /* #A1A1AA */
+
+  --popover: 240 10% 3.9%; /* #0A0A0A */
+  --popover-foreground: 0 0% 98%; /* #FAFAFA */
+
+  --card: 240 4% 10%; /* #1A1A1A */
+  --card-foreground: 0 0% 98%; /* #FAFAFA */
+
+  --border: 240 4% 17%; /* #2B2B2B */
+  --input: 240 4% 17%; /* #2B2B2B */
+
+  --primary: 217 91% 60%; /* #3B82F6 - Azul Tailwind 500 */
+  --primary-foreground: 210 40% 98%; /* Casi blanco */
+
+  --secondary: 240 4% 17%; /* #2B2B2B */
+  --secondary-foreground: 0 0% 98%; /* #FAFAFA */
+
+  --accent: 240 4% 17%; /* #2B2B2B */
+  --accent-foreground: 0 0% 98%; /* #FAFAFA */
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --ring: 217 91% 60%; /* Azul para focus rings */
+  
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h2 {
+    /* Título de panel (ej. en CardHeader) */
+    @apply text-lg; /* 18px */
+  }
+
+  h3 {
+    /* Subtítulo / Grupo */
+    @apply text-base; /* 16px */
+  }
+  
+  label {
+    /* Etiqueta de control */
+    @apply text-sm font-normal text-muted-foreground; /* 14px, #A1A1AA */
+  }
+
+  small {
+    /* Texto de ayuda / hint */
+    @apply text-xs text-muted-foreground; /* 12px */
+  }
 }
 
 * {
   border-color: hsl(var(--border));
-}
-
-html,
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-mono);
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
 }
 
 .text-balance {

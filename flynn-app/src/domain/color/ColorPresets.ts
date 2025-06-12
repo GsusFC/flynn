@@ -19,6 +19,20 @@ export const SOLID_PRESETS: Record<string, SolidColor> = {
 
 // ✅ Gradientes predefinidos (migrados de PRESET_GRADIENTS)
 export const GRADIENT_PRESETS: Record<string, GradientColor> = {
+  auroraBoreal: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 0,
+    stops: [
+      { offset: 0, color: '#05051f' },
+      { offset: 0.2, color: '#69c1ff' },
+      { offset: 0.4, color: '#97f7f3' },
+      { offset: 0.6, color: '#76f6bd' },
+      { offset: 0.8, color: '#aaebc9' },
+      { offset: 1, color: '#cb304f' }
+    ]
+  },
+  
   sunset: {
     type: 'gradient',
     variant: 'linear',
@@ -77,6 +91,84 @@ export const GRADIENT_PRESETS: Record<string, GradientColor> = {
     stops: [
       { offset: 0, color: '#00f2fe' },
       { offset: 1, color: '#4facfe' }
+    ]
+  },
+
+  flow: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 70,
+    stops: [
+      { offset: 0, color: '#2b5876' },
+      { offset: 1, color: '#4e4376' }
+    ]
+  },
+
+  grayscale: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 90,
+    stops: [
+      { offset: 0, color: '#eeeeee' },
+      { offset: 0.5, color: '#999999' },
+      { offset: 1, color: '#444444' }
+    ]
+  },
+
+  pastel: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 90,
+    stops: [
+      { offset: 0, color: '#fbc2eb' },  // light pink
+      { offset: 0.5, color: '#a6c1ee' }, // soft lavender/blue
+      { offset: 1, color: '#fbc2eb' }   // repeat for smooth loop
+    ]
+  },
+
+  metallic: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 135,
+    stops: [
+      { offset: 0, color: '#b8c6db' },  // steel blue-grey
+      { offset: 0.25, color: '#f5f7fa' }, // highlight
+      { offset: 0.5, color: '#c3cfe2' },  // mid tone
+      { offset: 0.75, color: '#f5f7fa' }, // highlight
+      { offset: 1, color: '#b8c6db' }   // return to base
+    ]
+  },
+
+  rainbow: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 120,
+    stops: [
+      { offset: 0, color: '#ff0000' },    // Red
+      { offset: 0.2, color: '#ffff00' },   // Yellow
+      { offset: 0.4, color: '#00ff00' },   // Green
+      { offset: 0.6, color: '#00ffff' },   // Cyan
+      { offset: 0.8, color: '#0000ff' },   // Blue
+      { offset: 1, color: '#ff00ff' }    // Magenta
+    ]
+  },
+
+  pulse: {
+    type: 'gradient',
+    variant: 'radial',
+    stops: [
+      { offset: 0, color: '#f093fb' },   // Bright Pink center
+      { offset: 1, color: '#f5576c' }    // Darker red edge
+    ]
+  },
+
+  subtle: {
+    type: 'gradient',
+    variant: 'linear',
+    angle: 90,
+    stops: [
+      { offset: 0, color: '#e0eafc' },   // very light blue
+      { offset: 1, color: '#cfdef3' }    // slightly darker light blue
     ]
   }
 };

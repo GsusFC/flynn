@@ -90,9 +90,15 @@ export interface SimpleVector {
   dynamicWidth?: number;
   intensity?: number;      // A menudo usado con dinámicas o calculado globalmente
   previousAngle?: number;  // Útil para calcular cambios o para ciertas animaciones
+  // Optional properties for advanced shape rendering
+  curvatureIntensity?: number;
+  waveFrequency?: number;
+  spiralTightness?: number;
+  organicNoise?: number;
+  rotationOrigin: RotationOrigin;
 }
 
-// Vector con todos los campos necesarios para el estado interno de la animación
+// Vector with all necessary fields for animation state
 export interface AnimatedVectorItem {
   id: string;
   x: number;
@@ -121,7 +127,7 @@ export interface AnimatedVectorItem {
   intensityFactor: number;
   r?: number;
   c?: number;
-  animationData: Record<string, unknown>; // Cambiado de 'any' a 'unknown' para mayor seguridad de tipos
+  animationData: Record<string, unknown>; // Changed from 'any' to 'unknown' for better type safety
 }
 
 // Unified GridConfig - supports both auto and manual modes
@@ -144,17 +150,17 @@ export interface GridConfig {
   physicsMode?: 'none' | 'velocity' | 'pressure' | 'field';
 }
 
-// Configuraciรณn de vectores - simple (ahora soporta degradados, dinรกmicos y rotaciรณn)
+// Vector configuration - simple (now supports gradients, dynamics, and rotation)
 
 export interface VectorConfig {
   // Basic vector properties
   shape: VectorShape;
   length: number;
   width: number;
-  color: ExtendedVectorColorValue; // Ahora soporta string, HSL y degradados
+  color: ExtendedVectorColorValue; // Now supports string, HSL, and gradients
   opacity?: number;
-  rotationOrigin: RotationOrigin; // Nueva propiedad para punto de rotaciรณn
-  strokeLinecap: 'butt' | 'round' | 'square'; // Terminaciones de línea
+  rotationOrigin: RotationOrigin; // New property for rotation point
+  strokeLinecap: 'butt' | 'round' | 'square'; // Line terminations
   
   // === UNIFIED COLOR SYSTEM (from FlynVectorGrid) ===
   colorMode?: 'solid' | 'gradient' | 'dynamic';
@@ -182,24 +188,24 @@ export interface VectorConfig {
   organicNoise?: number;
 }
 
-// Configuraciones validadas (actualmente alias, podrían evolucionar)
+// Validated configurations (currently alias, could evolve)
 export type ValidatedGridConfig = GridConfig;
 export type ValidatedVectorConfig = VectorConfig;
 
-// Configuración de Zoom
+// Zoom configuration
 export interface ZoomConfig {
-  level: number;        // Factor de zoom actual (0.1 - 5.0)
-  min: number;         // Zoom mínimo permitido  
-  max: number;         // Zoom máximo permitido
-  step: number;        // Incremento para botones +/-
-  presets: number[];   // Niveles predefinidos (25%, 50%, 100%, etc.)
+  level: number;        // Current zoom factor (0.1 - 5.0)
+  min: number;         // Minimum allowed zoom  
+  max: number;         // Maximum allowed zoom
+  step: number;        // Increment for +/- buttons
+  presets: number[];   // Predefined levels (25%, 50%, 100%, etc.)
 }
 
 // ===============================
 // SISTEMA DE CONFIGURACIONES GUARDADAS
 // ===============================
 
-// Configuración completa guardada
+// Complete saved configuration
 export interface SavedAnimation {
   id: string;
   name: string;
@@ -218,51 +224,51 @@ export interface SavedAnimation {
   tags: string[];
 }
 
-// Configuración de animación para guardar
+// Configuration for saving animation
 export interface AnimationConfig {
   type: AnimationType;
   props: Record<string, unknown>;
 }
 
-// Filtros para configuraciones públicas
+// Filters for public configurations
 export interface ConfigFilters {
-  search?: string;              // Búsqueda por nombre/descripción
-  tags?: string[];              // Filtrar por tags
-  animationType?: AnimationType; // Filtrar por tipo de animación
-  sortBy?: 'recent' | 'popular' | 'name'; // Ordenamiento
-  limit?: number;               // Límite de resultados
-  offset?: number;              // Para paginación
+  search?: string;              // Search by name/description
+  tags?: string[];              // Filter by tags
+  animationType?: AnimationType; // Filter by animation type
+  sortBy?: 'recent' | 'popular' | 'name'; // Sorting
+  limit?: number;               // Result limit
+  offset?: number;              // For pagination
 }
 
-// Respuesta del API para configuraciones públicas
+// API response for public configurations
 export interface PublicConfigsResponse {
   configs: SavedAnimation[];
   total: number;
   hasMore: boolean;
 }
 
-// Manager para gestión de configuraciones
+// Manager for configuration management
 export interface ConfigManager {
-  // ===== CONFIGURACIONES PRIVADAS (localStorage) =====
+  // ===== PRIVATE CONFIGURATIONS (localStorage) =====
   savePrivate(config: SavedAnimation): Promise<void>;
   loadPrivate(): SavedAnimation[];
   deletePrivate(id: string): Promise<void>;
   updatePrivate(id: string, updates: Partial<SavedAnimation>): Promise<void>;
   
-  // ===== CONFIGURACIONES PÚBLICAS (Vercel KV) =====
-  savePublic(config: SavedAnimation): Promise<string>; // Retorna shareUrl
+  // ===== PUBLIC CONFIGURATIONS (Vercel KV) =====
+  savePublic(config: SavedAnimation): Promise<string>; // Returns shareUrl
   loadPublic(filters?: ConfigFilters): Promise<PublicConfigsResponse>;
   loadByShareId(shareId: string): Promise<SavedAnimation | null>;
   incrementUsage(shareId: string): Promise<void>;
   
-  // ===== UTILIDADES =====
+  // ===== UTILITIES =====
   exportToJSON(config: SavedAnimation): string;
   importFromJSON(json: string): SavedAnimation;
   generateShareId(): string;
   validateConfig(config: Partial<SavedAnimation>): boolean;
 }
 
-// Estados del modal de guardado
+// Save modal state
 export interface SaveConfigModalState {
   isOpen: boolean;
   name: string;
@@ -273,7 +279,7 @@ export interface SaveConfigModalState {
   error?: string;
 }
 
-// Props para componentes de configuraciones
+// Props for configuration components
 export interface SaveConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -293,13 +299,13 @@ export interface ConfigListProps {
   isLoading?: boolean;
   onLoad: (config: SavedAnimation) => void;
   onDelete?: (id: string) => void;
-  showUsageCount?: boolean; // Solo para públicas
+  showUsageCount?: boolean; // Only for public
   emptyMessage?: string;
 }
 
-// DynamicVectorConfig removido para simplificar
+// DynamicVectorConfig removed for simplification
 
-// Props de animaciones - solo las necesarias (ELIMINADAS LAS SIN GRACIA)
+// Props for animations - only the necessary ones (ELIMINATED THE SIN GRACIA)
 export interface SmoothWavesProps {
   frequency: number;
   amplitude: number;
@@ -366,7 +372,7 @@ export interface PerlinFlowProps {
 
 
 
-// Props para las nuevas animaciones
+// Props for the new animations
 export interface GeometricPatternProps {
   rotationSpeed: number;
   patternType: 'radial' | 'tangential' | 'spiral';
@@ -432,7 +438,7 @@ export interface TestRotationProps {
   speed: number;
 }
 
-// Union type para props de animaciรณn - EXPANDIDO CON NUEVAS ANIMACIONES
+// Union type for animation props - EXPANDED WITH NEW ANIMATIONS
 export type AnimationProps = 
   | { type: 'none' }
   | ({ type: 'smoothWaves' } & SmoothWavesProps)
@@ -453,7 +459,7 @@ export type AnimationProps =
   | ({ type: 'gaussianGradient' } & GaussianGradientProps)
   | ({ type: 'dipoleField' } & DipoleFieldProps);
 
-// Tipos para exportaciรณn (nuevos)
+// Types for exportation (new)
 export type ExportFormat = 'svg' | 'animated-svg' | 'gif';
 
 export interface ExportConfig {
@@ -461,14 +467,14 @@ export interface ExportConfig {
   width: number;
   height: number;
   quality: 'low' | 'medium' | 'high' | 'maximum';
-  // Para GIF y SVG animado
+  // For GIF and animated SVG
   duration?: number;
   fps?: number;
   loop?: boolean;
-  // Para GIF especรญficamente
+  // For GIF specifically
   dithering?: boolean;
   colorPalette?: 'adaptive' | 'web-safe' | 'grayscale';
-  // Para SVG especรญficamente
+  // For SVG specifically
   precision?: number;
   optimize?: boolean;
 }
@@ -486,10 +492,10 @@ export interface ExportGIFOptions {
 }
 
 export interface AnimationCycle {
-  duration: number;        // Duraciรณn del ciclo completo en ms
-  frameCount: number;      // Frames necesarios para bucle perfecto
-  startOffset?: number;    // Offset para comenzar en punto รณptimo
-  isDetected: boolean;     // Si el ciclo fue detectado automรกticamente
+  duration: number;        // Duration of complete cycle in ms
+  frameCount: number;      // Frames needed for perfect loop
+  startOffset?: number;    // Offset to start at optimal point
+  isDetected: boolean;     // If cycle was detected automatically
 }
 
 export interface ExportFrame {
@@ -498,44 +504,44 @@ export interface ExportFrame {
   canvasData?: ImageData;
 }
 
-// Props principales del componente (expandido)
+// Main props for component (expanded)
 export interface SimpleVectorGridProps {
-  // Configuraciรณn del grid
+  // Grid configuration
   gridConfig: GridConfig;
   vectorConfig: VectorConfig;
   
-  // Configuraciรณn de animaciรณn
+  // Animation configuration
   animationType: AnimationType;
   animationProps: AnimationProps;
-  currentGlobalControlsProp?: Partial<GlobalAnimationControls>; // Añadido para controles globales directos
+  currentGlobalControlsProp?: Partial<GlobalAnimationControls>; // Added for direct global controls
   
-  // Configuraciรณn de vectores dinรกmicos (nueva)
-  // dynamicVectorConfig removido
+  // New dynamic vector configuration
+  // dynamicVectorConfig removed
   
-  // Configuraciรณn del canvas
+  // Canvas configuration
   width: number;
   height: number;
   backgroundColor?: string;
   
-  // Estados
+  // States
   isPaused?: boolean;
   debugMode?: boolean;
   
-  // Callbacks opcionales
+  // Optional callbacks
   onVectorCountChange?: (count: number) => void;
   onPulseComplete?: () => void;
   onExportProgress?: (progress: number) => void;
   pulseDurationMs?: number; // Duration of the pulse effect in milliseconds
 }
 
-// Ref del componente para control externo (expandido)
+// Ref for component for external control (expanded)
 export interface SimpleVectorGridRef {
   triggerPulse: (x?: number, y?: number) => void;
   togglePause: () => void;
   getVectors: () => SimpleVector[];
-  getCurrentVectors: () => SimpleVector[]; // Vectores con estado actual de animación
+  getCurrentVectors: () => SimpleVector[]; // Vectors with current state of animation
   resetVectors: () => void;
-  // Funciones de exportaciรณn (simplificadas) - 🔧 ARREGLADO consistencia de tipos
+  // Export functions (simplified) - 🔧 ARREGLADO consistency of types
   exportSVG: () => Promise<{ data: string; filename: string; }>;
   exportAnimatedSVG: () => Promise<{ data: string; filename: string; }>;
   exportGIF: (options?: {
@@ -549,13 +555,13 @@ export interface SimpleVectorGridRef {
   detectAnimationCycle: () => AnimationCycle;
 }
 
-// Posiciรณn del mouse
+// Mouse position
 export interface MousePosition {
   x: number | null;
   y: number | null;
 }
 
-// Estado interno del hook (expandido con rotaciรณn)
+// Internal state of hook (expanded with rotation)
 export interface VectorGridState {
   vectors: SimpleVector[];
   mousePosition: MousePosition;
@@ -565,37 +571,37 @@ export interface VectorGridState {
   lastUpdateTime: number; // Timestamp of the last update (performance.now())
   pulseCenter: { x: number; y: number } | null;
   pulseStartTime: number | null;
-  // Nuevos estados para vectores dinรกmicos
+  // New states for dynamic vectors
   previousVectors?: SimpleVector[];
-  // dynamicConfig removido
-  // Estados para exportaciรณn
+  // dynamicConfig removed
+  // States for exportation
   isExporting?: boolean;
   exportProgress?: number;
   capturedFrames?: ExportFrame[];
-  // Estado para transiciones de rotaciรณn (nuevo)
+  // State for rotation transitions (new)
   rotationTransition?: RotationTransition;
 }
 
-// Estado del pulso
+// Pulse state
 export interface PulseStatus {
   center: { x: number; y: number };
   startTime: number;
-  progress: number; // 0-1, basado en la duración del pulso
-  duration: number; // Duración configurable del pulso
+  progress: number; // 0-1, based on pulse duration
+  duration: number; // Configurable pulse duration
 }
 
-// Contexto proporcionado a cada función de animación
+// Context provided to each animation function
 export interface AnimationContext {
-  time: number; // Tiempo actual de la animación en ms (desde performance.now())
-  deltaTime: number; // Tiempo transcurrido desde el último fotograma en ms
-  width: number; // Ancho del canvas
-  height: number; // Alto del canvas
-  mousePosition: MousePosition; // Posición actual del ratón
-  gridConfig: GridConfig; // Configuración actual del grid
-  vectorConfig: VectorConfig; // Configuración actual de los vectores
-  globalAnimationControls: GlobalAnimationControls; // Controles globales de animación
-  // Información del pulso si está activo
+  time: number; // Current animation time in ms (from performance.now())
+  deltaTime: number; // Time elapsed since last frame in ms
+  width: number; // Canvas width
+  height: number; // Canvas height
+  mousePosition: MousePosition; // Current mouse position
+  gridConfig: GridConfig; // Current grid configuration
+  vectorConfig: VectorConfig; // Current vector configuration
+  globalAnimationControls: GlobalAnimationControls; // Global animation controls
+  // Pulse information if active
   pulseStatus?: PulseStatus;
-  // Información de la transición de rotación si está activa
+  // Rotation transition information if active
   rotationTransition?: RotationTransition | null;
 }

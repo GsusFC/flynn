@@ -36,6 +36,16 @@ interface CalculatedCoords {
   endY: number;
 }
 
+// --- BUGFIX: Import path generation utilities ---
+import { 
+  generateWavePath, 
+  generateBezierPath,
+  generateSpiralPath,
+  generateArcPath,
+  generateOrganicPath
+} from '@/app/dev/vector-path-utils';
+import { SHAPE_REGISTRY } from '@/lib/shapeRegistry';
+
 // Función auxiliar para calcular las coordenadas basadas en el origen de rotación
 const calculateCoordsForOrigin = (
   itemX: number,
@@ -89,7 +99,7 @@ export interface VectorSvgRendererProps {
     backgroundColor?: string;
 
     baseVectorLength: number | ((item: AnimatedVectorItem, frameInfo: { frameCount: number; timestamp: number; deltaTime: number }) => number);
-    baseVectorColor: ExtendedVectorColorValue | ((item: AnimatedVectorItem, frameInfo: { frameCount: number; timestamp: number; deltaTime: number }) => ExtendedVectorColorValue);
+    baseVectorColor?: ExtendedVectorColorValue | ((item: AnimatedVectorItem, frameInfo: { frameCount: number; timestamp: number; deltaTime: number }) => ExtendedVectorColorValue);
     baseVectorWidth: number | ((item: AnimatedVectorItem, frameInfo: { frameCount: number; timestamp: number; deltaTime: number }) => number);
 
     baseStrokeLinecap?: StrokeLinecap;
@@ -127,7 +137,7 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
     backgroundColor,
     preserveAspectRatio = 'xMidYMid meet',
     baseVectorLength,
-    baseVectorColor,
+    baseVectorColor = '#000000',
     baseVectorWidth,
     baseStrokeLinecap,
     baseVectorShape,
@@ -165,6 +175,10 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
                 ? baseVectorColor(item, frameInfo)
                 : baseVectorColor;
 
+            // --- BUGFIX: Prioritize individual vector color over base color ---
+            // If the incoming vector item has its own color, use it. Otherwise, fall back to the resolved base color.
+            const finalResolvedColor = item.color || resolvedColor;
+
             // Support both lengthFactor (AnimatedVectorItem) and dynamicLength (SimpleVector)
             const itemAny = item as any;
             const lengthMultiplier = itemAny.lengthFactor ??
@@ -178,79 +192,66 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
             // Procesar color (puede ser string, HSL o degradado)
             let finalColor: string;
 
-            if (isGradientConfig(resolvedColor)) {
+            if (isGradientConfig(finalResolvedColor)) {
                 // Es un degradado
                 const gradientId = generateGradientId(item.id);
                 gradientsMap.set(gradientId, {
                     id: gradientId,
-                    config: resolvedColor
+                    config: finalResolvedColor
                 });
                 finalColor = `url(#${gradientId})`;
-            } else if (typeof resolvedColor === 'object' && resolvedColor !== null && 'h' in resolvedColor) {
+            } else if (typeof finalResolvedColor === 'object' && finalResolvedColor !== null && 'h' in finalResolvedColor) {
                 // Es HSLColor
-                const { h, s, l, a = 1 } = resolvedColor as HSLColor;
+                const { h, s, l, a = 1 } = finalResolvedColor as HSLColor;
                 finalColor = `hsla(${h}, ${s}%, ${l}%, ${a})`;
             } else {
                 // Es un string de color
-                finalColor = resolvedColor as string;
+                finalColor = finalResolvedColor as string;
             }
 
-            // NUEVA LÓGICA PARA DETERMINAR PUNTOS BASADA EN baseRotationOrigin
-            const angleRad = item.angle * Math.PI / 180;
-            // Se elimina 'let startX = item.x;' para evitar redeclaración.
-            // Las coordenadas ahora vienen directamente de calculateCoordsForOrigin.
-            let { startX, startY, endX: finalEndX, endY: finalEndY } = calculateCoordsForOrigin(
-                item.x,
-                item.y,
-                actualLength,
-                angleRad,
-                baseRotationOrigin
+            const angleRad = (item.angle * Math.PI) / 180;
+            const { startX, startY, endX, endY } = calculateCoordsForOrigin(
+                item.x, item.y, actualLength, angleRad, item.rotationOrigin || baseRotationOrigin
             );
+            
+            const shapeParams = itemAny.shapeParams || {};
+            let pathData = `M ${startX} ${startY} L ${endX} ${endY}`; // Default to straight line
 
-            // Lógica de interpolación para la transición de rotación
-            if (rotationTransition && rotationTransition.isTransitioning) {
-                const currentTime = Date.now();
-                const elapsedTime = currentTime - rotationTransition.startTime;
-                let progress = Math.min(1, elapsedTime / rotationTransition.duration);
+            // Determinar la forma y generar la ruta
+            const shape: VectorShape = item.shape || baseVectorShape;
 
-                // Si la transición ha terminado, forzar progreso a 1 y potencialmente limpiar estado (en el hook)
-                if (progress >= 1) {
-                    progress = 1;
-                    // Aquí podrías llamar a una función para marcar la transición como completada,
-                    // pero eso se maneja mejor en el hook useSimpleVectorGrid.
-                }
-
-                const coordsFrom = calculateCoordsForOrigin(
-                    item.x,
-                    item.y,
-                    actualLength,
-                    angleRad,
-                    rotationTransition.fromOrigin
-                );
-
-                const coordsTo = calculateCoordsForOrigin(
-                    item.x,
-                    item.y,
-                    actualLength,
-                    angleRad,
-                    rotationTransition.toOrigin
-                );
-
-                // Interpolar coordenadas
-                startX = coordsFrom.startX + (coordsTo.startX - coordsFrom.startX) * progress;
-                startY = coordsFrom.startY + (coordsTo.startY - coordsFrom.startY) * progress;
-                finalEndX = coordsFrom.endX + (coordsTo.endX - coordsFrom.endX) * progress;
-                finalEndY = coordsFrom.endY + (coordsTo.endY - coordsFrom.endY) * progress;
+            switch(shape) {
+                case 'wave':
+                    pathData = generateWavePath(startX, startY, angleRad, actualLength, frameInfo.timestamp, item.gridRow * 100 + item.gridCol, shapeParams);
+                    break;
+                case 'bezier':
+                    pathData = generateBezierPath(startX, startY, angleRad, actualLength, frameInfo.timestamp, item.gridRow * 100 + item.gridCol, shapeParams);
+                    break;
+                case 'spiral':
+                    pathData = generateSpiralPath(startX, startY, angleRad, actualLength, frameInfo.timestamp, item.gridRow * 100 + item.gridCol, shapeParams);
+                    break;
+                case 'arc':
+                    pathData = generateArcPath(startX, startY, angleRad, actualLength, frameInfo.timestamp, item.gridRow * 100 + item.gridCol, shapeParams);
+                    break;
+                case 'organic':
+                    pathData = generateOrganicPath(startX, startY, angleRad, actualLength, frameInfo.timestamp, item.gridRow * 100 + item.gridCol, shapeParams);
+                    break;
+                case 'straight':
+                default:
+                    // pathData is already a straight line
+                    break;
             }
 
-            const commonEventHandlers = {
+            const commonProps = {
+                'data-id': item.id,
                 onClick: (e: React.MouseEvent<SVGElement>) => interactionEnabled && onVectorClick?.(item, e),
                 onMouseEnter: (e: React.MouseEvent<SVGElement>) => interactionEnabled && onVectorHover?.(item, e),
                 onMouseLeave: (e: React.MouseEvent<SVGElement>) => interactionEnabled && onVectorHover?.(null, e),
             };
 
             if (customRenderer) {
-                const renderProps: VectorRenderProps = {
+                const renderProps = {
+                    id: item.id,
                     item,
                     x: item.x,
                     y: item.y,
@@ -259,10 +260,8 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
                     width: actualWidth,
                     color: finalColor,
                     shape: baseVectorShape,
-                    id: item.id,
-                    opacity: item.opacity,
                 };
-                return <g key={item.id} {...commonEventHandlers}>{customRenderer(renderProps, item)}</g>;
+                return customRenderer(renderProps, item);
             }
 
             if (userSvgString) {
@@ -270,72 +269,42 @@ export const VectorSvgRenderer: React.FC<VectorSvgRendererProps> = React.memo(({
                     <g
                         key={item.id}
                         transform={`translate(${item.x}, ${item.y}) rotate(${item.angle})`}
-                        {...commonEventHandlers}
+                        {...commonProps}
                     >
                         <g dangerouslySetInnerHTML={{ __html: userSvgString }} />
                     </g>
                 );
             }
 
-            // Renderizar según la forma configurada
-            
-            let vectorElement: React.ReactNode;
-            
-            switch (baseVectorShape) {
-                case 'circle':
-                    // Círculo dinámico (radio varía con la longitud)
-                    vectorElement = (
-                        <circle
-                            cx={item.x}
-                            cy={item.y}
-                            r={actualLength / 2} // Radio es la mitad de la longitud
-                            fill={finalColor}
-                            opacity={item.opacity}
-                        />
-                    );
-                    break;
-                    
-                case 'curve':
-                case 'circle-wave':
-                    // Curva suave
-                    const midX = item.x + Math.cos(item.angle * Math.PI / 180) * actualLength * 0.5;
-                    const midY = item.y + Math.sin(item.angle * Math.PI / 180) * actualLength * 0.5;
-                    const controlX = midX + Math.cos((item.angle + 90) * Math.PI / 180) * actualLength * 0.2; // Control point for curve
-                    const controlY = midY + Math.sin((item.angle + 90) * Math.PI / 180) * actualLength * 0.2;
-                    
-                    vectorElement = (
-                        <path
-                            d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${finalEndX} ${finalEndY}`}
-                            stroke={finalColor}
-                            strokeWidth={actualWidth}
-                            fill="none"
-                            strokeLinecap={baseStrokeLinecap}
-                        />
-                    );
-                    break;
-                    
-                case 'line':
-                default:
-                    // Línea simple (por defecto)
-                    vectorElement = (
-                        <line
-                            x1={startX}
-                            y1={startY}
-                            x2={finalEndX}
-                            y2={finalEndY}
-                            stroke={finalColor}
-                            strokeWidth={actualWidth}
-                            strokeLinecap={baseStrokeLinecap}
-                        />
-                    );
-                    break;
+            if (shape === 'straight') {
+                 return (
+                    <line
+                        {...commonProps}
+                        key={item.id}
+                        x1={startX}
+                        y1={startY}
+                        x2={endX}
+                        y2={endY}
+                        stroke={finalColor}
+                        strokeWidth={actualWidth}
+                        strokeLinecap={baseStrokeLinecap || 'butt'}
+                        opacity={item.opacity ?? 1}
+                    />
+                );
+            } else {
+                return (
+                    <path
+                        {...commonProps}
+                        key={item.id}
+                        d={pathData}
+                        stroke={finalColor}
+                        strokeWidth={actualWidth}
+                        fill="none"
+                        strokeLinecap={baseStrokeLinecap || 'round'}
+                        opacity={item.opacity ?? 1}
+                    />
+                );
             }
-
-            return (
-                <g key={item.id} {...(interactionEnabled ? commonEventHandlers : {})}>
-                    {vectorElement}
-                </g>
-            );
         });
 
         return {

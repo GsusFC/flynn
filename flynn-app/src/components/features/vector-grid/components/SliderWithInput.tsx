@@ -1,21 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-
-// Hook personalizado para debounce
-const useDebouncedCallback = (callback: (value: number) => void, delay: number) => {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  return useCallback((value: number) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      callback(value);
-    }, delay);
-  }, [callback, delay]);
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
+import { useDebouncedCallback } from 'use-debounce';
 
 export interface SliderWithInputProps {
   label: string;
@@ -39,132 +26,96 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   step = 1,
   onChange,
   suffix = '',
-  className = '',
+  className,
   disabled = false,
   showInput = true,
-  inputWidth = 'sm'
+  inputWidth = 'md',
 }) => {
-  // Estado local para el input (permite edición temporal)
-  const [inputValue, setInputValue] = useState(value.toString());
+  const safeValue = value ?? min;
+  const [inputValue, setInputValue] = useState(safeValue.toString());
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const debouncedOnChange = useDebouncedCallback(onChange, 300);
 
-  // Sincronizar input con prop value cuando no está enfocado
   useEffect(() => {
     if (!isInputFocused) {
-      setInputValue(value.toString());
+      setInputValue(safeValue.toString());
       setHasError(false);
     }
-  }, [value, isInputFocused]);
-
-  // Validar y aplicar valor con debounce
-  const debouncedOnChange = useDebouncedCallback((newValue: number) => {
-    onChange(newValue);
-  }, 300);
-
-  // Validar valor
+  }, [safeValue, isInputFocused]);
+  
   const validateValue = useCallback((val: string): { isValid: boolean; value: number } => {
     const num = parseFloat(val);
-    
-    if (isNaN(num)) {
-      return { isValid: false, value: 0 };
-    }
-    
-    if (num < min || num > max) {
-      return { isValid: false, value: Math.max(min, Math.min(max, num)) };
-    }
-    
+    if (isNaN(num)) return { isValid: false, value: 0 };
+    if (num < min || num > max) return { isValid: false, value: Math.max(min, Math.min(max, num)) };
     return { isValid: true, value: num };
   }, [min, max]);
 
-  // Manejar cambio en slider
   const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value);
+    setInputValue(e.target.value);
     onChange(newValue);
   }, [onChange]);
 
-  // Manejar cambio en input
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    
     const validation = validateValue(newValue);
     setHasError(!validation.isValid);
-    
     if (validation.isValid) {
       debouncedOnChange(validation.value);
     }
   }, [validateValue, debouncedOnChange]);
 
-  // Manejar focus del input
-  const handleInputFocus = useCallback(() => {
-    setIsInputFocused(true);
-  }, []);
+  const handleInputFocus = useCallback(() => setIsInputFocused(true), []);
 
-  // Manejar blur del input
   const handleInputBlur = useCallback(() => {
     setIsInputFocused(false);
-    
     const validation = validateValue(inputValue);
-    
     if (!validation.isValid) {
-      // Corregir valor automáticamente
-      const correctedValue = validation.value || value;
+      const correctedValue = validation.value || safeValue;
       setInputValue(correctedValue.toString());
       setHasError(false);
       onChange(correctedValue);
     }
-  }, [inputValue, validateValue, value, onChange]);
+  }, [inputValue, validateValue, safeValue, onChange]);
 
-  // Manejar teclas especiales
   const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setInputValue(value.toString());
+    if (e.key === 'Enter') e.currentTarget.blur();
+    else if (e.key === 'Escape') {
+      setInputValue(safeValue.toString());
       setHasError(false);
       e.currentTarget.blur();
     }
-  }, [value]);
+  }, [safeValue]);
 
-  // Clases CSS para el input según el tamaño
-  const inputWidthClasses = {
-    sm: 'w-14',
-    md: 'w-16',
-    lg: 'w-20'
-  };
+  const inputWidthClasses = { sm: 'w-16', md: 'w-20', lg: 'w-24' };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {/* Label arriba - sin valor duplicado */}
-      <label className="block text-xs font-medium text-sidebar-foreground">
+    <div className={cn('flex w-full items-center justify-between gap-4', className)}>
+      <label htmlFor={label} className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
         {label}
       </label>
-
-      {/* Slider a la izquierda + Input a la derecha en la misma línea */}
-      <div className="flex items-center gap-2">
-        {/* Slider ocupa la mayor parte del espacio */}
-        <div className="flex-1">
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={handleSliderChange}
-            disabled={disabled}
-            className={`
-              w-full h-2 bg-sidebar rounded-lg appearance-none cursor-pointer 
-              accent-sidebar-primary
-              disabled:opacity-50 disabled:cursor-not-allowed
-              focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-1
-            `}
-          />
-        </div>
-
-        {/* Input compacto a la derecha */}
+      <div className="flex w-full items-center gap-2">
+        <input
+          id={label}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={safeValue}
+          onChange={handleSliderChange}
+          disabled={disabled}
+          className={cn(
+            'h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary', // Pista visible
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            '[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
+            '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary'
+          )}
+        />
         {showInput && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <input
               type="number"
               min={min}
@@ -176,36 +127,20 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
               disabled={disabled}
-              className={`
-                ${inputWidthClasses[inputWidth]}
-                px-2 py-1 text-xs text-center
-                bg-sidebar border border-sidebar-border rounded
-                text-sidebar-foreground
-                focus:ring-2 focus:ring-sidebar-ring focus:border-transparent
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors
-                ${hasError 
-                  ? 'border-red-500 bg-red-50 dark:bg-red-950/20' 
-                  : 'hover:border-sidebar-border/80'
-                }
-              `}
-              title={hasError ? `Valor debe estar entre ${min} y ${max}` : ''}
+              className={cn(
+                'h-8 text-center text-sm',
+                'rounded-md border border-input bg-transparent shadow-sm transition-colors',
+                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                hasError ? 'border-destructive' : '',
+                inputWidthClasses[inputWidth]
+              )}
+              title={hasError ? `El valor debe estar entre ${min} y ${max}` : ''}
             />
-            {suffix && (
-              <span className="text-xs text-sidebar-foreground/70 whitespace-nowrap">
-                {suffix}
-              </span>
-            )}
+            {suffix && <span className="pl-2 text-sm text-muted-foreground">{suffix}</span>}
           </div>
         )}
       </div>
-
-      {/* Mensaje de error */}
-      {hasError && (
-        <div className="text-xs text-red-500 dark:text-red-400">
-          Valor debe estar entre {min} y {max}
-        </div>
-      )}
     </div>
   );
 };

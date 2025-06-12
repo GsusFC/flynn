@@ -22,16 +22,16 @@ export const SimpleTabs: React.FC<SimpleTabsProps> = ({
 }) => {
   return (
     <div className={`w-full ${className}`}>
-      <div className="flex bg-sidebar-accent/20 border border-sidebar-border rounded-lg p-1">
+      <div className="flex bg-neutral-800 rounded-lg p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`
-              flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200
+              flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
               ${activeTab === tab.id
-                ? 'bg-sidebar text-sidebar-foreground shadow-sm border border-sidebar-border'
-                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/30'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
               }
             `}
           >
