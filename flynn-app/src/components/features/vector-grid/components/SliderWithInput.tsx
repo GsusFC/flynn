@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { cn } from '@/lib/utils';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -31,6 +31,7 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   showInput = true,
   inputWidth = 'md',
 }) => {
+  const uniqueId = useId();
   const safeValue = value ?? min;
   const [inputValue, setInputValue] = useState(safeValue.toString());
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -73,7 +74,7 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
     setIsInputFocused(false);
     const validation = validateValue(inputValue);
     if (!validation.isValid) {
-      const correctedValue = validation.value || safeValue;
+      const correctedValue = validation.value ?? safeValue;
       setInputValue(correctedValue.toString());
       setHasError(false);
       onChange(correctedValue);
@@ -93,12 +94,12 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
 
   return (
     <div className={cn('flex w-full items-center justify-between gap-4', className)}>
-      <label htmlFor={label} className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
+      <label htmlFor={uniqueId} className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
         {label}
       </label>
       <div className="flex w-full items-center gap-2">
         <input
-          id={label}
+          id={uniqueId}
           type="range"
           min={min}
           max={max}

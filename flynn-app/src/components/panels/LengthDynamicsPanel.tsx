@@ -44,8 +44,8 @@ export const LengthDynamicsPanel: React.FC<LengthDynamicsPanelProps> = ({ onShow
   const contentMap: Record<string, React.ReactNode> = {
     Oscillation: (
       <div className="grid gap-4">
-        <SliderWithInput label="Longitud Mín" min={1} max={300} step={1} value={lengthMin} onChange={(val) => setConfig({ lengthMin: val })} />
-        <SliderWithInput label="Longitud Máx" min={1} max={300} step={1} value={lengthMax} onChange={(val) => setConfig({ lengthMax: val })} />
+        <SliderWithInput label="Longitud Mín" min={1} max={600} step={1} value={lengthMin} onChange={(val) => setConfig({ lengthMin: val })} />
+        <SliderWithInput label="Longitud Máx" min={1} max={600} step={1} value={lengthMax} onChange={(val) => setConfig({ lengthMax: val })} />
         <SliderWithInput label="Frec. Oscilación" min={0.1} max={10} step={0.1} value={oscillationFreq} onChange={(val) => setConfig({ oscillationFreq: val })} />
         <SliderWithInput label="Amp. Oscilación" min={0} max={1} step={0.05} value={oscillationAmp} onChange={(val) => setConfig({ oscillationAmp: val })} />
       </div>

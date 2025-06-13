@@ -49,17 +49,17 @@ export const GradientEditorModal: React.FC<GradientEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-sidebar border border-sidebar-border rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden">
+      <div className="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-sidebar-accent/30 border-b border-sidebar-border p-6">
+        <div className="bg-neutral-800/70 border-b border-neutral-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-sidebar-foreground">🎨 Gradient Editor</h2>
-              <p className="text-xs text-sidebar-foreground/70 mt-1">Create your custom gradient</p>
+              <h2 className="text-xl font-bold text-neutral-200">🎨 Gradient Editor</h2>
+              <p className="text-xs text-neutral-400 mt-1">Create your custom gradient</p>
             </div>
             <button
               onClick={onClose}
-              className="text-sidebar-foreground hover:text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-colors"
+              className="text-neutral-300 hover:text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-colors"
               title="Close editor"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

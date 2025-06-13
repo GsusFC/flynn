@@ -6,9 +6,8 @@ import { useVectorAnimation } from '@/hooks/useVectorAnimation';
 import { useContainerDimensions } from '@/hooks/useContainerDimensions';
 import { useMousePosition } from '@/hooks/useMousePosition';
 import { useVectorGrid } from '@/hooks/useVectorGrid';
-import { VectorSvgRenderer } from '@/components/vector/renderers/VectorSvgRenderer';
+import { FastSvgRenderer } from '@/components/vector/renderers/FastSvgRenderer';
 import { useConfigStore } from '@/store/configStore';
-import { SHAPE_REGISTRY } from '@/lib/shapeRegistry';
 import type { VectorShape } from '@/lib/shapeRegistry';
 
 export interface Vector {
@@ -41,6 +40,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
   const rows = useConfigStore(state => state.rows);
   const cols = useConfigStore(state => state.cols);
   const spacing = useConfigStore(state => state.spacing);
+  const gridScale = useConfigStore(state => state.gridScale ?? 1);
   const gridPattern = useConfigStore(state => state.gridPattern);
   const colorMode = useConfigStore(state => state.colorMode);
   const solidColor = useConfigStore(state => state.solidColor);
@@ -77,6 +77,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
   const { vectors, hybridConfig } = useVectorGrid({
     gridSize, rows, cols, spacing, dimensions, gridPattern,
     margin: 20,
+    gridScale,
     colorMode, solidColor, gradientPalette, lengthMin, lengthMax,
   });
   
@@ -86,7 +87,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
     pulseSpeed: 1, 
     spatialFactor, spatialMode, mouseInfluence, mouseMode, physicsMode,
     colorMode, colorIntensityMode, colorHueShift, colorSaturation,
-    colorBrightness, shapeParams,
+    colorBrightness, gradientPalette, shapeParams,
     pulseState, // Pasamos el estado del pulso a la animación
   });
 
@@ -108,6 +109,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
       lengthFactor: v.length / lengthMax,
       widthFactor: 1,
       rotationOrigin,
+      shape: vectorShape,
       originalAngle: angleInDegrees, 
       gridRow: Math.floor(i / (hybridConfig.effectiveCols > 0 ? hybridConfig.effectiveCols : 1)),
       gridCol: i % (hybridConfig.effectiveCols > 0 ? hybridConfig.effectiveCols : 1),
@@ -163,17 +165,13 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
       className="w-full h-full flex items-center justify-center overflow-hidden"
       style={{ backgroundColor: backgroundColor || '#000000' }}
     >
-      <VectorSvgRenderer
+      <FastSvgRenderer
         vectors={adaptedVectors}
         width={hybridConfig.effectiveCanvasWidth}
         height={hybridConfig.effectiveCanvasHeight}
         backgroundColor={backgroundColor || '#000000'}
-        baseVectorLength={lengthMax}
-        baseVectorColor={colorMode === 'solid' ? solidColor : undefined}
         baseVectorWidth={1.5}
-        baseVectorShape={vectorShape as VectorShape}
         baseRotationOrigin={rotationOrigin}
-        frameInfo={{ frameCount: 0, timestamp: 0, deltaTime: 0 }}
       />
     </div>
   );

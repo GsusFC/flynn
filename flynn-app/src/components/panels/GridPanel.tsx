@@ -11,6 +11,7 @@ export const GridPanel = () => {
     const spacing = useConfigStore(state => state.spacing);
     const gridSize = useConfigStore(state => state.gridSize);
     const gridPattern = useConfigStore(state => state.gridPattern);
+    const gridScale = useConfigStore(state => state.gridScale ?? 1);
     const setConfig = useConfigStore(state => state.setConfig);
 
     const handleModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

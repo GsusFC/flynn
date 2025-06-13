@@ -137,4 +137,99 @@ export const generateOrganicPath = (
     const ctrl2Y = startY + (endY - startY) * 0.66 + Math.sin(time * freq + index * 0.7) * noiseAmount;
 
     return `M ${startX} ${startY} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${endX} ${endY}`;
+};
+
+// Zigzag path generator
+export const generateZigzagPath = (
+    startX: number,
+    startY: number,
+    angle: number,
+    length: number,
+    time: number,
+    index: number,
+    params: Record<string, number>
+): string => {
+    const { segments = 8, amplitude = 1 } = params;
+    const segs = Math.max(2, Math.floor(segments));
+    const segLength = length / segs;
+    let path = `M ${startX} ${startY}`;
+    for (let i = 1; i <= segs; i++) {
+      const dir = i % 2 === 0 ? -1 : 1;
+      const offset = amplitude * 3 * dir;
+      const baseX = startX + Math.cos(angle) * segLength * i;
+      const baseY = startY + Math.sin(angle) * segLength * i;
+      const perpAngle = angle + Math.PI / 2;
+      const zigX = baseX + Math.cos(perpAngle) * offset;
+      const zigY = baseY + Math.sin(perpAngle) * offset;
+      path += ` L ${zigX} ${zigY}`;
+    }
+    return path;
+};
+
+// Dash path generator
+export const generateDashPath = (startX: number, startY: number, angle: number, length: number, params: Record<string, number>): string => {
+    const { segments = 10, gap = 0.3 } = params;
+    const dashLen = length / segments * (1 - gap);
+    const gapLen = length / segments * gap;
+    let path = '';
+    for (let i = 0; i < segments; i++) {
+      const t0 = i * (dashLen + gapLen);
+      const t1 = t0 + dashLen;
+      const p0x = startX + Math.cos(angle) * t0;
+      const p0y = startY + Math.sin(angle) * t0;
+      const p1x = startX + Math.cos(angle) * t1;
+      const p1y = startY + Math.sin(angle) * t1;
+      path += ` M ${p0x} ${p0y} L ${p1x} ${p1y}`;
+    }
+    return path;
+};
+
+// Spring path generator
+export const generateSpringPath = (startX: number, startY: number, angle: number, length: number, params: Record<string, number>): string => {
+    const { coils = 8, radius = 0.5 } = params;
+    const segments = coils * 10;
+    let path = `M ${startX} ${startY}`;
+    const perpAngle = angle + Math.PI / 2;
+    for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const base_x = startX + Math.cos(angle) * length * t;
+        const base_y = startY + Math.sin(angle) * length * t;
+        const coilAngle = t * Math.PI * 2 * coils;
+        const coilRadius = radius * 4;
+        const x = base_x + Math.cos(perpAngle) * Math.sin(coilAngle) * coilRadius;
+        const y = base_y + Math.sin(perpAngle) * Math.sin(coilAngle) * coilRadius;
+        path += ` L ${x} ${y}`;
+    }
+    return path;
+};
+
+// Triangle Wave path generator
+export const generateTriangleWavePath = (startX: number, startY: number, angle: number, length: number, params: Record<string, number>): string => {
+    const { frequency = 4, amplitude = 1 } = params;
+    const segments = Math.floor(frequency * 2);
+    const segLength = length / segments;
+    let path = `M ${startX} ${startY}`;
+    for (let i = 1; i <= segments; i++) {
+        const dir = i % 2 === 0 ? -1 : 1;
+        const offset = amplitude * 4 * dir;
+        const baseX = startX + Math.cos(angle) * segLength * i;
+        const baseY = startY + Math.sin(angle) * segLength * i;
+        const perpAngle = angle + Math.PI / 2;
+        const waveX = baseX + Math.cos(perpAngle) * offset;
+        const waveY = baseY + Math.sin(perpAngle) * offset;
+        path += ` L ${waveX} ${waveY}`;
+    }
+    return path;
+};
+
+// Double Line path generator
+export const generateDoublePath = (startX: number, startY: number, angle: number, length: number, params: Record<string, number>): string => {
+    const { gap = 3 } = params;
+    const endX = startX + Math.cos(angle) * length;
+    const endY = startY + Math.sin(angle) * length;
+    const perpAngle = angle + Math.PI / 2;
+    const offsetX = Math.cos(perpAngle) * gap / 2;
+    const offsetY = Math.sin(perpAngle) * gap / 2;
+    return `M ${startX - offsetX} ${startY - offsetY} L ${endX - offsetX} ${endY - offsetY}` +
+           ` M ${startX + offsetX} ${startY + offsetY} L ${endX + offsetX} ${endY + offsetY}`;
 }; 

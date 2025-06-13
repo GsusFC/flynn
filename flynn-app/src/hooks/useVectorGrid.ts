@@ -20,6 +20,7 @@ interface UseVectorGridProps {
   gradientPalette?: string;
   lengthMin?: number;
   lengthMax?: number;
+  gridScale?: number;
   dimensions: { width: number; height: number };
 }
 
@@ -37,6 +38,7 @@ export const useVectorGrid = ({
   gradientPalette = 'flow',
   lengthMin = 10,
   lengthMax = 25,
+  gridScale = 1,
   dimensions,
 }: UseVectorGridProps) => {
   const [vectors, setVectors] = useState<Vector[]>([]);
@@ -75,86 +77,69 @@ export const useVectorGrid = ({
     }
   }, [gridSize, rows, cols, spacing, canvasWidth, canvasHeight, dimensions.width, dimensions.height]);
   
+  // Helper de interpolación de color a nivel de módulo (evita reinstanciar)
+  const lerpColor = (colorA: string, colorB: string, amount: number): string => {
+    const from = parseInt(colorA.slice(1), 16);
+    const to = parseInt(colorB.slice(1), 16);
+    const ar = (from >> 16) & 0xff, ag = (from >> 8) & 0xff, ab = from & 0xff;
+    const br = (to >> 16) & 0xff, bg = (to >> 8) & 0xff, bb = to & 0xff;
+    const rr = Math.round(ar + (br - ar) * amount);
+    const rg = Math.round(ag + (bg - ag) * amount);
+    const rb = Math.round(ab + (bb - ab) * amount);
+    return `#${((1 << 24) + (rr << 16) + (rg << 8) + rb).toString(16).slice(1).padStart(6, '0')}`;
+  };
+
+  // Memoizar stops ordenados del gradiente activo
+  const sortedStops = useMemo(() => {
+    if (colorMode !== 'gradient' || !gradientPalette) return null;
+    if (GRADIENT_PRESETS[gradientPalette]) {
+      return [...GRADIENT_PRESETS[gradientPalette].stops].sort((a,b)=>a.offset-b.offset);
+    }
+    const custom = getCustomGradient(gradientPalette);
+    if (custom) {
+      return [...custom.gradient.stops].sort((a,b)=>a.offset-b.offset);
+    }
+    return null;
+  }, [colorMode, gradientPalette]);
+
+  // Pre-calcular tabla de colores (LUT) cuando cambia el número de vectores o los stops
+  const colorLUT = useMemo(() => {
+    if (!sortedStops) return null;
+    const total = hybridConfig.effectiveGridSize;
+    if (!total || total <= 1) return null;
+    return Array.from({length: total}, (_, idx) => {
+      const factor = idx/(total-1);
+      let start = sortedStops[0];
+      let end = sortedStops[sortedStops.length-1];
+      for(let i=0;i<sortedStops.length-1;i++){
+        if(factor>=sortedStops[i].offset && factor<=sortedStops[i+1].offset){
+          start=sortedStops[i]; end=sortedStops[i+1]; break;
+        }
+      }
+      const t = end.offset>start.offset? (factor-start.offset)/(end.offset-start.offset):0;
+      return lerpColor(start.color,end.color,t);
+    });
+  }, [sortedStops, hybridConfig.effectiveGridSize]);
+
   const generateColor = useCallback((vectorIndex: number, totalVectors: number): string => {
-    if (colorMode === 'gradient' && gradientPalette) {
-      // Primero buscar en los presets predefinidos
-      const presetGradient = GRADIENT_PRESETS[gradientPalette];
-      if (presetGradient) {
-        const stops = presetGradient.stops.sort((a, b) => a.offset - b.offset);
-        if (stops.length === 0) return solidColor || '#000000';
-        if (stops.length === 1) return stops[0].color;
-
-        let factor = totalVectors > 1 ? vectorIndex / (totalVectors - 1) : 0;
-        
-        let startStop = stops[0];
-        let endStop = stops[stops.length - 1];
-
-        for (let i = 0; i < stops.length - 1; i++) {
-          if (factor >= stops[i].offset && factor <= stops[i+1].offset) {
-            startStop = stops[i];
-            endStop = stops[i+1];
-            break;
-          }
-        }
-        
-        const t = endStop.offset > startStop.offset 
-          ? (factor - startStop.offset) / (endStop.offset - startStop.offset) 
-          : 0;
-
-        const lerpColor = (colorA: string, colorB: string, amount: number): string => {
-          const from = parseInt(colorA.slice(1), 16);
-          const to = parseInt(colorB.slice(1), 16);
-          const ar = (from >> 16) & 0xff, ag = (from >> 8) & 0xff, ab = from & 0xff;
-          const br = (to >> 16) & 0xff, bg = (to >> 8) & 0xff, bb = to & 0xff;
-          const rr = Math.round(ar + (br - ar) * amount);
-          const rg = Math.round(ag + (bg - ag) * amount);
-          const rb = Math.round(ab + (bb - ab) * amount);
-          return `#${((1 << 24) + (rr << 16) + (rg << 8) + rb).toString(16).slice(1).padStart(6, '0')}`;
-        };
-        
-        return lerpColor(startStop.color, endStop.color, t);
+    if(colorMode==='gradient' && sortedStops){
+      if(colorLUT){
+        return colorLUT[vectorIndex] || solidColor || '#000000';
       }
-
-      // Si no está en los presets, buscar en los gradientes personalizados
-      const customGradient = getCustomGradient(gradientPalette);
-      if (customGradient) {
-        const stops = customGradient.gradient.stops.sort((a, b) => a.offset - b.offset);
-        if (stops.length === 0) return solidColor || '#000000';
-        if (stops.length === 1) return stops[0].color;
-
-        let factor = totalVectors > 1 ? vectorIndex / (totalVectors - 1) : 0;
-        
-        let startStop = stops[0];
-        let endStop = stops[stops.length - 1];
-
-        for (let i = 0; i < stops.length - 1; i++) {
-          if (factor >= stops[i].offset && factor <= stops[i+1].offset) {
-            startStop = stops[i];
-            endStop = stops[i+1];
-            break;
-          }
+      // Sin LUT (pocos vectores), interpolar rápido usando stops preordenados
+      const factor = totalVectors>1 ? vectorIndex/(totalVectors-1) : 0;
+      let start=sortedStops[0];
+      let end=sortedStops[sortedStops.length-1];
+      for(let i=0;i<sortedStops.length-1;i++){
+        if(factor>=sortedStops[i].offset && factor<=sortedStops[i+1].offset){
+          start=sortedStops[i]; end=sortedStops[i+1]; break;
         }
-        
-        const t = endStop.offset > startStop.offset 
-          ? (factor - startStop.offset) / (endStop.offset - startStop.offset) 
-          : 0;
-
-        const lerpColor = (colorA: string, colorB: string, amount: number): string => {
-          const from = parseInt(colorA.slice(1), 16);
-          const to = parseInt(colorB.slice(1), 16);
-          const ar = (from >> 16) & 0xff, ag = (from >> 8) & 0xff, ab = from & 0xff;
-          const br = (to >> 16) & 0xff, bg = (to >> 8) & 0xff, bb = to & 0xff;
-          const rr = Math.round(ar + (br - ar) * amount);
-          const rg = Math.round(ag + (bg - ag) * amount);
-          const rb = Math.round(ab + (bb - ab) * amount);
-          return `#${((1 << 24) + (rr << 16) + (rg << 8) + rb).toString(16).slice(1).padStart(6, '0')}`;
-        };
-        
-        return lerpColor(startStop.color, endStop.color, t);
       }
+      const t=end.offset>start.offset? (factor-start.offset)/(end.offset-start.offset):0;
+      return lerpColor(start.color,end.color,t);
     }
     return solidColor || '#000000';
-  }, [colorMode, solidColor, gradientPalette]);
+  }, [colorMode, sortedStops, colorLUT, solidColor]);
 
   const generateVectors = useCallback((pattern: string, count: number) => {
     if (!count || count <= 0 || isNaN(count)) {
@@ -163,13 +148,14 @@ export const useVectorGrid = ({
 
     const newVectors: Vector[] = [];
     const { effectiveRows = 0, effectiveCols = 0, effectiveSpacing, effectiveCanvasWidth: canvasW, effectiveCanvasHeight: canvasH } = hybridConfig;
+    const spacingScaled = effectiveSpacing * gridScale;
     const padding = Math.max(lengthMax || 0, 50);
     const contentArea = {
       x: padding, y: padding, width: canvasW - 2 * padding, height: canvasH - 2 * padding,
       centerX: canvasW / 2, centerY: canvasH / 2
     };
-    const gridWidth = (effectiveCols - 1) * effectiveSpacing;
-    const gridHeight = (effectiveRows - 1) * effectiveSpacing;
+    const gridWidth = (effectiveCols - 1) * spacingScaled;
+    const gridHeight = (effectiveRows - 1) * spacingScaled;
     const gridStartX = contentArea.x + (contentArea.width - gridWidth) / 2;
     const gridStartY = contentArea.y + (contentArea.height - gridHeight) / 2;
 
@@ -179,9 +165,9 @@ export const useVectorGrid = ({
         case 'hexagonal':
           const row = Math.floor(i / effectiveCols);
           const col = i % effectiveCols;
-          const offsetX = (row % 2) * (effectiveSpacing / 2);
-          x = gridStartX + col * effectiveSpacing + offsetX;
-          y = gridStartY + row * effectiveSpacing * 0.866;
+          const offsetX = (row % 2) * (spacingScaled / 2);
+          x = gridStartX + col * spacingScaled + offsetX;
+          y = gridStartY + row * spacingScaled * 0.866;
           break;
         case 'fibonacci':
           if (count === 0) break;
@@ -204,9 +190,9 @@ export const useVectorGrid = ({
         case 'staggered':
           const staggeredRow = Math.floor(i / effectiveCols);
           const staggeredCol = i % effectiveCols;
-          const staggerOffset = (staggeredRow % 2) * (effectiveSpacing / 4);
-          x = gridStartX + staggeredCol * effectiveSpacing + staggerOffset;
-          y = gridStartY + staggeredRow * effectiveSpacing;
+          const staggerOffset = (staggeredRow % 2) * (spacingScaled / 4);
+          x = gridStartX + staggeredCol * spacingScaled + staggerOffset;
+          y = gridStartY + staggeredRow * spacingScaled;
           break;
         case 'triangular':
           const triCols = Math.ceil(Math.sqrt(count * 1.2));
@@ -287,8 +273,8 @@ export const useVectorGrid = ({
         default: // regular
           const rowReg = Math.floor(i / effectiveCols);
           const colReg = i % effectiveCols;
-          x = gridStartX + colReg * effectiveSpacing;
-          y = gridStartY + rowReg * effectiveSpacing;
+          x = gridStartX + colReg * spacingScaled;
+          y = gridStartY + rowReg * spacingScaled;
       }
       const finalX = Math.max(margin || 0, Math.min(canvasW - (margin || 0), x || 0));
       const finalY = Math.max(margin || 0, Math.min(canvasH - (margin || 0), y || 0));
@@ -299,7 +285,7 @@ export const useVectorGrid = ({
       });
     }
     return newVectors;
-  }, [hybridConfig, margin, lengthMin, lengthMax, generateColor]);
+  }, [hybridConfig, margin, lengthMin, lengthMax, generateColor, gridScale]);
 
   useEffect(() => {
     if(hybridConfig.effectiveGridSize > 0) {

@@ -10,12 +10,12 @@ interface PulseProps {
 }
 
 const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<PulseProps>): AnimationResult => {
-  const { speed = 1, amplitude = 1, pulseWidth = 50, pulseState } = props;
+  const { speed = 1, amplitude = Math.PI / 2, pulseWidth = 50, pulseState } = props;
 
   // Si no hay un pulso activo, no hacemos nada o aplicamos una ligera calma.
   if (!pulseState?.active) {
     // Los vectores vuelven lentamente a su ángulo original (si lo tuvieran) o a 0.
-    const newVectors = vectors.map(v => ({ ...v, angle: v.angle * 0.9 }));
+    const newVectors = vectors.map(v => ({ ...v, angle: (v.angle || 0) * 0.9 }));
     return { vectors: newVectors, animationData: vectors.map(() => ({})) };
   }
 
@@ -23,7 +23,7 @@ const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<Pul
   const centerY = dimensions.height / 2;
   
   // Tiempo transcurrido desde que se inició el pulso
-  const elapsedTime = (Date.now() / 1000) - pulseState.startTime;
+  const elapsedTime = time - pulseState.startTime;
   
   // El radio del frente de la onda del pulso
   const pulseRadius = elapsedTime * speed * 200; // Multiplicador para velocidad perceptible

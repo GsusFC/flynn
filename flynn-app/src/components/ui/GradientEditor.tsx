@@ -91,27 +91,27 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Preview Section */}
-      <div className="bg-sidebar-accent/30 border border-sidebar-border rounded-lg p-4">
-        <label className="block text-xs font-medium text-sidebar-foreground mb-3">Live Preview</label>
+      <div className="bg-neutral-800/60 border border-neutral-700 rounded-lg p-4">
+        <label className="block text-xs font-medium text-neutral-300 mb-3">Live Preview</label>
         <div 
-          className="w-full h-20 rounded-lg border-2 border-sidebar-border shadow-inner"
+          className="w-full h-20 rounded-lg border-2 border-neutral-700 shadow-inner"
           style={{ background: getGradientCSS() }}
         />
       </div>
 
       {/* Configuration Section */}
-      <div className="bg-sidebar-accent/20 border border-sidebar-border rounded-lg p-4 space-y-4">
-        <h3 className="text-xs font-semibold text-sidebar-foreground uppercase tracking-wide border-b border-sidebar-border pb-2">
+      <div className="bg-neutral-800/40 border border-neutral-700 rounded-lg p-4 space-y-4">
+        <h3 className="text-xs font-semibold text-neutral-300 uppercase tracking-wide border-b border-neutral-700 pb-2">
           Gradient Settings
         </h3>
         
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Type</label>
+            <label className="block text-xs font-medium mb-2 text-neutral-300">Type</label>
             <select
               value={gradient.variant}
               onChange={(e) => updateVariant(e.target.value as 'linear' | 'radial')}
-              className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2.5 text-xs rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 p-2.5 text-xs rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="linear">Linear</option>
               <option value="radial">Radial</option>
@@ -120,7 +120,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
           {gradient.variant === 'linear' && (
             <div>
-              <label className="block text-xs font-medium mb-2 text-sidebar-foreground">Angle (°)</label>
+              <label className="block text-xs font-medium mb-2 text-neutral-300">Angle (°)</label>
               <input
                 type="number"
                 min="0"
@@ -128,7 +128,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                 step="1"
                 value={gradient.angle || 90}
                 onChange={(e) => updateAngle(parseInt(e.target.value) || 90)}
-                className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-2.5 text-xs rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 p-2.5 text-xs rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="90"
               />
             </div>
@@ -137,9 +137,9 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
       </div>
 
       {/* Color Stops Section */}
-      <div className="bg-sidebar-accent/20 border border-sidebar-border rounded-lg p-4 space-y-4">
+      <div className="bg-neutral-800/40 border border-neutral-700 rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-sidebar-foreground uppercase tracking-wide">
+          <h3 className="text-xs font-semibold text-neutral-300 uppercase tracking-wide">
             Color Stops ({gradient.stops.length})
           </h3>
           <button
@@ -154,9 +154,9 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           {gradient.stops
             .sort((a, b) => a.offset - b.offset)
             .map((stop, index) => (
-            <div key={index} className="bg-sidebar border border-sidebar-border rounded-lg p-3 space-y-3">
+            <div key={index} className="bg-neutral-900 border border-neutral-700 rounded-lg p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-sidebar-foreground">
+                <span className="text-xs font-medium text-neutral-300">
                   Stop {index + 1}
                 </span>
                 {gradient.stops.length > 2 && (
@@ -172,17 +172,17 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
               
               <div className="grid grid-cols-3 gap-3 items-end">
                 <div>
-                  <label className="block text-xs text-sidebar-foreground mb-1">Color</label>
+                  <label className="block text-xs text-neutral-300 mb-1">Color</label>
                   <input
                     type="color"
                     value={stop.color}
                     onChange={(e) => updateColorStop(index, { color: e.target.value })}
-                    className="w-full h-10 border border-sidebar-border rounded-md cursor-pointer"
+                    className="w-full h-10 border border-neutral-700 rounded-md cursor-pointer"
                   />
                 </div>
                 
                 <div className="col-span-2">
-                  <label className="block text-xs text-sidebar-foreground mb-1">
+                  <label className="block text-xs text-neutral-300 mb-1">
                     Position: {Math.round(stop.offset * 100)}%
                   </label>
                   <input
@@ -192,7 +192,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                     step="0.01"
                     value={stop.offset}
                     onChange={(e) => updateColorStop(index, { offset: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-sidebar-accent rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
               </div>
@@ -203,8 +203,8 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
       {/* Save Section */}
       {onSave && (
-        <div className="bg-sidebar-accent/20 border border-sidebar-border rounded-lg p-4 space-y-4">
-          <h3 className="text-xs font-semibold text-sidebar-foreground uppercase tracking-wide border-b border-sidebar-border pb-2">
+        <div className="bg-neutral-800/40 border border-neutral-700 rounded-lg p-4 space-y-4">
+          <h3 className="text-xs font-semibold text-neutral-300 uppercase tracking-wide border-b border-neutral-700 pb-2">
             Save Gradient
           </h3>
           
@@ -218,7 +218,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           ) : (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-sidebar-foreground mb-2">
+                <label className="block text-xs font-medium text-neutral-300 mb-2">
                   Gradient Name
                 </label>
                 <input
@@ -226,7 +226,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                   placeholder="Enter a unique name..."
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
-                  className="w-full bg-sidebar border border-sidebar-border text-sidebar-foreground p-3 text-sm rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="w-full bg-neutral-900 border border-neutral-700 text-neutral-200 p-3 text-sm rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                   autoFocus
                 />

@@ -2,13 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Play, Pause, Download, Share2, Film } from 'lucide-react';
+import { Play, Pause, Download, Share2, Film, Check } from 'lucide-react';
 
 interface ToolbarProps {
   onTogglePause: () => void;
   isPaused: boolean;
   onExportSVG: () => void;
   onExportGIF?: () => void;
+  onShare?: () => void;
   className?: string;
 }
 
@@ -17,14 +18,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   isPaused,
   onExportSVG,
   onExportGIF,
+  onShare,
   className,
 }) => {
   const [position, setPosition] = useState({ x: window.innerWidth / 2 - 100, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
+  const [showShareConfirm, setShowShareConfirm] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
 
+  const handleShareClick = () => {
+    if (onShare) {
+      onShare();
+      setShowShareConfirm(true);
+      setTimeout(() => {
+        setShowShareConfirm(false);
+      }, 2000);
+    }
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent dragging when clicking on a button
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
     setIsDragging(true);
     const panel = toolbarRef.current;
     if (panel) {
@@ -85,8 +102,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button onClick={onExportGIF} className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled={!onExportGIF}>
             <Film size={16} />
         </button>
-        <button className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled>
-            <Share2 size={16} />
+        <button onClick={handleShareClick} className="p-2 hover:bg-neutral-700 rounded-full text-white flex items-center gap-1" disabled={!onShare}>
+            {showShareConfirm ? (
+                <>
+                    <Check size={16} className="text-green-400" />
+                    <span className="text-xs text-green-400 pr-2">Copied!</span>
+                </>
+            ) : (
+                <Share2 size={16} />
+            )}
         </button>
     </div>
   );

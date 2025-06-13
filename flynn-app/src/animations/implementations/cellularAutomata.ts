@@ -9,28 +9,54 @@ interface CellularAutomataProps {
   seed: number;
 }
 
-// --- Estado de la Simulación ---
-let grid: number[][] = [];
-let gridWidth = 0;
-let gridHeight = 0;
-let vectorToGridMap: { row: number, col: number }[] = [];
-let lastSeed = -1;
-let frameCounter = 0;
-let isInitialized = false;
+// --- Estado de la Simulación Encapsulado ---
+interface CellularAutomataState {
+  grid: number[][];
+  gridWidth: number;
+  gridHeight: number;
+  vectorToGridMap: { row: number, col: number }[];
+  lastSeed: number;
+  frameCounter: number;
+  isInitialized: boolean;
+}
+
+// WeakMap para almacenar estado por instancia de animación.
+// Usamos la referencia de `vectors` como clave porque permanece estable mientras
+// la cuadrícula no cambie, y es exclusiva de cada instancia de `FlynVectorGrid`.
+// (Si en el futuro se dispone de un `instanceId` explícito, bastará con sustituir la clave.)
+const instanceStates = new WeakMap<Readonly<Vector[]>, CellularAutomataState>();
+
+// Función para obtener o crear el estado de la instancia según el array de vectores.
+function getInstanceState(vectorsKey: Readonly<Vector[]>): CellularAutomataState {
+  let state = instanceStates.get(vectorsKey);
+  if (!state) {
+    state = {
+      grid: [],
+      gridWidth: 0,
+      gridHeight: 0,
+      vectorToGridMap: [],
+      lastSeed: -1,
+      frameCounter: 0,
+      isInitialized: false,
+    };
+    instanceStates.set(vectorsKey, state);
+  }
+  return state;
+}
 
 // --- Lógica de Inicialización ---
-function initializeGrid(vectors: Readonly<Vector[]>, seed: number) {
+function initializeGrid(vectors: Readonly<Vector[]>, seed: number, state: CellularAutomataState) {
   const uniqueX = [...new Set(vectors.map(v => v.x))].sort((a, b) => a - b);
   const uniqueY = [...new Set(vectors.map(v => v.y))].sort((a, b) => a - b);
-  gridWidth = uniqueX.length;
-  gridHeight = uniqueY.length;
+  state.gridWidth = uniqueX.length;
+  state.gridHeight = uniqueY.length;
 
-  if (gridWidth === 0 || gridHeight === 0) return;
+  if (state.gridWidth === 0 || state.gridHeight === 0) return;
 
   const mapX = new Map(uniqueX.map((x, i) => [x, i]));
   const mapY = new Map(uniqueY.map((y, i) => [y, i]));
 
-  vectorToGridMap = vectors.map(v => ({ col: mapX.get(v.x)!, row: mapY.get(v.y)! }));
+  state.vectorToGridMap = vectors.map(v => ({ col: mapX.get(v.x)!, row: mapY.get(v.y)! }));
 
   // Usar la semilla para un resultado determinista
   let simpleSeed = seed;
@@ -39,61 +65,65 @@ function initializeGrid(vectors: Readonly<Vector[]>, seed: number) {
     return x - Math.floor(x);
   };
 
-  grid = Array.from({ length: gridHeight }, () => 
-    Array.from({ length: gridWidth }, () => (pseudoRandom() > 0.6 ? 1 : 0))
+  state.grid = Array.from({ length: state.gridHeight }, () => 
+    Array.from({ length: state.gridWidth }, () => (pseudoRandom() > 0.6 ? 1 : 0))
   );
   
-  lastSeed = seed;
-  isInitialized = true;
+  state.lastSeed = seed;
+  state.isInitialized = true;
 }
 
 // --- Lógica de la Animación ---
-const applyCellularAutomata = ({ vectors, props, time }: AnimationFrameData<CellularAutomataProps>): AnimationResult => {
-  if (!isInitialized || props.seed !== lastSeed || vectorToGridMap.length !== vectors.length) {
-    initializeGrid(vectors, props.seed);
+const applyCellularAutomata = (frameData: AnimationFrameData<CellularAutomataProps>): AnimationResult => {
+  const { vectors, props } = frameData;
+  const state = getInstanceState(vectors);
+
+  if (!state.isInitialized || props.seed !== state.lastSeed || state.vectorToGridMap.length !== vectors.length) {
+    initializeGrid(vectors, props.seed, state);
+    state.frameCounter = 0; // Reset frameCounter after grid initialization
   }
 
-  if (!isInitialized) {
+  if (!state.isInitialized) {
     return { vectors: [...vectors], animationData: [] };
   }
 
-  frameCounter++;
-  if (frameCounter >= props.updateInterval) {
-    frameCounter = 0;
+  state.frameCounter++;
+  if (state.frameCounter >= props.updateInterval) {
+    state.frameCounter = 0;
 
-    const nextGrid = grid.map(arr => [...arr]);
+    const nextGrid = state.grid.map(arr => [...arr]);
 
-    for (let row = 0; row < gridHeight; row++) {
-      for (let col = 0; col < gridWidth; col++) {
+    for (let row = 0; row < state.gridHeight; row++) {
+      for (let col = 0; col < state.gridWidth; col++) {
         // Contar vecinos vivos (con bordes toroidales)
         let liveNeighbors = 0;
         for (let i = -1; i <= 1; i++) {
           for (let j = -1; j <= 1; j++) {
             if (i === 0 && j === 0) continue;
-            const neighborRow = (row + i + gridHeight) % gridHeight;
-            const neighborCol = (col + j + gridWidth) % gridWidth;
-            liveNeighbors += grid[neighborRow][neighborCol];
+            const neighborRow = (row + i + state.gridHeight) % state.gridHeight;
+            const neighborCol = (col + j + state.gridWidth) % state.gridWidth;
+            liveNeighbors += state.grid[neighborRow][neighborCol];
           }
         }
 
         // Aplicar reglas
-        const state = grid[row][col];
-        if (state === 0 && liveNeighbors === props.birthCount) {
+        const cellState = state.grid[row][col];
+        if (cellState === 0 && liveNeighbors === props.birthCount) {
           nextGrid[row][col] = 1; // Nacimiento
-        } else if (state === 1 && (liveNeighbors < props.survivalCount1 || liveNeighbors > props.survivalCount2)) {
+        } else if (cellState === 1 && (liveNeighbors < props.survivalCount1 || liveNeighbors > props.survivalCount2)) {
           nextGrid[row][col] = 0; // Muerte por soledad o sobrepoblación
         }
       }
     }
-    grid = nextGrid;
+    state.grid = nextGrid;
   }
   
   // Mapear estado de la retícula a los vectores
   const newVectors = vectors.map((vec, i) => {
-      if (!vectorToGridMap[i]) return { ...vec, animationData: { isAlive: 0 } };
+      if (!state.vectorToGridMap[i]) return { ...vec, animationData: { isAlive: 0 } };
       
-      const { row, col } = vectorToGridMap[i];
-      const isAlive = grid[row][col] === 1;
+      const { row, col } = state.vectorToGridMap[i];
+      const isAlive = state.grid[row][col] === 1;
       
       // La animación solo se encarga de devolver el ESTADO.
       // El motor (useVectorAnimation) se encargará de la APARIENCIA.

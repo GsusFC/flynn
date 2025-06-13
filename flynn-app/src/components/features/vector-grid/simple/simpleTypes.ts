@@ -52,10 +52,15 @@ export type VectorShape =
   | 'bezier'
   | 'spiral'
   | 'arc'
-  | 'organic';
+  | 'organic'
+  | 'zigzag'
+  | 'dash'
+  | 'spring'
+  | 'triangleWave'
+  | 'double';
 
 // Tipo para el punto de rotaciรณn de los vectores
-export type RotationOrigin = 'center' | 'start' | 'end' | 'tail';
+export type RotationOrigin = 'global' | 'local' | 'center' | 'end';
 
 // Configuraciรณn para transiciones de rotaciรณn
 export interface RotationTransition {

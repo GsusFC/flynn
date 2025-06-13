@@ -21,11 +21,15 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { AnimationParamsPanel } from '@/components/panels/AnimationParamsPanel';
 import { FloatingPanel } from '@/components/ui/FloatingPanel';
 import { Toolbar } from '@/components/ui/Toolbar';
+import { createCompressedShareUrl } from '@/utils/urlCompression';
+import { GridScaleControl } from '@/components/ui/GridScaleControl';
 
 // Cargar todas las animaciones para que se registren
 import '@/animations/implementations/rotation';
 import '@/animations/implementations/wave';
 import '@/animations/implementations/spiral';
+import '@/animations/implementations/pulse';
+import '@/animations/implementations/oceanCurrents';
 
 export default function DevPage() {
     const currentAnimationId = useConfigStore(state => state.animation);
@@ -45,8 +49,15 @@ export default function DevPage() {
         refreshCustomGradients();
     }, [refreshCustomGradients]);
     
-    const handleTogglePause = useCallback(() => setConfig({ isPaused: !isPaused }), [setConfig, isPaused]);
-    const handleTriggerPulse = useCallback(() => { /* Placeholder */ }, []);
+    const handleTogglePause = useCallback(() => {
+        setConfig(prevConfig => ({ isPaused: !prevConfig.isPaused }));
+    }, [setConfig]);
+    
+    const handleTriggerPulse = useCallback(() => {
+        if (gridRef.current) {
+            gridRef.current.triggerPulse();
+        }
+    }, []);
 
     const handleExportSVG = useCallback(async () => {
         if (gridRef.current) {
@@ -60,6 +71,17 @@ export default function DevPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+    }, []);
+
+    const handleShare = useCallback(async () => {
+        try {
+            const { setConfig, setAnimation, setVectorShape, ...configData } = useConfigStore.getState();
+            const shareUrl = createCompressedShareUrl(configData, window.location.origin);
+            await navigator.clipboard.writeText(shareUrl);
+        } catch (error) {
+            console.error('Error al generar enlace de compartición:', error);
+            alert('No se pudo generar el enlace de compartición');
         }
     }, []);
 
@@ -83,6 +105,7 @@ export default function DevPage() {
                   onTogglePause={handleTogglePause}
                   onExportSVG={handleExportSVG}
                   onExportGIF={() => setShowGifExportModal(true)}
+                  onShare={handleShare}
                 />
 
                 <FloatingPanel
@@ -125,6 +148,8 @@ export default function DevPage() {
                         </section>
                     </div>
                 </FloatingPanel>
+
+                <GridScaleControl />
 
             </main>
 

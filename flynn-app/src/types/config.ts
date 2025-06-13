@@ -34,5 +34,7 @@ export interface PresetConfig {
     shapeParams: Record<string, number>;
     rotationOrigin: 'start' | 'center' | 'end';
     isPaused: boolean;
+    gridMode: string;
+    gridScale?: number;
     [key: string]: any;
 } 

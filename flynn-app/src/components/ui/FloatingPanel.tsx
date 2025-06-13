@@ -27,6 +27,10 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
   const dragStartPos = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+
     if (e.target !== e.currentTarget && !(e.target as HTMLElement).closest('.drag-handle')) {
         return;
     }
@@ -67,7 +71,10 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
     };
   }, [isDragging]);
 
-  const handleClose = () => setIsVisible(false);
+  const handleClose = () => {
+    setIsVisible(false);
+    onClose?.();
+  };
   const toggleMinimize = () => setIsMinimized(!isMinimized);
   
   if (!isVisible) return null;

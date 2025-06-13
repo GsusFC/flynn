@@ -37,6 +37,7 @@ const initialConfig: PresetConfig = {
     rotationOrigin: 'start',
     isPaused: false,
     gridMode: 'basic',
+    gridScale: 1,
 };
 
 interface ConfigStore extends PresetConfig {
