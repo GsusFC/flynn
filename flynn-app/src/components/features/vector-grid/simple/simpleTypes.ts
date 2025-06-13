@@ -60,7 +60,7 @@ export type VectorShape =
   | 'double';
 
 // Tipo para el punto de rotaciรณn de los vectores
-export type RotationOrigin = 'global' | 'local' | 'center' | 'end';
+export type RotationOrigin = 'global' | 'local' | 'center' | 'end' | 'start';
 
 // Configuraciรณn para transiciones de rotaciรณn
 export interface RotationTransition {
