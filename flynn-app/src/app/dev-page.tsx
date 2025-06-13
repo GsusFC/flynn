@@ -32,7 +32,6 @@ import '@/animations/implementations/pulse';
 import '@/animations/implementations/oceanCurrents';
 
 export default function DevPage() {
-    const currentAnimationId = useConfigStore(state => state.animation);
     const isPaused = useConfigStore(state => state.isPaused);
     const setConfig = useConfigStore(state => state.setConfig);
     
