@@ -56,8 +56,7 @@ export const useConfigStore = create<ConfigStore>()(
             if (updates.gridMode === 'basic') {
                 state.gridSize = 0;
             } else if (updates.gridMode === 'math') {
-                state.rows = 0;
-                state.cols = 0;
+                state.gridSize = 0;
             }
         }
         
