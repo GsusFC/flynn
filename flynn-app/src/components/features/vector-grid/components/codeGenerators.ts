@@ -118,6 +118,7 @@ export const extractGridData = async (
           width: appConfig.vectorConfig.width,
           color: appConfig.vectorConfig.color,
           opacity: 1,
+          rotationOrigin: appConfig.vectorConfig.rotationOrigin,
           lengthFactor: 1,
           widthFactor: 1,
           intensityFactor: 1,
