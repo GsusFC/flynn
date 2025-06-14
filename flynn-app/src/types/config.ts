@@ -40,5 +40,36 @@ export interface PresetConfig {
     rows?: number;
     cols?: number;
     spacing?: number;
+    
+    /** Pattern-specific parameters for math mode */
+    // Fibonacci pattern
+    fibonacciDensity?: number;
+    fibonacciRadius?: number;
+    fibonacciAngle?: number;
+    
+    // Radial pattern
+    radialRings?: number;
+    radialVectorsPerRing?: number;
+    radialMaxRadius?: number;
+    
+    // Polar pattern
+    polarRadialLines?: number;
+    polarRings?: number;
+    polarDistribution?: 'uniform' | 'logarithmic';
+    
+    // Golden ratio pattern
+    goldenExpansion?: number;
+    goldenRotation?: number;
+    goldenCompression?: number;
+    
+    // Spiral pattern
+    spiralTightness?: number;
+    spiralArms?: number;
+    spiralStartRadius?: number;
+    
+    // Hexagonal pattern
+    hexagonalSpacing?: number;
+    hexagonalOffset?: number;
+    
     [key: string]: any;
 } 

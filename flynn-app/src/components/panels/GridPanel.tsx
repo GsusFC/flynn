@@ -3,6 +3,7 @@
 import { useConfigStore } from '@/store/configStore';
 import { cn } from '@/lib/utils';
 import { SliderWithInput } from '@/components/features/vector-grid/components/SliderWithInput';
+import { PatternSpecificControls } from './PatternSpecificControls';
 
 export const GridPanel = () => {
     const gridMode = useConfigStore(state => state.gridMode);
@@ -108,6 +109,9 @@ export const GridPanel = () => {
                             <option value={2500} className={optionClassName}>2500 vectores 💥 Locura</option>
                         </select>
                     </div>
+                    
+                    {/* Pattern-specific controls */}
+                    <PatternSpecificControls />
                 </div>
             )}
         </div>

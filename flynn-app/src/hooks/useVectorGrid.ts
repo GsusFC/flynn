@@ -22,6 +22,25 @@ interface UseVectorGridProps {
   lengthMax?: number;
   gridScale?: number;
   dimensions: { width: number; height: number };
+  
+  // Pattern-specific parameters
+  fibonacciDensity?: number;
+  fibonacciRadius?: number;
+  fibonacciAngle?: number;
+  radialRings?: number;
+  radialVectorsPerRing?: number;
+  radialMaxRadius?: number;
+  polarRadialLines?: number;
+  polarRings?: number;
+  polarDistribution?: 'uniform' | 'logarithmic';
+  goldenExpansion?: number;
+  goldenRotation?: number;
+  goldenCompression?: number;
+  spiralTightness?: number;
+  spiralArms?: number;
+  spiralStartRadius?: number;
+  hexagonalSpacing?: number;
+  hexagonalOffset?: number;
 }
 
 export const useVectorGrid = ({
@@ -40,6 +59,23 @@ export const useVectorGrid = ({
   lengthMax = 25,
   gridScale = 1,
   dimensions,
+  fibonacciDensity,
+  fibonacciRadius,
+  fibonacciAngle,
+  radialRings,
+  radialVectorsPerRing,
+  radialMaxRadius,
+  polarRadialLines,
+  polarRings,
+  polarDistribution,
+  goldenExpansion,
+  goldenRotation,
+  goldenCompression,
+  spiralTightness,
+  spiralArms,
+  spiralStartRadius,
+  hexagonalSpacing,
+  hexagonalOffset,
 }: UseVectorGridProps) => {
   const [vectors, setVectors] = useState<Vector[]>([]);
 
@@ -165,25 +201,32 @@ export const useVectorGrid = ({
         case 'hexagonal':
           const row = Math.floor(i / effectiveCols);
           const col = i % effectiveCols;
-          const offsetX = (row % 2) * (spacingScaled / 2);
-          x = gridStartX + col * spacingScaled + offsetX;
-          y = gridStartY + row * spacingScaled * 0.866;
+          const hexSpacing = spacingScaled * (hexagonalSpacing ?? 1.0);
+          const hexOffset = (hexagonalOffset ?? 0.5);
+          const offsetX = (row % 2) * (hexSpacing * hexOffset);
+          x = gridStartX + col * hexSpacing + offsetX;
+          y = gridStartY + row * hexSpacing * 0.866;
           break;
         case 'fibonacci':
           if (count === 0) break;
           const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-          const fibRadius = Math.min(contentArea.width, contentArea.height) / 3 * Math.sqrt(i / count);
-          const fibAngle = i * goldenAngle;
+          const adjustedAngle = (fibonacciAngle ?? 137.5) * Math.PI / 180;
+          const densityFactor = fibonacciDensity ?? 1.0;
+          const maxRadiusFactor = fibonacciRadius ?? 0.8;
+          const fibRadius = Math.min(contentArea.width, contentArea.height) / 3 * maxRadiusFactor * Math.sqrt(i / count) * densityFactor;
+          const fibAngle = i * adjustedAngle;
           x = contentArea.centerX + Math.cos(fibAngle) * fibRadius;
           y = contentArea.centerY + Math.sin(fibAngle) * fibRadius;
           break;
         case 'radial':
           if (count === 0) break;
-          const numRings = Math.ceil(Math.sqrt(count / Math.PI));
-          const ringIndex = Math.floor(Math.sqrt(i * Math.PI));
-          const pointsInRing = Math.max(1, Math.round(2 * Math.PI * ringIndex));
+          const numRingsRadial = radialRings ?? Math.ceil(Math.sqrt(count / Math.PI));
+          const vectorsPerRing = radialVectorsPerRing ?? Math.max(1, Math.round(2 * Math.PI * (Math.floor(i / numRingsRadial) + 1)));
+          const ringIndex = Math.floor(i / vectorsPerRing) % numRingsRadial;
+          const pointsInRing = vectorsPerRing;
           const angleInRing = (i % pointsInRing) * (2 * Math.PI / pointsInRing);
-          const radiusInRing = (ringIndex / numRings) * Math.min(contentArea.width, contentArea.height) / 2.5;
+          const maxRadiusRadial = Math.min(contentArea.width, contentArea.height) / 2.5 * (radialMaxRadius ?? 0.9);
+          const radiusInRing = ((ringIndex + 1) / numRingsRadial) * maxRadiusRadial;
           x = contentArea.centerX + Math.cos(angleInRing) * radiusInRing;
           y = contentArea.centerY + Math.sin(angleInRing) * radiusInRing;
           break;
@@ -214,27 +257,35 @@ export const useVectorGrid = ({
           if (count === 0) break;
           const goldenRatio = (1 + Math.sqrt(5)) / 2;
           const goldenAngleRad = 2 * Math.PI / goldenRatio;
-          const goldenRadius = Math.sqrt(i) * Math.min(contentArea.width, contentArea.height) / (2 * Math.sqrt(count));
-          const goldenAnglePos = i * goldenAngleRad;
+          const expansionFactor = goldenExpansion ?? 1.0;
+          const rotationOffset = (goldenRotation ?? 0) * Math.PI / 180;
+          const compressionFactor = goldenCompression ?? 1.0;
+          const goldenRadius = Math.sqrt(i) * Math.min(contentArea.width, contentArea.height) / (2 * Math.sqrt(count)) * expansionFactor * compressionFactor;
+          const goldenAnglePos = i * goldenAngleRad + rotationOffset;
           x = contentArea.centerX + Math.cos(goldenAnglePos) * goldenRadius;
           y = contentArea.centerY + Math.sin(goldenAnglePos) * goldenRadius;
           break;
         case 'polar':
-          const numRingsPolar = Math.ceil(Math.sqrt(count / 8));
-          const numRadialLines = Math.ceil(count / numRingsPolar);
+          const numRingsPolar = polarRings ?? Math.ceil(Math.sqrt(count / 8));
+          const numRadialLines = polarRadialLines ?? Math.ceil(count / numRingsPolar);
           const ringIndexPolar = Math.floor(i / numRadialLines);
           const radialIndexPolar = i % numRadialLines;
           const maxRadiusPolar = Math.min(contentArea.width, contentArea.height) / 2.2;
-          const radiusPolar = (ringIndexPolar + 0.5) * (maxRadiusPolar / numRingsPolar);
+          let radiusPolar;
+          if (polarDistribution === 'logarithmic') {
+            radiusPolar = maxRadiusPolar * Math.pow((ringIndexPolar + 1) / numRingsPolar, 1.5);
+          } else {
+            radiusPolar = (ringIndexPolar + 0.5) * (maxRadiusPolar / numRingsPolar);
+          }
           const anglePolar = (radialIndexPolar / numRadialLines) * 2 * Math.PI;
           x = contentArea.centerX + Math.cos(anglePolar) * radiusPolar;
           y = contentArea.centerY + Math.sin(anglePolar) * radiusPolar;
           break;
         case 'logSpiral':
           if (count === 0) break;
-          const tightness = 0.2;
-          const startRadius = 5;
-          const numArms = 2;
+          const tightness = spiralTightness ?? 0.2;
+          const startRadius = spiralStartRadius ?? 5;
+          const numArms = spiralArms ?? 2;
           const spiralProgress = i / count;
           const totalAngle = spiralProgress * 8 * Math.PI;
           const armOffset = (i % numArms) * (2 * Math.PI / numArms);

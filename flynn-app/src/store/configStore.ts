@@ -51,6 +51,36 @@ export const useConfigStore = create<ConfigStore>()(
     cols: 10,
     spacing: 50,
     
+    // Pattern-specific parameters with defaults
+    // Fibonacci pattern
+    fibonacciDensity: 1.0,
+    fibonacciRadius: 0.8,
+    fibonacciAngle: 137.5,
+    
+    // Radial pattern
+    radialRings: 6,
+    radialVectorsPerRing: 12,
+    radialMaxRadius: 0.9,
+    
+    // Polar pattern
+    polarRadialLines: 16,
+    polarRings: 6,
+    polarDistribution: 'uniform' as const,
+    
+    // Golden ratio pattern
+    goldenExpansion: 1.0,
+    goldenRotation: 0,
+    goldenCompression: 1.0,
+    
+    // Spiral pattern
+    spiralTightness: 0.2,
+    spiralArms: 2,
+    spiralStartRadius: 5,
+    
+    // Hexagonal pattern
+    hexagonalSpacing: 1.0,
+    hexagonalOffset: 0.5,
+    
     // Métodos del store
     setConfig: (updater) => {
       set((state) => {

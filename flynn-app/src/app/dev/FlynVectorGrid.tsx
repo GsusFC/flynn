@@ -118,6 +118,25 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
   const backgroundColor = propBackgroundColor ?? useConfigStore(state => state.backgroundColor);
   const vectorShape = propVectorShape ?? useConfigStore(state => state.vectorShape);
 
+  // Pattern-specific parameters
+  const fibonacciDensity = useConfigStore(state => state.fibonacciDensity);
+  const fibonacciRadius = useConfigStore(state => state.fibonacciRadius);
+  const fibonacciAngle = useConfigStore(state => state.fibonacciAngle);
+  const radialRings = useConfigStore(state => state.radialRings);
+  const radialVectorsPerRing = useConfigStore(state => state.radialVectorsPerRing);
+  const radialMaxRadius = useConfigStore(state => state.radialMaxRadius);
+  const polarRadialLines = useConfigStore(state => state.polarRadialLines);
+  const polarRings = useConfigStore(state => state.polarRings);
+  const polarDistribution = useConfigStore(state => state.polarDistribution);
+  const goldenExpansion = useConfigStore(state => state.goldenExpansion);
+  const goldenRotation = useConfigStore(state => state.goldenRotation);
+  const goldenCompression = useConfigStore(state => state.goldenCompression);
+  const spiralTightness = useConfigStore(state => state.spiralTightness);
+  const spiralArms = useConfigStore(state => state.spiralArms);
+  const spiralStartRadius = useConfigStore(state => state.spiralStartRadius);
+  const hexagonalSpacing = useConfigStore(state => state.hexagonalSpacing);
+  const hexagonalOffset = useConfigStore(state => state.hexagonalOffset);
+
   // Estado local para gestionar el evento del pulso
   const [pulseState, setPulseState] = useState({ active: false, startTime: 0 });
 
@@ -131,6 +150,13 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
     margin: 20,
     gridScale,
     colorMode, solidColor, gradientPalette, lengthMin, lengthMax,
+    // Pattern-specific parameters
+    fibonacciDensity, fibonacciRadius, fibonacciAngle,
+    radialRings, radialVectorsPerRing, radialMaxRadius,
+    polarRadialLines, polarRings, polarDistribution,
+    goldenExpansion, goldenRotation, goldenCompression,
+    spiralTightness, spiralArms, spiralStartRadius,
+    hexagonalSpacing, hexagonalOffset,
   });
   
   const animatedVectors = useVectorAnimation({
