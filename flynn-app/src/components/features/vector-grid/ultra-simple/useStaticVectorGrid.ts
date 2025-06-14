@@ -62,7 +62,8 @@ export const useStaticVectorGrid = (props: StaticVectorGridProps) => {
         color: solidColor,
         opacity: 1,
         gridRow: row,
-        gridCol: col
+        gridCol: col,
+        rotationOrigin: 'start'
       });
     }
     
