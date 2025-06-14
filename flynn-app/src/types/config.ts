@@ -36,5 +36,9 @@ export interface PresetConfig {
     isPaused: boolean;
     gridMode: 'basic' | 'math';
     gridScale?: number;
+    /** Grid properties for basic mode */
+    rows?: number;
+    cols?: number;
+    spacing?: number;
     [key: string]: any;
 } 

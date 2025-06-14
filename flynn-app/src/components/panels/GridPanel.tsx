@@ -6,9 +6,9 @@ import { SliderWithInput } from '@/components/features/vector-grid/components/Sl
 
 export const GridPanel = () => {
     const gridMode = useConfigStore(state => state.gridMode);
-    const rows = useConfigStore(state => state.rows);
-    const cols = useConfigStore(state => state.cols);
-    const spacing = useConfigStore(state => state.spacing);
+    const rows = useConfigStore(state => state.rows ?? 10);
+    const cols = useConfigStore(state => state.cols ?? 10);
+    const spacing = useConfigStore(state => state.spacing ?? 50);
     const gridSize = useConfigStore(state => state.gridSize);
     const gridPattern = useConfigStore(state => state.gridPattern);
     const gridScale = useConfigStore(state => state.gridScale ?? 1);

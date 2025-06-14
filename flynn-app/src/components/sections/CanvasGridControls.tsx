@@ -4,9 +4,9 @@ import { SliderWithInput } from "@/components/features/vector-grid/components/Sl
 import { useConfigStore } from "@/store/configStore";
 
 export default function CanvasGridControls() {
-    const rows = useConfigStore(state => state.rows);
-    const cols = useConfigStore(state => state.cols);
-    const spacing = useConfigStore(state => state.spacing);
+    const rows = useConfigStore(state => state.rows ?? 10);
+    const cols = useConfigStore(state => state.cols ?? 10);
+    const spacing = useConfigStore(state => state.spacing ?? 50);
     const setConfig = useConfigStore(state => state.setConfig);
 
     return (

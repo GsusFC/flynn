@@ -46,6 +46,10 @@ export const useConfigStore = create<ConfigStore>()(
     isPaused: false,
     gridScale: 1,
     gridMode: 'basic' as const,
+    // Grid properties for basic mode
+    rows: 10,
+    cols: 10,
+    spacing: 50,
     
     // Métodos del store
     setConfig: (updater) => {
@@ -54,9 +58,12 @@ export const useConfigStore = create<ConfigStore>()(
         
         if (updates.gridMode) {
             if (updates.gridMode === 'basic') {
+                // Reset gridSize when switching to basic mode
                 state.gridSize = 0;
             } else if (updates.gridMode === 'math') {
-                state.gridSize = 0;
+                // Reset rows/cols when switching to math mode
+                state.rows = 0;
+                state.cols = 0;
             }
         }
         
