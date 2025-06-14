@@ -225,6 +225,7 @@ export const useSimpleVectorGrid = (props: UseSimpleVectorGridProps) => {
             width: vectorWidth,
             color,
             opacity: 1,
+            rotationOrigin: vectorConfig.rotationOrigin,
             originalX: x,
             originalY: y,
             originalAngle: 0,
