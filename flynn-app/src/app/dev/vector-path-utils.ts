@@ -1,5 +1,3 @@
-import type { Vector } from './FlynVectorGrid';
-
 // Wave path generator
 export const generateWavePath = (
     startX: number, 
@@ -232,4 +230,35 @@ export const generateDoublePath = (startX: number, startY: number, angle: number
     const offsetY = Math.sin(perpAngle) * gap / 2;
     return `M ${startX - offsetX} ${startY - offsetY} L ${endX - offsetX} ${endY - offsetY}` +
            ` M ${startX + offsetX} ${startY + offsetY} L ${endX + offsetX} ${endY + offsetY}`;
-}; 
+};
+
+export function calculateCoordsForOrigin(
+  x: number,
+  y: number,
+  length: number,
+  angleRad: number,
+  origin: 'start' | 'center' | 'end' | 'global' | 'local'
+) {
+  let startX = x;
+  let startY = y;
+  let endX = x;
+  let endY = y;
+  switch (origin) {
+    case 'start':
+      endX = x + Math.cos(angleRad) * length;
+      endY = y + Math.sin(angleRad) * length;
+      break;
+    case 'center':
+      const half = length / 2;
+      startX = x - Math.cos(angleRad) * half;
+      startY = y - Math.sin(angleRad) * half;
+      endX = x + Math.cos(angleRad) * half;
+      endY = y + Math.sin(angleRad) * half;
+      break;
+    case 'end':
+      startX = x - Math.cos(angleRad) * length;
+      startY = y - Math.sin(angleRad) * length;
+      break;
+  }
+  return { startX, startY, endX, endY };
+} 

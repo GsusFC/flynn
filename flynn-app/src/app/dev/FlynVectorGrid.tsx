@@ -9,6 +9,13 @@ import { useVectorGrid } from '@/hooks/useVectorGrid';
 import { FastSvgRenderer } from '@/components/vector/renderers/FastSvgRenderer';
 import { useConfigStore } from '@/store/configStore';
 import type { VectorShape } from '@/lib/shapeRegistry';
+import { 
+    generateWavePath, generateBezierPath, generateSpiralPath, 
+    generateArcPath, generateOrganicPath, generateZigzagPath,
+    generateDashPath, generateSpringPath, generateTriangleWavePath, generateDoublePath,
+    calculateCoordsForOrigin
+} from '@/app/dev/vector-path-utils';
+import { isGradientConfig, generateGradientId, type GradientConfig, type ExtendedVectorColorValue } from '@/components/features/vector-grid/types/gradientTypes';
 
 export interface Vector {
   id: string;
@@ -71,6 +78,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
   const [pulseState, setPulseState] = useState({ active: false, startTime: 0 });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const dimensions = useContainerDimensions(containerRef, canvasWidth, canvasHeight);
   const mousePos = useMousePosition(containerRef);
 
@@ -148,11 +156,11 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
     getCurrentVectors: () => lastRenderedFrameRef.current,
     resetVectors: () => {},
     exportSVG: async () => {
-        const currentVectors: SimpleVector[] = lastRenderedFrameRef.current;
-        const svgWidth = hybridConfig.effectiveCanvasWidth;
-        const svgHeight = hybridConfig.effectiveCanvasHeight;
-        let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="${backgroundColor}"/></svg>`;
-        return { data: svgContent, filename: 'flyn-grid.svg' };
+      if (!svgRef.current) {
+        return { data: '', filename: 'error.svg' };
+      }
+      const svgContent = new XMLSerializer().serializeToString(svgRef.current);
+      return { data: svgContent, filename: 'flynn-grid.svg' };
     },
     exportAnimatedSVG: async () => ({ data: '<svg></svg>', filename: 'animated.svg' }),
     exportGIF: async () => new Blob(),
@@ -166,6 +174,7 @@ const FlynVectorGrid = forwardRef<SimpleVectorGridRef, FlynVectorGridProps>(({
       style={{ backgroundColor: backgroundColor || '#000000' }}
     >
       <FastSvgRenderer
+        ref={svgRef}
         vectors={adaptedVectors}
         width={hybridConfig.effectiveCanvasWidth}
         height={hybridConfig.effectiveCanvasHeight}
