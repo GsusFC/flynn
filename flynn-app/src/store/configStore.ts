@@ -7,17 +7,25 @@ import type { VectorShape } from '@/lib/shapeRegistry';
 
 type AnimationId = PresetConfig['animation'];
 
-const initialConfig: PresetConfig = {
+interface ConfigStore extends PresetConfig {
+  setConfig: (updater: Partial<PresetConfig> | ((state: PresetConfig) => Partial<PresetConfig>)) => void;
+  setAnimation: (animationId: AnimationId) => void;
+  setVectorShape: (shape: VectorShape) => void;
+}
+
+export const useConfigStore = create<ConfigStore>()(
+  immer((set) => ({
+    // Propiedades de configuración inicial
     name: 'Custom',
     gridSize: 25,
-    gridPattern: 'regular',
-    animation: 'wave',
+    gridPattern: 'regular' as const,
+    animation: 'wave' as const,
     speed: 1,
     intensity: 0.5,
-    colorMode: 'dynamic',
+    colorMode: 'dynamic' as const,
     solidColor: '#3b82f6',
     gradientPalette: 'flow',
-    colorIntensityMode: 'field',
+    colorIntensityMode: 'field' as const,
     colorHueShift: 1,
     colorSaturation: 80,
     colorBrightness: 60,
@@ -28,29 +36,18 @@ const initialConfig: PresetConfig = {
     oscillationAmp: 0.3,
     pulseSpeed: 1,
     spatialFactor: 0.2,
-    spatialMode: 'edge',
+    spatialMode: 'edge' as const,
     mouseInfluence: 0,
-    mouseMode: 'attract',
-    physicsMode: 'none',
-    vectorShape: 'wave',
+    mouseMode: 'attract' as const,
+    physicsMode: 'none' as const,
+    vectorShape: 'wave' as const,
     shapeParams: getDefaultShapeParams('wave'),
-    rotationOrigin: 'start',
+    rotationOrigin: 'start' as const,
     isPaused: false,
-    gridMode: 'basic',
     gridScale: 1,
-};
-
-interface ConfigStore extends PresetConfig {
-  gridMode: 'basic' | 'math';
-  setConfig: (updater: Partial<PresetConfig> | ((state: PresetConfig) => Partial<PresetConfig>)) => void;
-  setAnimation: (animationId: AnimationId) => void;
-  setVectorShape: (shape: VectorShape) => void;
-}
-
-export const useConfigStore = create<ConfigStore>()(
-  immer((set) => ({
-    ...initialConfig,
-    gridMode: initialConfig.gridMode,
+    gridMode: 'basic' as const,
+    
+    // Métodos del store
     setConfig: (updater) => {
       set((state) => {
         const updates = typeof updater === 'function' ? updater(state) : updater;
