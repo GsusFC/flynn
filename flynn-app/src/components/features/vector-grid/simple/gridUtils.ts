@@ -312,7 +312,8 @@ function createVectorAt(
   col: number,
   vectorConfig: VectorConfig
 ): SimpleVector {
-  const id = `vector-${row}-${col}`;
+  const { length, width, color, opacity } = vectorConfig;
+  const id = `${row}-${col}`;
   const angle = 0; // Default angle
   
   return {
@@ -320,33 +321,33 @@ function createVectorAt(
     x,
     y,
     angle,
-    length: vectorConfig.length,
-    width: vectorConfig.width,
-    color: vectorConfig.color,
-    opacity: vectorConfig.opacity,
+    length,
+    width,
+    color,
+    opacity: opacity ?? 1,
     originalX: x,
     originalY: y,
     originalAngle: angle,
+    rotationOrigin: vectorConfig.rotationOrigin,
+    dynamicLength: length,
+    dynamicWidth: width,
     gridRow: row,
     gridCol: col,
-    // Additional compatibility fields for legacy code
+    intensity: 1,
+    previousAngle: angle,
     baseX: x,
     baseY: y,
     currentAngle: angle,
     baseAngle: angle,
     initialAngle: angle,
-    previousAngle: angle,
-    baseLength: vectorConfig.length,
-    originalLength: vectorConfig.length,
-    baseWidth: vectorConfig.width,
-    baseOpacity: vectorConfig.opacity,
-    originalColor: vectorConfig.color,
+    baseLength: length,
+    originalLength: length,
+    baseWidth: width,
+    baseOpacity: opacity ?? 1,
+    originalColor: color,
     lengthFactor: 1,
     widthFactor: 1,
     intensityFactor: 1,
-    r: row,
-    c: col,
-    animationData: {},
   } as SimpleVector;
 }
 
