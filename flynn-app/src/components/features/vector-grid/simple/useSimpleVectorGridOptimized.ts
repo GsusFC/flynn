@@ -495,6 +495,7 @@ export const useSimpleVectorGridOptimized = (props: UseSimpleVectorGridProps) =>
           width: vectorWidth,
           color,
           opacity: 1,
+          rotationOrigin: vectorConfig.rotationOrigin,
           gridRow: row,
           gridCol: col,
           dynamicLength: undefined,
