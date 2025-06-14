@@ -4,34 +4,27 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { VectorSvgRenderer } from '../../../vector/renderers/VectorSvgRenderer';
-
-interface Vector {
-  x: number;
-  y: number;
-  angle: number;
-  length: number;
-  color: string;
-}
+import { FastSvgRenderer } from '@/components/vector/renderers/FastSvgRenderer';
+import type { RotationOrigin, SimpleVector } from '@/components/features/vector-grid/simple/simpleTypes';
+import { isGradientConfig, type GradientConfig } from '@/components/features/vector-grid/types/gradientTypes';
 
 interface HybridRendererProps {
-  vectors: any[]; // Acepta tanto SimpleVector[] como Vector[]
+  vectors: SimpleVector[];
   width: number;
   height: number;
   onPerformanceUpdate?: (metrics: any) => void;
   debugMode?: boolean;
+  baseVectorWidth?: number;
+  baseRotationOrigin?: RotationOrigin;
   // Otros props que se pasan a SVG renderer
   [key: string]: any;
 }
 
 const CANVAS_THRESHOLD = 900;
 
-const CanvasVectorRenderer: React.FC<{
-  vectors: any[];
-  width: number;
-  height: number;
-  debugMode?: boolean;
-}> = ({ vectors, width, height, debugMode }) => {
+const CanvasVectorRenderer: React.FC<
+  HybridRendererProps & { debugMode?: boolean }
+> = ({ vectors, width, height, debugMode, backgroundColor, ...props }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -51,6 +44,8 @@ const CanvasVectorRenderer: React.FC<{
 
     // Limpiar canvas
     ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = backgroundColor || '#000000';
+    ctx.fillRect(0, 0, width, height);
 
     // Configuración de renderizado
     ctx.lineCap = 'round';
@@ -63,8 +58,8 @@ const CanvasVectorRenderer: React.FC<{
       // Extraer propiedades (compatible con SimpleVector y Vector)
       const x = vector.x;
       const y = vector.y;
-      const angle = vector.angle;
-      const length = vector.dynamicLength || vector.length;
+      const angle = vector.angle * Math.PI / 180; // Canvas usa radianes
+      const length = vector.dynamicLength ?? vector.length;
       const color = vector.color;
       
       // Calcular posición final del vector
@@ -72,8 +67,29 @@ const CanvasVectorRenderer: React.FC<{
       const endY = y + Math.sin(angle) * length;
 
       // Configurar estilo
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
+      if (isGradientConfig(color)) {
+        const gradConfig = color as GradientConfig;
+        if (gradConfig.type === 'linear') {
+          const gradAngle = (gradConfig.angle ?? 0) * Math.PI / 180;
+          const gradLength = length / 2;
+          const gX0 = x + Math.cos(gradAngle) * -gradLength;
+          const gY0 = y + Math.sin(gradAngle) * -gradLength;
+          const gX1 = x + Math.cos(gradAngle) * gradLength;
+          const gY1 = y + Math.sin(gradAngle) * gradLength;
+          const gradient = ctx.createLinearGradient(gX0, gY0, gX1, gY1);
+          gradConfig.colors.forEach(stop => gradient.addColorStop(stop.offset, stop.color));
+          ctx.strokeStyle = gradient;
+        } else { // radial
+          const centerX = x + (gradConfig.centerX ?? 0.5) - 0.5;
+          const centerY = y + (gradConfig.centerY ?? 0.5) - 0.5;
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, (gradConfig.radius ?? 0.5) * length);
+          gradConfig.colors.forEach(stop => gradient.addColorStop(stop.offset, stop.color));
+          ctx.strokeStyle = gradient;
+        }
+      } else {
+        ctx.strokeStyle = color as string;
+      }
+      ctx.lineWidth = vector.dynamicWidth ?? vector.width ?? 1.5;
 
       // Dibujar línea
       ctx.beginPath();
@@ -109,7 +125,7 @@ const CanvasVectorRenderer: React.FC<{
       console.log(`[Canvas Renderer] Rendered ${vectors.length} vectors in ${renderTime.toFixed(2)}ms`);
     }
 
-  }, [vectors, width, height, debugMode]);
+  }, [vectors, width, height, debugMode, backgroundColor]);
 
   return (
     <canvas
@@ -122,7 +138,7 @@ const CanvasVectorRenderer: React.FC<{
   );
 };
 
-export const HybridRenderer: React.FC<any> = (props) => {
+export const HybridRenderer: React.FC<HybridRendererProps> = (props) => {
   const { vectors = [], width, height, debugMode, onPerformanceUpdate } = props;
   
   const vectorCount = vectors.length;
@@ -142,17 +158,12 @@ export const HybridRenderer: React.FC<any> = (props) => {
         timestamp: Date.now()
       });
     }
-  }, [useCanvas, vectorCount, debugMode, onPerformanceUpdate]);
+  }, [useCanvas, vectorCount, debugMode, onPerformanceUpdate, props.backgroundColor]);
 
   if (useCanvas) {
     return (
       <div className="relative w-full h-full">
-        <CanvasVectorRenderer 
-          vectors={vectors}
-          width={width}
-          height={height}
-          debugMode={debugMode}
-        />
+        <CanvasVectorRenderer {...props} />
         {debugMode && (
           <div className="absolute top-2 right-2 bg-green-950/80 text-green-400 text-xs px-2 py-1 rounded">
             🖥️ Canvas ({vectorCount} vectors)
@@ -165,7 +176,14 @@ export const HybridRenderer: React.FC<any> = (props) => {
   // Usar SVG renderer para baja densidad
   return (
     <div className="relative w-full h-full">
-      <VectorSvgRenderer {...props} />
+      <FastSvgRenderer
+        vectors={props.vectors}
+        width={props.width}
+        height={props.height}
+        backgroundColor={props.backgroundColor}
+        baseVectorWidth={props.baseVectorWidth ?? 1.5}
+        baseRotationOrigin={props.baseRotationOrigin ?? 'start'}
+      />
       {debugMode && (
         <div className="absolute top-2 right-2 bg-blue-950/80 text-blue-400 text-xs px-2 py-1 rounded">
           📊 SVG ({vectorCount} vectors)
