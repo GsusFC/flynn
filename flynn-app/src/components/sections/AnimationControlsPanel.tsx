@@ -10,7 +10,15 @@ import { cn } from '@/lib/utils';
 // Componente individual para un control, que puede usar hooks
 const ControlRenderer: React.FC<{ control: ControlDef }> = ({ control }) => {
   const { id, label, type } = control;
-  const value = useConfigStore((state) => state[id] ?? control.defaultValue);
+  // Fallback a un valor solo si no es un botón.
+  const value = useConfigStore((state) => {
+    const stateValue = state[id];
+    if (stateValue !== undefined) return stateValue;
+    if (control.type !== 'button') {
+      return control.defaultValue;
+    }
+    return undefined; // Los botones no tienen valor
+  });
   const setConfig = useConfigStore((state) => state.setConfig);
 
   const selectClassName = cn(
