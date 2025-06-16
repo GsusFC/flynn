@@ -13,7 +13,7 @@ interface CurlNoiseProps {
 const applyCurlNoise = ({ vectors, time, props }: AnimationFrameData<CurlNoiseProps>): AnimationResult => {
   const { scale, speed, epsilon } = props;
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const x = vector.x * scale;
     const y = vector.y * scale;
     const z = time * speed;
@@ -48,8 +48,8 @@ const applyCurlNoise = ({ vectors, time, props }: AnimationFrameData<CurlNoisePr
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

@@ -1,5 +1,5 @@
 import { registerAnimation } from '../registry';
-import type { AnimationMeta, AnimationFrameData, AnimationResult } from '../types';
+import type { AnimationMeta, AnimationFrameData, AnimationResult, Vector } from '../types';
 
 // Props
 interface VortexProps {
@@ -14,7 +14,7 @@ const applyVortex = ({ vectors, time, props, dimensions }: AnimationFrameData<Vo
   const centerX = width / 2;
   const centerY = height / 2;
 
-  const newVectors = vectors.map((vector) => {
+  const newVectors = vectors.map((vector: Vector) => {
     const dx = vector.x - centerX;
     const dy = vector.y - centerY;
     const dist = Math.sqrt(dx * dx + dy * dy);

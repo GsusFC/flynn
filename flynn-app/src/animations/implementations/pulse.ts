@@ -1,5 +1,5 @@
 import { registerAnimation } from '../registry';
-import type { AnimationMeta, AnimationFrameData, AnimationResult } from '../types';
+import type { AnimationMeta, AnimationFrameData, AnimationResult, Vector } from '../types';
 
 interface PulseProps {
   speed: number;
@@ -15,7 +15,7 @@ const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<Pul
   // Si no hay un pulso activo, no hacemos nada o aplicamos una ligera calma.
   if (!pulseState?.active) {
     // Los vectores vuelven lentamente a su ángulo original (si lo tuvieran) o a 0.
-    const newVectors = vectors.map(v => ({ ...v, angle: (v.angle || 0) * 0.9 }));
+    const newVectors = vectors.map((v: Vector) => ({ ...v, angle: (v.angle || 0) * 0.9 }));
     return { vectors: newVectors, animationData: vectors.map(() => ({})) };
   }
 
@@ -28,7 +28,7 @@ const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<Pul
   // El radio del frente de la onda del pulso
   const pulseRadius = elapsedTime * speed * 200; // Multiplicador para velocidad perceptible
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const dx = vector.x - centerX;
     const dy = vector.y - centerY;
     const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
@@ -55,8 +55,8 @@ const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<Pul
   });
 
   return { 
-    vectors: results.map(r => r.vector), 
-    animationData: results.map(r => r.data) 
+    vectors: results.map((r: any) => r.vector), 
+    animationData: results.map((r: any) => r.data) 
   };
 };
 

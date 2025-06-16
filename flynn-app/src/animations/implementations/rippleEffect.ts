@@ -40,7 +40,7 @@ const applyRippleEffect = ({ vectors, time, mousePos, props }: AnimationFrameDat
   // 2. Eliminar ondas viejas
   ripples = ripples.filter(r => time - r.startTime < duration);
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     let netDx = 0;
     let netDy = 0;
     let totalPressure = 0;
@@ -76,8 +76,8 @@ const applyRippleEffect = ({ vectors, time, mousePos, props }: AnimationFrameDat
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

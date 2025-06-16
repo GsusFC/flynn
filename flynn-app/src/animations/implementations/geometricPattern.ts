@@ -20,7 +20,7 @@ const applyGeometricPattern = ({ vectors, time, dimensions, props }: AnimationFr
   const centerY = dimensions.height / 2;
   const maxDist = Math.sqrt(centerX**2 + centerY**2);
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const x = vector.x - centerX;
     const y = vector.y - centerY;
     const dist = Math.sqrt(x*x + y*y);
@@ -64,8 +64,8 @@ const applyGeometricPattern = ({ vectors, time, dimensions, props }: AnimationFr
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

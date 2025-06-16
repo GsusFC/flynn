@@ -10,7 +10,7 @@ interface PinwheelsProps {
 const applyPinwheels = ({ vectors, time, props }: AnimationFrameData<PinwheelsProps>): AnimationResult => {
   const { gridSize, speed, alternating } = props;
 
-  const newVectors: Vector[] = vectors.map(vector => {
+  const newVectors: Vector[] = vectors.map((vector: Vector) => {
     // 1. Encontrar el centro del molinete más cercano
     const cellX = Math.floor(vector.x / gridSize);
     const cellY = Math.floor(vector.y / gridSize);

@@ -1,6 +1,16 @@
-import type { Vector } from '@/app/dev/FlynVectorGrid';
+import type { ExtendedVectorColorValue } from '@/components/features/vector-grid/types/gradientTypes';
 
-export type { Vector };
+export interface Vector {
+  id: string;
+  x: number;
+  y: number;
+  initialAngle: number;
+  angle: number;
+  length: number;
+  initialLength: number;
+  color: ExtendedVectorColorValue;
+  shapeParams?: Record<string, number>;
+}
 
 // --- Tipos para la definición de Controles en la UI ---
 

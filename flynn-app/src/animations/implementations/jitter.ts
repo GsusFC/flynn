@@ -6,7 +6,7 @@ interface JitterProps {
 }
 
 const applyJitter = ({ vectors, props: { amount } }: AnimationFrameData<JitterProps>): AnimationResult => {
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     // jitterAmount va de -amount a +amount
     const jitterAmount = (Math.random() - 0.5) * amount * 2; 
     
@@ -23,8 +23,8 @@ const applyJitter = ({ vectors, props: { amount } }: AnimationFrameData<JitterPr
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

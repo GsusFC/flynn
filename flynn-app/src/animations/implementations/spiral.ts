@@ -1,6 +1,5 @@
 import { registerAnimation } from '../registry';
-import type { AnimationMeta, AnimationFrameData, AnimationResult } from '../types';
-import type { Vector } from '@/app/dev/FlynVectorGrid';
+import type { AnimationMeta, AnimationFrameData, AnimationResult, Vector } from '../types';
 
 // Props
 interface SpiralProps {
@@ -17,7 +16,7 @@ const applySpiral = ({ vectors, time, props, dimensions }: AnimationFrameData<Sp
   const centerY = height / 2;
   const animationData: Array<Record<string, any>> = [];
 
-  const newVectors = vectors.map((vector) => {
+  const newVectors = vectors.map((vector: Vector) => {
     const dx = vector.x - centerX;
     const dy = vector.y - centerY;
     const dist = Math.sqrt(dx * dx + dy * dy);

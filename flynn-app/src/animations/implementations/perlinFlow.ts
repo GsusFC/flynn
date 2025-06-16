@@ -13,7 +13,7 @@ interface PerlinFlowProps {
 const applyPerlinFlow = ({ vectors, time, props }: AnimationFrameData<PerlinFlowProps>): AnimationResult => {
   const { scale, speed, force } = props;
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const noiseValue = noise3D(vector.x * scale, vector.y * scale, time * speed);
     const angle = ((noiseValue + 1) / 2) * Math.PI * 2 * force;
 
@@ -29,8 +29,8 @@ const applyPerlinFlow = ({ vectors, time, props }: AnimationFrameData<PerlinFlow
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

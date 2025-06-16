@@ -19,7 +19,7 @@ const applyGaussianGradient = ({ vectors, dimensions, props }: AnimationFrameDat
   const sx2 = Math.max(0.001, sigmaX * sigmaX);
   const sy2 = Math.max(0.001, sigmaY * sigmaY);
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const dx = vector.x - realCenterX;
     const dy = vector.y - realCenterY;
 
@@ -46,8 +46,8 @@ const applyGaussianGradient = ({ vectors, dimensions, props }: AnimationFrameDat
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

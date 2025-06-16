@@ -1,5 +1,5 @@
 import { registerAnimation } from '../registry';
-import type { AnimationMeta, AnimationFrameData, AnimationResult } from '../types';
+import type { AnimationMeta, AnimationFrameData, AnimationResult, Vector } from '../types';
 
 // No hay props para una animación estática
 type StaticProps = Record<string, never>;
@@ -10,7 +10,7 @@ const applyStatic = ({ vectors, dimensions }: AnimationFrameData<StaticProps>): 
   const centerY = dimensions.height / 2;
   const maxDist = Math.sqrt(centerX**2 + centerY**2);
 
-  const animationData = vectors.map(vector => {
+  const animationData = vectors.map((vector: Vector) => {
     const dx = vector.x - centerX;
     const dy = vector.y - centerY;
     const dist = Math.sqrt(dx*dx + dy*dy);

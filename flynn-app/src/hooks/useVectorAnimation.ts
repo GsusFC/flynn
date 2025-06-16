@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { Vector } from '@/app/dev/FlynVectorGrid';
+import type { Vector } from '@/animations/types';
 import { getCustomGradient } from '@/lib/customGradients';
 import { PRESET_GRADIENTS } from '@/components/features/vector-grid/types/gradientTypes';
 import type { GradientConfig } from '@/components/features/vector-grid/types/gradientTypes';
@@ -202,7 +202,7 @@ export const useVectorAnimation = ({
         });
 
         // 2. Calculate dynamic properties (length, color) for each vector
-        const vectorsWithDynamicProps = baseAnimatedVectors.map((vector, index) => {
+        const vectorsWithDynamicProps = baseAnimatedVectors.map((vector: Vector, index: number) => {
           const data = animationData[index] || {};
           
           // --- Lógica especial para Cellular Automata ---

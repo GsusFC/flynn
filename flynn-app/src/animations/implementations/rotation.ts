@@ -1,6 +1,5 @@
 import { registerAnimation } from '../registry';
-import type { AnimationMeta, AnimationFrameData, AnimationResult } from '../types';
-import type { Vector } from '@/app/dev/FlynVectorGrid';
+import type { AnimationMeta, AnimationFrameData, AnimationResult, Vector } from '../types';
 
 // Definir las props específicas para esta animación
 interface RotationProps {
@@ -11,7 +10,7 @@ interface RotationProps {
 const applyRotation = ({ vectors, time, props }: AnimationFrameData<RotationProps>): AnimationResult => {
   const { speed } = props;
   
-  const newVectors = vectors.map((vector, index) => ({
+  const newVectors = vectors.map((vector: Vector, index: number) => ({
     ...vector,
     // La fórmula original era un poco caótica, la simplifico para que 'speed' sea el único factor
     angle: (vector.angle + time * 0.01 * speed + index * 0.01) % (Math.PI * 2),

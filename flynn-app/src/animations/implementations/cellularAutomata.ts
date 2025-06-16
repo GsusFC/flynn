@@ -46,8 +46,8 @@ function getInstanceState(vectorsKey: Readonly<Vector[]>): CellularAutomataState
 
 // --- Lógica de Inicialización ---
 function initializeGrid(vectors: Readonly<Vector[]>, seed: number, state: CellularAutomataState) {
-  const uniqueX = [...new Set(vectors.map(v => v.x))].sort((a, b) => a - b);
-  const uniqueY = [...new Set(vectors.map(v => v.y))].sort((a, b) => a - b);
+  const uniqueX = [...new Set(vectors.map((v: Vector) => v.x))].sort((a, b) => (a as number) - (b as number));
+  const uniqueY = [...new Set(vectors.map((v: Vector) => v.y))].sort((a, b) => (a as number) - (b as number));
   state.gridWidth = uniqueX.length;
   state.gridHeight = uniqueY.length;
 
@@ -56,7 +56,7 @@ function initializeGrid(vectors: Readonly<Vector[]>, seed: number, state: Cellul
   const mapX = new Map(uniqueX.map((x, i) => [x, i]));
   const mapY = new Map(uniqueY.map((y, i) => [y, i]));
 
-  state.vectorToGridMap = vectors.map(v => ({ col: mapX.get(v.x)!, row: mapY.get(v.y)! }));
+  state.vectorToGridMap = vectors.map((v: Vector) => ({ col: mapX.get(v.x)!, row: mapY.get(v.y)! }));
 
   // Usar la semilla para un resultado determinista
   let simpleSeed = seed;
@@ -119,7 +119,7 @@ const applyCellularAutomata = (frameData: AnimationFrameData<CellularAutomataPro
   }
   
   // Mapear estado de la retícula a los vectores
-  const newVectors = vectors.map((vec, i) => {
+  const newVectors = vectors.map((vec: Vector, i: number) => {
       if (!state.vectorToGridMap[i]) return { ...vec, animationData: { isAlive: 0 } };
       
       const { row, col } = state.vectorToGridMap[i];
@@ -134,10 +134,10 @@ const applyCellularAutomata = (frameData: AnimationFrameData<CellularAutomataPro
       };
   });
 
-  const allAnimationData = newVectors.map(v => v.animationData);
+  const allAnimationData = newVectors.map((v: any) => v.animationData);
   
   // La función debe devolver un array de vectores y un array de datos
-  return { vectors: newVectors.map(({ animationData, ...rest}) => rest), animationData: allAnimationData };
+  return { vectors: newVectors.map(({ animationData, ...rest}: any) => rest), animationData: allAnimationData };
 };
 
 const cellularAutomataMeta: AnimationMeta<CellularAutomataProps> = {

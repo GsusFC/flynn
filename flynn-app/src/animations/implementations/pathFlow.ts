@@ -57,7 +57,7 @@ const applyPathFlow = ({ vectors, props, dimensions }: AnimationFrameData<PathFl
   const path = generatePath(props.pathType, dimensions.width, dimensions.height);
   if (path.length < 2) return { vectors: [...vectors], animationData: [] };
   
-  const newVectors = vectors.map(vec => {
+  const newVectors = vectors.map((vec: Vector) => {
     const p = new Vector2D(vec.x, vec.y);
     let minDistanceSq = Infinity;
     let pathAngle = 0;

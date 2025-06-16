@@ -17,7 +17,7 @@ export const useConfigStore = create<ConfigStore>()(
   immer((set) => ({
     // Propiedades de configuración inicial
     name: 'Custom',
-    gridSize: 25,
+    gridSize: 0,
     gridPattern: 'regular' as const,
     animation: 'wave' as const,
     speed: 1,
@@ -49,7 +49,7 @@ export const useConfigStore = create<ConfigStore>()(
     // Grid properties for basic mode
     rows: 10,
     cols: 10,
-    spacing: 50,
+    spacing: 0,
     
     // Pattern-specific parameters with defaults
     // Fibonacci pattern
@@ -88,12 +88,15 @@ export const useConfigStore = create<ConfigStore>()(
         
         if (updates.gridMode) {
             if (updates.gridMode === 'basic') {
-                // Reset gridSize when switching to basic mode
+                // Volvemos al modo basado en filas/columnas → ignoramos gridSize
                 state.gridSize = 0;
             } else if (updates.gridMode === 'math') {
-                // Reset rows/cols when switching to math mode
+                // En modo matemático se ignoran filas/columnas
                 state.rows = 0;
                 state.cols = 0;
+                if (state.gridSize === 0) {
+                    state.gridSize = 100; // valor por defecto razonable
+                }
             }
         }
         

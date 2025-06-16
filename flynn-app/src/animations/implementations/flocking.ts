@@ -24,7 +24,7 @@ interface FlockingProps {
 const applyFlocking = ({ vectors, props, dimensions }: AnimationFrameData<FlockingProps>): AnimationResult => {
   // 1. Inicialización del estado
   if (!isInitialized || boids.length !== vectors.length) {
-    boids = vectors.map(v => ({
+    boids = vectors.map((v: Vector) => ({
       position: new Vector2D(v.x, v.y),
       velocity: new Vector2D(Math.random() * 2 - 1, Math.random() * 2 - 1),
       acceleration: new Vector2D(),
@@ -105,8 +105,8 @@ const applyFlocking = ({ vectors, props, dimensions }: AnimationFrameData<Flocki
     return { vector: newVector, data };
   });
   
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

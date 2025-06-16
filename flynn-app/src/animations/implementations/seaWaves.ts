@@ -24,7 +24,7 @@ const applySeaWaves = ({ vectors, time, props }: AnimationFrameData<SeaWavesProp
   const cosDir = Math.cos(direction);
   const sinDir = Math.sin(direction);
 
-  const results = vectors.map(vector => {
+  const results = vectors.map((vector: Vector) => {
     const rotatedX = vector.x * cosDir + vector.y * sinDir;
     
     let totalOffset = 0;
@@ -56,8 +56,8 @@ const applySeaWaves = ({ vectors, time, props }: AnimationFrameData<SeaWavesProp
     return { vector: newVector, data };
   });
 
-  const newVectors = results.map(r => r.vector);
-  const animationData = results.map(r => r.data);
+  const newVectors = results.map((r: any) => r.vector);
+  const animationData = results.map((r: any) => r.data);
 
   return { vectors: newVectors, animationData };
 };

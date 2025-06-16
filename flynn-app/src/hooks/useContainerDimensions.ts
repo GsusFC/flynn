@@ -14,9 +14,19 @@ export const useContainerDimensions = (
 ): Dimensions => {
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 800, height: 600 });
 
+  const updateDimensions = (newWidth: number, newHeight: number) => {
+    setDimensions(prev => {
+      if (prev.width === newWidth && prev.height === newHeight) return prev;
+      return { width: newWidth, height: newHeight };
+    });
+  };
+
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[Debug] useContainerDimensions effect', { fixedWidth, fixedHeight });
+    }
     if (fixedWidth && fixedHeight) {
-      setDimensions({ width: fixedWidth, height: fixedHeight });
+      updateDimensions(fixedWidth, fixedHeight);
       return;
     }
 
@@ -26,7 +36,7 @@ export const useContainerDimensions = (
       if (element) {
         const { width, height } = element.getBoundingClientRect();
         if (width > 0 && height > 0) {
-          setDimensions({ width, height });
+          updateDimensions(width, height);
         }
       }
     };

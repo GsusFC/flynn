@@ -60,6 +60,7 @@ function ViewContent() {
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
+    console.log('[Debug] ViewContent searchParams effect triggered');
     // First try to load compressed configuration
     const tryLoadCompressedConfig = async () => {
       const compressedParam = searchParams.get('c');
@@ -275,44 +276,7 @@ function ViewContent() {
       
       {/* Full screen vector grid */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <FlynVectorGrid
-          animation={animation}
-          speed={speed}
-          intensity={intensity}
-          gridPattern={gridPattern}
-          gridSize={gridSize}
-          spacing={spacing}
-          rows={rows}
-          cols={cols}
-          colorMode={colorMode}
-          solidColor={solidColor}
-          gradientPalette={gradientPalette}
-          colorIntensityMode={colorIntensityMode}
-          colorHueShift={colorHueShift}
-          colorSaturation={colorSaturation}
-          colorBrightness={colorBrightness}
-          backgroundColor={backgroundColor}
-          lengthMin={lengthMin}
-          lengthMax={lengthMax}
-          oscillationFreq={oscillationFreq}
-          oscillationAmp={oscillationAmp}
-          pulseSpeed={pulseSpeed}
-          spatialFactor={spatialFactor}
-          spatialMode={spatialMode}
-          mouseInfluence={mouseInfluence}
-          mouseMode={mouseMode}
-          physicsMode={physicsMode}
-          vectorShape={vectorShape}
-          showArrowheads={showArrowheads}
-          curvatureIntensity={curvatureIntensity}
-          waveFrequency={waveFrequency}
-          spiralTightness={spiralTightness}
-          organicNoise={organicNoise}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          margin={margin}
-          isPaused={isPaused}
-        />
+        <FlynVectorGrid />
       </div>
       
       {/* Footer with subtle branding */}

@@ -16,7 +16,7 @@ interface OceanCurrentsProps {
 const applyOceanCurrents = ({ vectors, time, props }: AnimationFrameData<OceanCurrentsProps>): AnimationResult => {
   const { scale, speed, force } = props;
 
-  const newVectors: Vector[] = vectors.map(vector => {
+  const newVectors: Vector[] = vectors.map((vector: Vector) => {
     const x = vector.x * scale;
     const y = vector.y * scale;
     const z = time * speed;

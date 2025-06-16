@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getCustomGradient } from '@/lib/customGradients';
 import { GRADIENT_PRESETS } from '@/domain/color/ColorPresets';
-import type { Vector } from '@/app/dev/FlynVectorGrid'; // Dependencia temporal
+import type { ExtendedVectorColorValue } from '@/components/features/vector-grid/types/gradientTypes';
+import type { Vector } from '../animations/types';
 
 // Las props que el hook necesita del componente principal
 interface UseVectorGridProps {
@@ -78,6 +79,7 @@ export const useVectorGrid = ({
   hexagonalOffset,
 }: UseVectorGridProps) => {
   const [vectors, setVectors] = useState<Vector[]>([]);
+  const prevCountRef = useRef<number>(0);
 
   const hybridConfig = useMemo(() => {
     const hasHybridProps = !!(rows || cols || spacing || canvasWidth || canvasHeight);
@@ -101,12 +103,13 @@ export const useVectorGrid = ({
     } else {
       const effectiveRows = rows || fallbackDim;
       const effectiveCols = cols || fallbackDim;
+      const calculatedSpacing = spacing && spacing > 0 ? spacing : (containerSize / (Math.max(effectiveRows, effectiveCols) + 1));
       return {
         mode: 'hybrid' as const,
         effectiveGridSize: Math.round(effectiveRows * effectiveCols),
         effectiveRows,
         effectiveCols,
-        effectiveSpacing: spacing || baseSpacing,
+        effectiveSpacing: calculatedSpacing,
         effectiveCanvasWidth: canvasWidth || dimensions.width,
         effectiveCanvasHeight: canvasHeight || dimensions.height,
       };
@@ -125,67 +128,57 @@ export const useVectorGrid = ({
     return `#${((1 << 24) + (rr << 16) + (rg << 8) + rb).toString(16).slice(1).padStart(6, '0')}`;
   };
 
-  // Memoizar stops ordenados del gradiente activo
-  const sortedStops = useMemo(() => {
-    if (colorMode !== 'gradient' || !gradientPalette) return null;
-    if (GRADIENT_PRESETS[gradientPalette]) {
-      return [...GRADIENT_PRESETS[gradientPalette].stops].sort((a,b)=>a.offset-b.offset);
-    }
-    const custom = getCustomGradient(gradientPalette);
-    if (custom) {
-      return [...custom.gradient.stops].sort((a,b)=>a.offset-b.offset);
-    }
-    return null;
-  }, [colorMode, gradientPalette]);
-
-  // Pre-calcular tabla de colores (LUT) cuando cambia el número de vectores o los stops
-  const colorLUT = useMemo(() => {
-    if (!sortedStops) return null;
-    const total = hybridConfig.effectiveGridSize;
-    if (!total || total <= 1) return null;
-    return Array.from({length: total}, (_, idx) => {
-      const factor = idx/(total-1);
-      let start = sortedStops[0];
-      let end = sortedStops[sortedStops.length-1];
-      for(let i=0;i<sortedStops.length-1;i++){
-        if(factor>=sortedStops[i].offset && factor<=sortedStops[i+1].offset){
-          start=sortedStops[i]; end=sortedStops[i+1]; break;
-        }
-      }
-      const t = end.offset>start.offset? (factor-start.offset)/(end.offset-start.offset):0;
-      return lerpColor(start.color,end.color,t);
-    });
-  }, [sortedStops, hybridConfig.effectiveGridSize]);
-
   const generateColor = useCallback((vectorIndex: number, totalVectors: number): string => {
-    if(colorMode==='gradient' && sortedStops){
-      if(colorLUT){
-        return colorLUT[vectorIndex] || solidColor || '#000000';
-      }
-      // Sin LUT (pocos vectores), interpolar rápido usando stops preordenados
-      const factor = totalVectors>1 ? vectorIndex/(totalVectors-1) : 0;
-      let start=sortedStops[0];
-      let end=sortedStops[sortedStops.length-1];
-      for(let i=0;i<sortedStops.length-1;i++){
-        if(factor>=sortedStops[i].offset && factor<=sortedStops[i+1].offset){
-          start=sortedStops[i]; end=sortedStops[i+1]; break;
+    if(colorMode==='gradient' && gradientPalette){
+      // Get fresh gradient data each time to avoid dependency issues
+      let currentStops = null;
+      if (GRADIENT_PRESETS[gradientPalette]) {
+        currentStops = [...GRADIENT_PRESETS[gradientPalette].stops].sort((a,b)=>a.offset-b.offset);
+      } else {
+        const custom = getCustomGradient(gradientPalette);
+        if (custom) {
+          currentStops = [...custom.gradient.stops].sort((a,b)=>a.offset-b.offset);
         }
       }
-      const t=end.offset>start.offset? (factor-start.offset)/(end.offset-start.offset):0;
-      return lerpColor(start.color,end.color,t);
+      
+      if (currentStops) {
+        const factor = totalVectors>1 ? vectorIndex/(totalVectors-1) : 0;
+        let start=currentStops[0];
+        let end=currentStops[currentStops.length-1];
+        for(let i=0;i<currentStops.length-1;i++){
+          if(factor>=currentStops[i].offset && factor<=currentStops[i+1].offset){
+            start=currentStops[i]; end=currentStops[i+1]; break;
+          }
+        }
+        const t=end.offset>start.offset? (factor-start.offset)/(end.offset-start.offset):0;
+        return lerpColor(start.color,end.color,t);
+      }
     }
     return solidColor || '#000000';
-  }, [colorMode, sortedStops, colorLUT, solidColor]);
+  }, [colorMode, gradientPalette, solidColor]);
 
-  const generateVectors = useCallback((pattern: string, count: number) => {
-    if (!count || count <= 0 || isNaN(count)) {
-      return [];
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[Debug] useVectorGrid effect triggered');
     }
+    const count = hybridConfig.effectiveGridSize;
+    if (!count || count <= 0 || isNaN(count)) {
+      if (typeof window !== 'undefined') console.log('[Debug] Early exit: invalid count', count);
+      setVectors([]);
+      return;
+    }
+    
+    if (count === prevCountRef.current && vectors.length > 0) {
+      if (typeof window !== 'undefined') console.log('[Debug] Early exit: count unchanged', {count, vectorsLen: vectors.length});
+      return;
+    }
+    if (typeof window !== 'undefined') console.log('[Debug] Generating new vectors', {count, prevCount: prevCountRef.current, vectorsLen: vectors.length});
+    prevCountRef.current = count;
 
     const newVectors: Vector[] = [];
     const { effectiveRows = 0, effectiveCols = 0, effectiveSpacing, effectiveCanvasWidth: canvasW, effectiveCanvasHeight: canvasH } = hybridConfig;
-    const spacingScaled = effectiveSpacing * gridScale;
-    const padding = Math.max(lengthMax || 0, 50);
+    const spacingScaled = effectiveSpacing * (gridScale ?? 1);
+    const padding = Math.max(lengthMax ?? 0, 50);
     const contentArea = {
       x: padding, y: padding, width: canvasW - 2 * padding, height: canvasH - 2 * padding,
       centerX: canvasW / 2, centerY: canvasH / 2
@@ -196,8 +189,25 @@ export const useVectorGrid = ({
     const gridStartY = contentArea.y + (contentArea.height - gridHeight) / 2;
 
     for (let i = 0; i < count; i++) {
-      let x, y;
-      switch (pattern) {
+      let x = 0, y = 0;
+      
+      switch (gridPattern) {
+        case 'regular':
+          x = gridStartX + (i % effectiveCols) * spacingScaled;
+          y = gridStartY + Math.floor(i / effectiveCols) * spacingScaled;
+          break;
+        
+        case 'fibonacci':
+          const n = i + 1;
+          const angle = n * (fibonacciAngle ?? 137.5) * (Math.PI / 180);
+          const radius = (fibonacciDensity ?? 1.0) * Math.sqrt(n) * ((contentArea.width / Math.sqrt(count)) / 2);
+          const maxR = contentArea.width / 2 * (fibonacciRadius ?? 0.8);
+          if (radius <= maxR) {
+            x = contentArea.centerX + Math.cos(angle) * radius;
+            y = contentArea.centerY + Math.sin(angle) * radius;
+          }
+          break;
+
         case 'hexagonal':
           const row = Math.floor(i / effectiveCols);
           const col = i % effectiveCols;
@@ -207,17 +217,7 @@ export const useVectorGrid = ({
           x = gridStartX + col * hexSpacing + offsetX;
           y = gridStartY + row * hexSpacing * 0.866;
           break;
-        case 'fibonacci':
-          if (count === 0) break;
-          const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-          const adjustedAngle = (fibonacciAngle ?? 137.5) * Math.PI / 180;
-          const densityFactor = fibonacciDensity ?? 1.0;
-          const maxRadiusFactor = fibonacciRadius ?? 0.8;
-          const fibRadius = Math.min(contentArea.width, contentArea.height) / 3 * maxRadiusFactor * Math.sqrt(i / count) * densityFactor;
-          const fibAngle = i * adjustedAngle;
-          x = contentArea.centerX + Math.cos(fibAngle) * fibRadius;
-          y = contentArea.centerY + Math.sin(fibAngle) * fibRadius;
-          break;
+
         case 'radial':
           if (count === 0) break;
           const numRingsRadial = radialRings ?? Math.ceil(Math.sqrt(count / Math.PI));
@@ -230,6 +230,7 @@ export const useVectorGrid = ({
           x = contentArea.centerX + Math.cos(angleInRing) * radiusInRing;
           y = contentArea.centerY + Math.sin(angleInRing) * radiusInRing;
           break;
+
         case 'staggered':
           const staggeredRow = Math.floor(i / effectiveCols);
           const staggeredCol = i % effectiveCols;
@@ -237,6 +238,7 @@ export const useVectorGrid = ({
           x = gridStartX + staggeredCol * spacingScaled + staggerOffset;
           y = gridStartY + staggeredRow * spacingScaled;
           break;
+
         case 'triangular':
           const triCols = Math.ceil(Math.sqrt(count * 1.2));
           const triRowIndex = Math.floor(i / triCols);
@@ -247,12 +249,14 @@ export const useVectorGrid = ({
           x = contentArea.x + triSpacingX + triColIndex * triSpacingX + rowOffset;
           y = contentArea.y + triSpacingY + triRowIndex * triSpacingY;
           break;
+
         case 'voronoi':
           const seed1 = (i * 73 + 37) % 997;
           const seed2 = (i * 179 + 83) % 991;
           x = contentArea.x + (seed1 / 997) * contentArea.width;
           y = contentArea.y + (seed2 / 991) * contentArea.height;
           break;
+
         case 'golden':
           if (count === 0) break;
           const goldenRatio = (1 + Math.sqrt(5)) / 2;
@@ -265,6 +269,7 @@ export const useVectorGrid = ({
           x = contentArea.centerX + Math.cos(goldenAnglePos) * goldenRadius;
           y = contentArea.centerY + Math.sin(goldenAnglePos) * goldenRadius;
           break;
+
         case 'polar':
           const numRingsPolar = polarRings ?? Math.ceil(Math.sqrt(count / 8));
           const numRadialLines = polarRadialLines ?? Math.ceil(count / numRingsPolar);
@@ -281,6 +286,7 @@ export const useVectorGrid = ({
           x = contentArea.centerX + Math.cos(anglePolar) * radiusPolar;
           y = contentArea.centerY + Math.sin(anglePolar) * radiusPolar;
           break;
+
         case 'logSpiral':
           if (count === 0) break;
           const tightness = spiralTightness ?? 0.2;
@@ -296,6 +302,7 @@ export const useVectorGrid = ({
           x = contentArea.centerX + Math.cos(spiralAngle) * normalizedRadius;
           y = contentArea.centerY + Math.sin(spiralAngle) * normalizedRadius;
           break;
+
         case 'concentricSquares':
           if (count === 0) break;
           const maxSquareSize = Math.min(contentArea.width, contentArea.height) / 2.2;
@@ -321,28 +328,63 @@ export const useVectorGrid = ({
           x = contentArea.centerX + squareX;
           y = contentArea.centerY + squareY;
           break;
-        default: // regular
-          const rowReg = Math.floor(i / effectiveCols);
-          const colReg = i % effectiveCols;
-          x = gridStartX + colReg * spacingScaled;
-          y = gridStartY + rowReg * spacingScaled;
-      }
-      const finalX = Math.max(margin || 0, Math.min(canvasW - (margin || 0), x || 0));
-      const finalY = Math.max(margin || 0, Math.min(canvasH - (margin || 0), y || 0));
-      newVectors.push({
-        id: `vector-${i}`, x: finalX, y: finalY, angle: i * 0.5,
-        length: (lengthMin || 10) + ((lengthMax || 25) - (lengthMin || 10)) * 0.5,
-        color: generateColor(i, count)
-      });
-    }
-    return newVectors;
-  }, [hybridConfig, margin, lengthMin, lengthMax, generateColor, gridScale]);
 
-  useEffect(() => {
-    if(hybridConfig.effectiveGridSize > 0) {
-      setVectors(generateVectors(gridPattern || 'regular', hybridConfig.effectiveGridSize));
+        default:
+          x = gridStartX + (i % effectiveCols) * spacingScaled;
+          y = gridStartY + Math.floor(i / effectiveCols) * spacingScaled;
+          break;
+      }
+
+      if (x > 0 && y > 0) {
+        const length = (lengthMin ?? 10) + Math.random() * ((lengthMax ?? 25) - (lengthMin ?? 10));
+        newVectors.push({
+          id: `${gridPattern}-${i}`,
+          x,
+          y,
+          initialAngle: Math.random() * 360,
+          angle: 0,
+          length,
+          initialLength: length,
+          color: generateColor(i, count),
+        });
+      }
     }
-  }, [gridPattern, hybridConfig.effectiveGridSize, generateVectors]);
+
+    // --- Ajuste final: centrar el bounding box de los vectores en el área de contenido ---
+    if (newVectors.length > 0) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const v of newVectors) {
+        if (v.x < minX) minX = v.x;
+        if (v.x > maxX) maxX = v.x;
+        if (v.y < minY) minY = v.y;
+        if (v.y > maxY) maxY = v.y;
+      }
+      const bboxCenterX = (minX + maxX) / 2;
+      const bboxCenterY = (minY + maxY) / 2;
+      const offsetX = contentArea.centerX - bboxCenterX;
+      const offsetY = contentArea.centerY - bboxCenterY;
+      if (offsetX !== 0 || offsetY !== 0) {
+        for (const v of newVectors) {
+          v.x += offsetX;
+          v.y += offsetY;
+        }
+      }
+    }
+
+    setVectors(newVectors);
+  }, [
+    gridPattern,
+    hybridConfig.effectiveGridSize, hybridConfig.effectiveRows, hybridConfig.effectiveCols,
+    hybridConfig.effectiveSpacing, hybridConfig.effectiveCanvasWidth, hybridConfig.effectiveCanvasHeight,
+    gridScale, lengthMin, lengthMax,
+    fibonacciAngle, fibonacciDensity, fibonacciRadius,
+    radialRings, radialVectorsPerRing, radialMaxRadius,
+    polarRadialLines, polarRings, polarDistribution,
+    goldenExpansion, goldenRotation, goldenCompression,
+    spiralTightness, spiralArms, spiralStartRadius,
+    hexagonalSpacing, hexagonalOffset,
+    solidColor, colorMode, gradientPalette
+  ]);
 
   return { vectors, hybridConfig };
 }; 
