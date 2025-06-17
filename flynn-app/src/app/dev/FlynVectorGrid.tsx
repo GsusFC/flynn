@@ -30,7 +30,7 @@ const FlynVectorGrid = forwardRef<FlynVectorGridRef, FlynVectorGridProps>(({
   const memoizedMousePos = useMemo(() => mousePos, [mousePos.x, mousePos.y]);
   const shapeParams = useMemo(() => config.shapeParams, [JSON.stringify(config.shapeParams)]);
 
-  const { vectors, hybridConfig } = useVectorGrid({
+  const { vectors, hybridConfig, layoutInfo } = useVectorGrid({
     dimensions: memoizedDimensions,
     gridSize: config.gridSize,
     gridPattern: config.gridPattern,
@@ -41,12 +41,10 @@ const FlynVectorGrid = forwardRef<FlynVectorGridRef, FlynVectorGridProps>(({
     fibonacciDensity: config.fibonacciDensity,
     fibonacciRadius: config.fibonacciRadius,
     fibonacciAngle: config.fibonacciAngle,
-    radialRings: config.radialRings,
-    radialVectorsPerRing: config.radialVectorsPerRing,
+    radialPatternBias: config.radialPatternBias,
     radialMaxRadius: config.radialMaxRadius,
-    polarRadialLines: config.polarRadialLines,
-    polarRings: config.polarRings,
     polarDistribution: config.polarDistribution,
+    polarRadialBias: config.polarRadialBias,
     goldenExpansion: config.goldenExpansion,
     goldenRotation: config.goldenRotation,
     goldenCompression: config.goldenCompression,
@@ -55,10 +53,14 @@ const FlynVectorGrid = forwardRef<FlynVectorGridRef, FlynVectorGridProps>(({
     spiralStartRadius: config.spiralStartRadius,
     hexagonalSpacing: config.hexagonalSpacing,
     hexagonalOffset: config.hexagonalOffset,
+    concentricSquaresNumSquares: config.concentricSquaresNumSquares,
+    concentricSquaresRotation: config.concentricSquaresRotation,
+    voronoiSeed: config.voronoiSeed,
   });
 
   const animatedVectors = useVectorAnimation({
     vectors,
+    layout: layoutInfo,
     dimensions: memoizedDimensions,
     mousePos: memoizedMousePos,
     ...config, 

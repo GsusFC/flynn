@@ -30,7 +30,7 @@ export const FastSvgRenderer = forwardRef<SVGSVGElement, FastSvgRendererProps>((
   const gradientMap = new Map<string, string>();
 
   const paths = vectors.map((v, i) => {
-    const angleRad = (v.angle * Math.PI) / 180;
+    const angleRad = v.angle;
     const { startX, startY, endX, endY } = calculateCoordsForOrigin(v.x, v.y, v.length, angleRad, baseRotationOrigin);
     let d = '';
     const vecShape = (v.shape ?? 'straight') as VectorShape;

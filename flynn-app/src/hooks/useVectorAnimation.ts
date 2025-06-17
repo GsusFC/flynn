@@ -7,6 +7,15 @@ import { evaluateGradient } from '@/lib/colorUtils';
 import { simpleNoise } from '@/lib/noise';
 import { applyAnimation } from '@/animations/animationEngine';
 import { getAnimation } from '@/animations/registry';
+import type { LayoutResult } from '@/gridEngine/types';
+
+const lerpAngle = (current: number, target: number, factor: number = 0.1): number => {
+  let diff = target - current;
+  // Asegurarse de que la interpolación toma el camino más corto en el círculo
+  if (diff > Math.PI) diff -= 2 * Math.PI;
+  if (diff < -Math.PI) diff += 2 * Math.PI;
+  return current + diff * factor;
+};
 
 const smoothLerp = (current: number, target: number, factor: number = 0.1): number => {
   return current + (target - current) * factor;
@@ -144,18 +153,13 @@ const applyGlobalEffects = (
       }
     }
 
-    // Angle smoothing
-    const prevAngleKey = `angle_main_${vector.id}`;
-    const prevAngle = prevValuesRef.current[prevAngleKey] || newAngle;
-    const finalSmoothedAngle = smoothLerp(prevAngle, newAngle, 0.15);
-    prevValuesRef.current[prevAngleKey] = finalSmoothedAngle;
-
-    return { ...vector, angle: finalSmoothedAngle };
+    return { ...vector, angle: newAngle };
   });
 }
 
 interface UseVectorAnimationProps {
   vectors: Vector[];
+  layout: LayoutResult | null;
   dimensions: { width: number; height: number };
   mousePos: { x: number; y: number };
   isPaused: boolean;
@@ -164,7 +168,7 @@ interface UseVectorAnimationProps {
 }
 
 export const useVectorAnimation = ({
-  vectors, dimensions, mousePos, isPaused, ...props
+  vectors, layout, dimensions, mousePos, isPaused, ...props
 }: UseVectorAnimationProps) => {
   const [animatedVectors, setAnimatedVectors] = useState<Vector[]>([]);
   const animationTimeRef = useRef(0);
@@ -175,48 +179,46 @@ export const useVectorAnimation = ({
 
   useEffect(() => {
     // We clone the vectors to avoid mutating the original array from useVectorGrid
-    setAnimatedVectors([...vectors]);
+    setAnimatedVectors(vectors.map(v => ({...v})));
   }, [vectors]);
 
   useEffect(() => {
     const animate = () => {
-      const currentProps = propsRef.current;
-      if (!isPaused && vectors.length && dimensions.width && dimensions.height) {
+      setAnimatedVectors(prevVectors => {
+        if (isPaused || !prevVectors.length || !dimensions.width || !dimensions.height) {
+            return prevVectors;
+        }
+
+        const currentProps = propsRef.current;
         animationTimeRef.current += 0.02 * (currentProps.speed || 1);
         const time = animationTimeRef.current;
         
-        // --- Integración con el nuevo sistema de animaciones ---
         const animationMeta = getAnimation(currentProps.animation);
-        
-        // Combinar props globales con las props específicas de la animación
         const animationSpecificProps = animationMeta ? animationMeta.defaultProps : {};
         const combinedProps = { ...animationSpecificProps, ...currentProps };
 
-        // 1. Apply the core animation logic from the engine
-        const { vectors: baseAnimatedVectors, animationData } = applyAnimation(currentProps.animation, {
-          vectors,
+        const { vectors: baseAnimatedVectors, animationData, targetAngles } = applyAnimation(currentProps.animation, {
+          vectors: prevVectors,
           time,
           dimensions,
           mousePos,
-          props: combinedProps // <-- Usar las props combinadas
+          props: combinedProps,
+          layout: layout ?? undefined
         });
 
-        // 2. Calculate dynamic properties (length, color) for each vector
         const vectorsWithDynamicProps = baseAnimatedVectors.map((vector: Vector, index: number) => {
           const data = animationData[index] || {};
           
-          // --- Lógica especial para Cellular Automata ---
           if (data.isAlive === 0) {
             return {
               ...vector,
-              length: 2, // Longitud mínima para células muertas
-              angle: 0, // Ángulo estático para células muertas
-              color: '#333', // Color oscuro para células muertas
+              length: 2,
+              angle: vector.angle,
+              color: '#333',
               shapeParams: vector.shapeParams || currentProps.shapeParams || {},
             };
           }
 
-          // --- Lógica normal para el resto de animaciones (y células vivas) ---
           let newLength = vector.length;
           if (animationMeta?.enableLengthDynamics !== false) {
             newLength = calculateDynamicLength(vector, time, index, dimensions, mousePos, prevValuesRef, currentProps);
@@ -224,19 +226,28 @@ export const useVectorAnimation = ({
 
           const newColor = calculateDynamicColor(vector, time, data, dimensions, currentProps);
           
+          let finalAngle = vector.angle;
+          if (targetAngles && targetAngles[index] !== undefined) {
+            if (currentProps.animation === 'inkFlow') {
+              finalAngle = targetAngles[index] as number;
+            } else {
+              finalAngle = lerpAngle(vector.angle, targetAngles[index] as number, 0.3);
+            }
+          }
+
           return {
             ...vector,
+            angle: finalAngle,
             length: newLength,
             color: newColor,
             shapeParams: vector.shapeParams || currentProps.shapeParams || {},
           };
         });
 
-        // 3. Apply global effects (like mouse influence) and smoothing
         const finalVectors = applyGlobalEffects(vectorsWithDynamicProps, mousePos, currentProps, prevValuesRef);
 
-        setAnimatedVectors(finalVectors);
-      }
+        return finalVectors;
+      });
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
@@ -247,7 +258,7 @@ export const useVectorAnimation = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [vectors, dimensions, mousePos, isPaused]);
+  }, [dimensions, mousePos, isPaused, layout]);
 
   return animatedVectors;
 };

@@ -35,7 +35,11 @@ export const AnimationParamsPanel: React.FC<AnimationParamsPanelProps> = ({ grid
 
     const handleButtonClick = (control: ButtonControlDef) => {
         if (control.id === 'triggerPulse') {
-            gridRef?.current?.triggerPulse?.();
+            const now = Date.now();
+            setConfig({ pulseState: { active: true, startMs: now } });
+            setTimeout(() => {
+                setConfig(state => ({ pulseState: { active: false, startMs: state.pulseState?.startMs || now } }));
+            }, 2000);
         }
     };
 

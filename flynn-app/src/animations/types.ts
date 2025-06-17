@@ -10,6 +10,9 @@ export interface Vector {
   initialLength: number;
   color: ExtendedVectorColorValue;
   shapeParams?: Record<string, number>;
+  row?: number;
+  col?: number;
+  ring?: number;
 }
 
 // --- Tipos para la definición de Controles en la UI ---
@@ -65,6 +68,14 @@ export interface AnimationFrameData<TProps = Record<string, any>> {
   dimensions: { width: number; height: number };
   mousePos: { x: number | null; y: number | null };
   props: TProps;
+  layout?: {
+    rows?: number;
+    cols?: number;
+    rings?: number;
+    lines?: number;
+    arms?: number;
+    spacing?: number;
+  };
 }
 
 /**
@@ -74,6 +85,8 @@ export interface AnimationResult {
   vectors: Vector[];
   /** Datos extra por vector que pueden usar otros sistemas (ej: color dinámico). */
   animationData: Array<Record<string, any>>;
+  /** El ángulo objetivo que la animación desea para el vector (opcional). */
+  targetAngles?: (number | undefined)[];
 }
 
 /**
@@ -84,7 +97,7 @@ export interface AnimationMeta<TProps extends Record<string, any>> {
   id: string;
   name: string;
   description?: string;
-  category?: 'core' | 'simple' | 'experimental';
+  category?: 'core' | 'simple' | 'experimental' | 'legacy';
   icon?: string;
   
   /** Define los sliders, selects, etc. que se mostrarán en la UI. */

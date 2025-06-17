@@ -26,6 +26,17 @@ export const AnimationSelectorPanel: React.FC<AnimationSelectorPanelProps> = ({
     "disabled:cursor-not-allowed disabled:opacity-50"
   );
 
+  const groupAndSort = (category: string) =>
+    availableAnimations
+      .filter(a => a.category === category)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+  const coreList = groupAndSort('core');
+  const legacyList = groupAndSort('legacy');
+  const experimentalList = availableAnimations
+      .filter(a => a.category !== 'core' && a.category !== 'legacy')
+      .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="pt-2">
       <select
@@ -34,24 +45,33 @@ export const AnimationSelectorPanel: React.FC<AnimationSelectorPanelProps> = ({
         onChange={handleAnimationChange}
         className={selectClassName}
       >
-        <optgroup label="Core">
-          {availableAnimations
-            .filter((a) => a.category === 'core')
-            .map((a) => (
+        {coreList.length > 0 && (
+          <optgroup label="Core">
+            {coreList.map(a => (
               <option key={a.id} value={a.id} className="bg-background text-foreground">
                 {a.name}
               </option>
             ))}
-        </optgroup>
-        <optgroup label="Experimental">
-          {availableAnimations
-            .filter((a) => a.category !== 'core')
-            .map((a) => (
+          </optgroup>
+        )}
+        {legacyList.length > 0 && (
+          <optgroup label="Legacy (Victor2)">
+            {legacyList.map(a => (
               <option key={a.id} value={a.id} className="bg-background text-foreground">
                 {a.name}
               </option>
             ))}
-        </optgroup>
+          </optgroup>
+        )}
+        {experimentalList.length > 0 && (
+          <optgroup label="Experimental">
+            {experimentalList.map(a => (
+              <option key={a.id} value={a.id} className="bg-background text-foreground">
+                {a.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
       </select>
     </div>
   );

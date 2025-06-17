@@ -53,10 +53,12 @@ export default function DevPage() {
     }, [setConfig]);
     
     const handleTriggerPulse = useCallback(() => {
-        if (gridRef.current) {
-            gridRef.current.triggerPulse();
-        }
-    }, []);
+        const now = Date.now();
+        setConfig({ pulseState: { active: true, startMs: now } });
+        setTimeout(() => {
+            setConfig(state => ({ pulseState: { active: false, startMs: state.pulseState?.startMs || now } }));
+        }, 2000);
+    }, [setConfig]);
 
     const handleExportSVG = useCallback(async () => {
         if (gridRef.current) {

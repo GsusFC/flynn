@@ -8,7 +8,8 @@ import type { VectorShape } from '@/lib/shapeRegistry';
 type AnimationId = PresetConfig['animation'];
 
 interface ConfigStore extends PresetConfig {
-  setConfig: (updater: Partial<PresetConfig> | ((state: PresetConfig) => Partial<PresetConfig>)) => void;
+  pulseState?: { active: boolean; startMs: number };
+  setConfig: (updater: Partial<PresetConfig & { pulseState?: { active: boolean; startMs: number } }> | ((state: PresetConfig & { pulseState?: { active: boolean; startMs: number } }) => Partial<PresetConfig & { pulseState?: { active: boolean; startMs: number } }>)) => void;
   setAnimation: (animationId: AnimationId) => void;
   setVectorShape: (shape: VectorShape) => void;
 }
@@ -40,7 +41,7 @@ export const useConfigStore = create<ConfigStore>()(
     mouseInfluence: 0,
     mouseMode: 'attract' as const,
     physicsMode: 'none' as const,
-    vectorShape: 'wave' as const,
+    vectorShape: 'straight' as const,
     shapeParams: getDefaultShapeParams('wave'),
     rotationOrigin: 'start' as const,
     isPaused: false,
@@ -58,14 +59,12 @@ export const useConfigStore = create<ConfigStore>()(
     fibonacciAngle: 137.5,
     
     // Radial pattern
-    radialRings: 6,
-    radialVectorsPerRing: 12,
+    radialPatternBias: 0, // -1 for rings, 1 for lines
     radialMaxRadius: 0.9,
     
     // Polar pattern
-    polarRadialLines: 16,
-    polarRings: 6,
     polarDistribution: 'uniform' as const,
+    polarRadialBias: 0, // -1 for rings, 1 for lines
     
     // Golden ratio pattern
     goldenExpansion: 1.0,
@@ -80,6 +79,15 @@ export const useConfigStore = create<ConfigStore>()(
     // Hexagonal pattern
     hexagonalSpacing: 1.0,
     hexagonalOffset: 0.5,
+
+    // Concentric Squares pattern
+    concentricSquaresNumSquares: 5,
+    concentricSquaresRotation: 0,
+
+    // Voronoi pattern
+    voronoiSeed: 1,
+    
+    pulseState: { active: false, startMs: 0 }, // Estado inicial del pulso
     
     // Métodos del store
     setConfig: (updater) => {
@@ -90,6 +98,7 @@ export const useConfigStore = create<ConfigStore>()(
             if (updates.gridMode === 'basic') {
                 // Volvemos al modo basado en filas/columnas → ignoramos gridSize
                 state.gridSize = 0;
+                state.gridPattern = 'regular';
             } else if (updates.gridMode === 'math') {
                 // En modo matemático se ignoran filas/columnas
                 state.rows = 0;

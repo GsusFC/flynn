@@ -22,6 +22,11 @@ import './implementations/geometricPattern';
 import './implementations/flocking';
 import './implementations/pathFlow';
 import './implementations/cellularAutomata';
+import './implementations/smoothWaves';
+import './implementations/seaWavesVictor';
+import './implementations/geometricPatternVictor';
+import './implementations/inkFlow';
+import './implementations/gaussianPulse';
 // A medida que migremos más, los añadiremos aquí.
 
 /**

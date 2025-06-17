@@ -11,19 +11,31 @@ interface WaveProps {
 }
 
 // Lógica
-const applyWave = ({ vectors, time, props }: AnimationFrameData<WaveProps>): AnimationResult => {
+const applyWave = ({ vectors, time, layout, props }: AnimationFrameData<WaveProps>): AnimationResult => {
   const { speed, intensity, frequency, amplitude, direction } = props;
   const angleRad = direction * (Math.PI / 180);
-  
+
+  // Detectar si la cuadrícula es de tipo polar/radial
+  const isRadial = layout?.rings !== undefined && layout.rings > 0;
+
   const results = vectors.map((vector: Vector) => {
-    // Proyectar la posición del vector sobre la dirección de la onda
-    const projected = vector.x * Math.cos(angleRad) + vector.y * Math.sin(angleRad);
-    
-    const waveValue = Math.sin(projected * (0.01 * frequency) + time * speed) * intensity;
+    let waveValue;
+
+    if (isRadial) {
+      // Comportamiento para cuadrículas polares/radiales
+      const ring = vector.ring ?? 0;
+      const totalRings = layout?.rings ?? 1;
+      // Propagar la onda desde el centro hacia afuera
+      waveValue = Math.sin(ring * (frequency / totalRings) - time * speed) * intensity;
+    } else {
+      // Comportamiento original para cuadrículas cartesianas (onda plana)
+      const projected = vector.x * Math.cos(angleRad) + vector.y * Math.sin(angleRad);
+      waveValue = Math.sin(projected * (0.01 * frequency) + time * speed) * intensity;
+    }
     
     const newVector = {
       ...vector,
-      angle: waveValue,
+      angle: waveValue * 3, // Absoluto, no aditivo + escalado para ser más visible
     };
     
     const data = {
@@ -97,7 +109,7 @@ const waveMeta: AnimationMeta<WaveProps> = {
   
   defaultProps: {
     speed: 1,
-    intensity: 1,
+    intensity: 2,
     frequency: 5,
     amplitude: 5,
     direction: 0,

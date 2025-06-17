@@ -14,13 +14,11 @@ export const PatternSpecificControls: React.FC = () => {
     const fibonacciRadius = useConfigStore(state => state.fibonacciRadius ?? 0.8);
     const fibonacciAngle = useConfigStore(state => state.fibonacciAngle ?? 137.5);
 
-    const radialRings = useConfigStore(state => state.radialRings ?? 6);
-    const radialVectorsPerRing = useConfigStore(state => state.radialVectorsPerRing ?? 12);
+    const radialPatternBias = useConfigStore(state => state.radialPatternBias ?? 0);
     const radialMaxRadius = useConfigStore(state => state.radialMaxRadius ?? 0.9);
 
-    const polarRadialLines = useConfigStore(state => state.polarRadialLines ?? 16);
-    const polarRings = useConfigStore(state => state.polarRings ?? 6);
     const polarDistribution = useConfigStore(state => state.polarDistribution ?? 'uniform');
+    const polarRadialBias = useConfigStore(state => state.polarRadialBias ?? 0);
 
     const goldenExpansion = useConfigStore(state => state.goldenExpansion ?? 1.0);
     const goldenRotation = useConfigStore(state => state.goldenRotation ?? 0);
@@ -32,6 +30,11 @@ export const PatternSpecificControls: React.FC = () => {
 
     const hexagonalSpacing = useConfigStore(state => state.hexagonalSpacing ?? 1.0);
     const hexagonalOffset = useConfigStore(state => state.hexagonalOffset ?? 0.5);
+
+    const concentricSquaresNumSquares = useConfigStore(state => state.concentricSquaresNumSquares ?? 5);
+    const concentricSquaresRotation = useConfigStore(state => state.concentricSquaresRotation ?? 0);
+
+    const voronoiSeed = useConfigStore(state => state.voronoiSeed ?? 1);
 
     const gridScale = useConfigStore(state => state.gridScale ?? 1);
 
@@ -82,20 +85,12 @@ export const PatternSpecificControls: React.FC = () => {
             <div className="grid gap-4 pt-2">
                 <div className="text-sm font-medium text-muted-foreground">Controles Radiales</div>
                 <SliderWithInput
-                    label="Número de Anillos"
-                    value={radialRings}
-                    min={3}
-                    max={15}
-                    step={1}
-                    onChange={val => setConfig({ radialRings: val })}
-                />
-                <SliderWithInput
-                    label="Vectores por Anillo"
-                    value={radialVectorsPerRing}
-                    min={6}
-                    max={24}
-                    step={2}
-                    onChange={val => setConfig({ radialVectorsPerRing: val })}
+                    label="Proporción Radial"
+                    value={radialPatternBias}
+                    min={-1}
+                    max={1}
+                    step={0.1}
+                    onChange={val => setConfig({ radialPatternBias: val })}
                 />
                 <SliderWithInput
                     label="Radio Máximo"
@@ -112,20 +107,12 @@ export const PatternSpecificControls: React.FC = () => {
             <div className="grid gap-4 pt-2">
                 <div className="text-sm font-medium text-muted-foreground">Controles Polares</div>
                 <SliderWithInput
-                    label="Líneas Radiales"
-                    value={polarRadialLines}
-                    min={8}
-                    max={32}
-                    step={2}
-                    onChange={val => setConfig({ polarRadialLines: val })}
-                />
-                <SliderWithInput
-                    label="Anillos Concéntricos"
-                    value={polarRings}
-                    min={3}
-                    max={12}
-                    step={1}
-                    onChange={val => setConfig({ polarRings: val })}
+                    label="Proporción Radial"
+                    value={polarRadialBias}
+                    min={-1}
+                    max={1}
+                    step={0.1}
+                    onChange={val => setConfig({ polarRadialBias: val })}
                 />
                 <div className="grid gap-2">
                     <label className="text-sm font-medium">Distribución</label>
@@ -223,7 +210,44 @@ export const PatternSpecificControls: React.FC = () => {
                 />
             </div>
         );
-    } else if (['triangular', 'staggered', 'concentricSquares'].includes(gridPattern)) {
+    } else if (gridPattern === 'concentricSquares') {
+        controlsContent = (
+            <div className="grid gap-4 pt-2">
+                <div className="text-sm font-medium text-muted-foreground">Controles Cuadrados Concéntricos</div>
+                <SliderWithInput
+                    label="Número de Cuadrados"
+                    value={concentricSquaresNumSquares}
+                    min={1}
+                    max={20}
+                    step={1}
+                    onChange={val => setConfig({ concentricSquaresNumSquares: val })}
+                />
+                <SliderWithInput
+                    label="Rotación"
+                    value={concentricSquaresRotation}
+                    min={0}
+                    max={90}
+                    step={1}
+                    onChange={val => setConfig({ concentricSquaresRotation: val })}
+                    suffix="°"
+                />
+            </div>
+        );
+    } else if (gridPattern === 'voronoi') {
+        controlsContent = (
+            <div className="grid gap-4 pt-2">
+                <div className="text-sm font-medium text-muted-foreground">Controles Voronoi</div>
+                <SliderWithInput
+                    label="Semilla Aleatoria"
+                    value={voronoiSeed}
+                    min={1}
+                    max={1000}
+                    step={1}
+                    onChange={val => setConfig({ voronoiSeed: val })}
+                />
+            </div>
+        );
+    } else if (['triangular', 'staggered'].includes(gridPattern)) {
         // Geometric patterns that use gridScale
         controlsContent = (
             <div className="grid gap-4 pt-2">

@@ -5,32 +5,38 @@ interface PulseProps {
   speed: number;
   amplitude: number;
   pulseWidth: number; // Ancho de la onda del pulso
-  // El estado del pulso se pasará desde el componente de la cuadrícula
-  pulseState?: { active: boolean; startTime: number };
+  pulseState?: { active: boolean; startMs: number };
 }
 
-const applyPulse = ({ vectors, time, dimensions, props }: AnimationFrameData<PulseProps>): AnimationResult => {
+const applyPulse = ({ vectors, dimensions, props }: AnimationFrameData<PulseProps>): AnimationResult => {
   const { speed = 1, amplitude = Math.PI / 2, pulseWidth = 50, pulseState } = props;
 
-  // Si no hay un pulso activo, no hacemos nada o aplicamos una ligera calma.
   if (!pulseState?.active) {
-    // Los vectores vuelven lentamente a su ángulo original (si lo tuvieran) o a 0.
-    const newVectors = vectors.map((v: Vector) => ({ ...v, angle: (v.angle || 0) * 0.9 }));
+    const centerX = dimensions.width / 2;
+    const centerY = dimensions.height / 2;
+
+    const smooth = (current: number, target: number, factor = 0.1) => {
+      let diff = target - current;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      return current + diff * factor;
+    };
+
+    const newVectors = vectors.map((v: Vector) => {
+      const dx = v.x - centerX;
+      const dy = v.y - centerY;
+      const baseAngle = Math.atan2(dy, dx) + Math.PI / 2;
+      return { ...v, angle: baseAngle };
+    });
     return { vectors: newVectors, animationData: vectors.map(() => ({})) };
   }
 
-  const centerX = dimensions.width / 2;
-  const centerY = dimensions.height / 2;
-  
-  // Tiempo transcurrido desde que se inició el pulso
-  const elapsedTime = time - pulseState.startTime;
-  
-  // El radio del frente de la onda del pulso
-  const pulseRadius = elapsedTime * speed * 200; // Multiplicador para velocidad perceptible
+  const elapsedSec = (Date.now() - pulseState.startMs) / 1000;
+  const pulseRadius = elapsedSec * speed * 200;
 
   const results = vectors.map((vector: Vector) => {
-    const dx = vector.x - centerX;
-    const dy = vector.y - centerY;
+    const dx = vector.x - dimensions.width / 2;
+    const dy = vector.y - dimensions.height / 2;
     const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
 
     // Distancia del vector al frente de la onda
@@ -71,7 +77,7 @@ const pulseMeta: AnimationMeta<PulseProps> = {
     {
       id: 'triggerPulse',
       type: 'button',
-      label: 'Lanzar Pulso',
+      label: '⚡ Pulso',
     },
     {
       id: 'speed',

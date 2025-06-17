@@ -58,7 +58,7 @@ const CanvasVectorRenderer: React.FC<
       // Extraer propiedades (compatible con SimpleVector y Vector)
       const x = vector.x;
       const y = vector.y;
-      const angle = vector.angle * Math.PI / 180; // Canvas usa radianes
+      const angle = vector.angle; // ahora en radianes directamente
       const length = vector.dynamicLength ?? vector.length;
       const color = vector.color;
       
