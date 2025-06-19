@@ -181,7 +181,7 @@ export default function LabCanvas() {
     if (controls.animationType === 'none') { setAnimatedVectors(baseVectors); return; }
     const animationMeta = getAllAnimations().find(a => a.id === controls.animationType);
     if (!animationMeta) { setAnimatedVectors(baseVectors); return; }
-    const animationResult = applyAnimation(controls.animationType, { vectors: baseVectors, time, dimensions: { width: 100, height: 100 }, mousePos: { x: null, y: null }, props: { ...animationMeta.defaultProps, ...controls.animationProps, speed: controls.animationSpeed, intensity: controls.animationIntensity }, layout: layoutInfo });
+    const animationResult = applyAnimation(controls.animationType, { vectors: baseVectors, time, dimensions: { width: 100, height: 100 }, mousePos: { x: null, y: null }, props: { ...animationMeta.defaultProps, ...controls.animationProps, speed: controls.animationSpeed, intensity: controls.animationIntensity }, layout: layoutInfo || undefined });
     setAnimatedVectors(animationResult.vectors);
   }, [controls.animationType, controls.animationIntensity, controls.animationSpeed, controls.animationProps, baseVectors, time, layoutInfo]);
 

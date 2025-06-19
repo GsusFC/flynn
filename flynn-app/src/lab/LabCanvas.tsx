@@ -676,17 +676,17 @@ export default function LabCanvas() {
                     )}
                      {controls.colorConfig.color.type === 'hsl' && (
                         <div className="space-y-4">
-                          <SliderWithInput label="Tono Base" value={controls.colorConfig.color.hue ?? 0} min={0} max={360} step={1} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, hue: v}})} />
-                          <SliderWithInput label="Velocidad" value={controls.colorConfig.color.speed ?? 0.5} min={0.01} max={1.0} step={0.01} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, speed: v}})} />
-                          <SliderWithInput label="Saturación" value={controls.colorConfig.color.saturation ?? 80} min={20} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, saturation: v}})} />
+                          <SliderWithInput label="Tono Base" value={(controls.colorConfig.color as any).hue ?? 0} min={0} max={360} step={1} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, hue: v} as any})} />
+                          <SliderWithInput label="Velocidad" value={(controls.colorConfig.color as any).speed ?? 0.5} min={0.01} max={1.0} step={0.01} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, speed: v} as any})} />
+                          <SliderWithInput label="Saturación" value={(controls.colorConfig.color as any).saturation ?? 80} min={20} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, saturation: v} as any})} />
                         </div>
                      )}
                      {controls.colorConfig.color.type === 'dynamic' && (
                         <div className="space-y-4">
-                           <SliderWithInput label="Sensibilidad" value={controls.colorConfig.color.intensityResponse ?? 0.5} min={0.1} max={1.5} step={0.1} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, intensityResponse: v}})} />
-                           <SliderWithInput label="Color Base" value={controls.colorConfig.color.hue ?? 0} min={0} max={360} step={10} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, hue: v}})} />
-                           <SliderWithInput label="Saturación" value={controls.colorConfig.color.saturation ?? 70} min={0} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, saturation: v}})} />
-                           <SliderWithInput label="Luminosidad" value={controls.colorConfig.color.lightness ?? 50} min={0} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, lightness: v}})} />
+                           <SliderWithInput label="Sensibilidad" value={(controls.colorConfig.color as any).intensityResponse ?? 0.5} min={0.1} max={1.5} step={0.1} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, intensityResponse: v} as any})} />
+                           <SliderWithInput label="Color Base" value={(controls.colorConfig.color as any).hue ?? 0} min={0} max={360} step={10} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, hue: v} as any})} />
+                           <SliderWithInput label="Saturación" value={(controls.colorConfig.color as any).saturation ?? 70} min={0} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, saturation: v} as any})} />
+                           <SliderWithInput label="Luminosidad" value={(controls.colorConfig.color as any).lightness ?? 50} min={0} max={100} step={5} onChange={v => updateColorConfig({color: {...controls.colorConfig.color, lightness: v} as any})} />
                         </div>
                      )}
                   </div>
@@ -705,7 +705,7 @@ export default function LabCanvas() {
                         { value: 'bezier', label: 'Bezier' },
                         { value: 'zigzag', label: 'Zigzag' }
                       ]}
-                      onChange={(value) => updateControl('vectorShape', value)}
+                      onChange={(value) => updateControl('vectorShape', value as any)}
                     />
                     <SliderWithInput label="Grosor" value={controls.vectorThickness} min={0.001} max={0.1} step={0.001} onChange={(v) => updateControl('vectorThickness', v)} />
                   </div>
