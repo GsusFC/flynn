@@ -31,7 +31,7 @@ const applyFlocking = ({ vectors, props, dimensions, gridChecksum }: AnimationFr
       acceleration: new Vector2D(),
     }));
     isInitialized = true;
-    lastGridChecksum = gridChecksum;
+    lastGridChecksum = gridChecksum ?? null;
   }
 
   // 2. Calcular el siguiente estado para cada boid

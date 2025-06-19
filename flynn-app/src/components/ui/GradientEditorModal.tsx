@@ -72,9 +72,11 @@ export const GradientEditorModal: React.FC<GradientEditorModalProps> = ({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)]">
           <GradientEditor
-            gradient={currentGradient}
-            onChange={setCurrentGradient}
-            onSave={handleSave}
+            isOpen={true}
+            onClose={() => {}}
+            initialGradient={currentGradient}
+            onSave={setCurrentGradient}
+            onSaveAsCustom={handleSave}
           />
         </div>
       </div>

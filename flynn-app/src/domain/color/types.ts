@@ -1,7 +1,7 @@
 // Domain types for color system
 // Tipos base para el sistema de colores independiente
 
-export type ColorMode = 'solid' | 'gradient' | 'dynamic';
+export type ColorMode = 'solid' | 'gradient' | 'dynamic' | 'hsl';
 
 export interface SolidColor {
   type: 'solid';

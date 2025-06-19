@@ -64,7 +64,7 @@ export const WebExportModal: React.FC<WebExportModalProps> = ({
     vectorConfig: {
       length: vectorConfig.length || 20,
       width: vectorConfig.width || 2,
-      color: vectorConfig.color || '#10b981',
+      color: typeof vectorConfig.color === 'string' ? vectorConfig.color : '#10b981',
       shape: (vectorConfig.shape as any) || 'line',
       opacity: vectorConfig.opacity || 0.8
     },
@@ -79,6 +79,11 @@ export const WebExportModal: React.FC<WebExportModalProps> = ({
       height: canvasDimensions.height || 600,
       background: '#0a0a0a',
       responsive: true
+    },
+    interaction: {
+      clickToPause: true,
+      mouseInfluence: false,
+      autoStart: true
     }
   }));
 

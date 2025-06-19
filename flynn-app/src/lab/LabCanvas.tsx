@@ -369,7 +369,7 @@ export default function LabCanvas() {
         speed: controls.animationSpeed, 
         intensity: controls.animationIntensity 
       }, 
-      layout: layoutInfo,
+      layout: layoutInfo || undefined,
       gridChecksum // Pass the checksum here
     });
     setAnimatedVectors(animationResult.vectors);
