@@ -311,8 +311,24 @@ export default function LabCanvas() {
 
   useEffect(() => {
     if (!isPlaying) return;
-    const interval = setInterval(() => setTime(prev => isLooping && prev + 0.016 * controls.animationSpeed >= loopDuration ? (prev + 0.016 * controls.animationSpeed) % loopDuration : prev + 0.016 * controls.animationSpeed), 16);
-    return () => clearInterval(interval);
+    
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+      lastTime = currentTime;
+      
+      setTime(prev => {
+        const newTime = prev + deltaTime * controls.animationSpeed;
+        return isLooping && newTime >= loopDuration ? newTime % loopDuration : newTime;
+      });
+      
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    
+    animationFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrameId);
   }, [controls.animationSpeed, isPlaying, isLooping, loopDuration]);
 
   const { vectors: flynVectors, layoutInfo } = useVectorGrid({ 

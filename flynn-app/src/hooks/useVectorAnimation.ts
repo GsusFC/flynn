@@ -8,13 +8,11 @@ import { simpleNoise } from '@/lib/noise';
 import { applyAnimation } from '@/animations/animationEngine';
 import { getAnimation } from '@/animations/registry';
 import type { LayoutResult } from '@/gridEngine/types';
+import { smoothAngleLerp, SmoothTimer, AnimationValueCache } from '@/components/features/vector-grid/utils/smoothAnimationUtils';
 
+// Usar la nueva función de interpolación angular suave
 const lerpAngle = (current: number, target: number, factor: number = 0.1): number => {
-  let diff = target - current;
-  // Asegurarse de que la interpolación toma el camino más corto en el círculo
-  if (diff > Math.PI) diff -= 2 * Math.PI;
-  if (diff < -Math.PI) diff += 2 * Math.PI;
-  return current + diff * factor;
+  return smoothAngleLerp(current, target, factor);
 };
 
 const smoothLerp = (current: number, target: number, factor: number = 0.1): number => {
@@ -172,6 +170,8 @@ export const useVectorAnimation = ({
 }: UseVectorAnimationProps) => {
   const [animatedVectors, setAnimatedVectors] = useState<Vector[]>([]);
   const animationTimeRef = useRef(0);
+  const smoothTimerRef = useRef(new SmoothTimer());
+  const animationCacheRef = useRef(new AnimationValueCache());
   const prevValuesRef = useRef<{ [key: string]: number }>({});
   const animationFrameRef = useRef<number>();
   const propsRef = useRef(props);
@@ -183,14 +183,19 @@ export const useVectorAnimation = ({
   }, [vectors]);
 
   useEffect(() => {
-    const animate = () => {
+    const animate = (currentTime: number) => {
       setAnimatedVectors(prevVectors => {
         if (isPaused || !prevVectors.length || !dimensions.width || !dimensions.height) {
             return prevVectors;
         }
 
         const currentProps = propsRef.current;
-        animationTimeRef.current += 0.02 * (currentProps.speed || 1);
+        
+        // Calculate smooth delta time for animation
+        const deltaTime = smoothTimerRef.current.update(currentTime);
+        
+        // Update animation time with smooth delta
+        animationTimeRef.current += deltaTime * (currentProps.speed || 1);
         const time = animationTimeRef.current;
         
         const animationMeta = getAnimation(currentProps.animation);
@@ -251,6 +256,9 @@ export const useVectorAnimation = ({
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
+    // Reset timing when animation starts
+    smoothTimerRef.current.reset();
+    animationCacheRef.current.clear();
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
