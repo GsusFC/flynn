@@ -10,6 +10,7 @@ interface Boid {
 }
 let boids: Boid[] = [];
 let isInitialized = false;
+let lastGridChecksum: number | null = null;
 
 
 interface FlockingProps {
@@ -21,15 +22,16 @@ interface FlockingProps {
   cohesionForce: number;
 }
 
-const applyFlocking = ({ vectors, props, dimensions }: AnimationFrameData<FlockingProps>): AnimationResult => {
+const applyFlocking = ({ vectors, props, dimensions, gridChecksum }: AnimationFrameData<FlockingProps>): AnimationResult => {
   // 1. Inicialización del estado
-  if (!isInitialized || boids.length !== vectors.length) {
+  if (!isInitialized || boids.length !== vectors.length || lastGridChecksum !== gridChecksum) {
     boids = vectors.map((v: Vector) => ({
       position: new Vector2D(v.x, v.y),
       velocity: new Vector2D(Math.random() * 2 - 1, Math.random() * 2 - 1),
       acceleration: new Vector2D(),
     }));
     isInitialized = true;
+    lastGridChecksum = gridChecksum;
   }
 
   // 2. Calcular el siguiente estado para cada boid

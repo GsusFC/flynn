@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Minus, X } from 'lucide-react';
 
+// Dummy provider for backward compatibility
+export const PanelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <>{children}</>;
+};
+
 interface FloatingPanelProps {
   title: string;
   children: React.ReactNode;
@@ -31,9 +36,6 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
       return;
     }
 
-    if (e.target !== e.currentTarget && !(e.target as HTMLElement).closest('.drag-handle')) {
-        return;
-    }
     e.preventDefault();
     setIsDragging(true);
     const panel = panelRef.current;
@@ -47,10 +49,11 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    setPosition({
-      x: e.clientX - dragStartPos.current.x,
-      y: e.clientY - dragStartPos.current.y,
-    });
+
+    const newX = e.clientX - dragStartPos.current.x;
+    const newY = e.clientY - dragStartPos.current.y;
+
+    setPosition({ x: newX, y: newY });
   };
 
   const handleMouseUp = () => {
@@ -61,15 +64,12 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -90,7 +90,7 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
         top: `${position.y}px`,
         width: `${defaultWidth}px`,
         height: isMinimized ? '40px' : 'auto',
-        zIndex: 10
+        zIndex: isDragging ? 20 : 10
       }}
     >
       <div 
@@ -109,7 +109,7 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
       </div>
       
       {!isMinimized && (
-        <div className="p-4">
+        <div className="p-4 overflow-y-auto">
           {children}
         </div>
       )}

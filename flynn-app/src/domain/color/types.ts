@@ -1,11 +1,12 @@
 // Domain types for color system
 // Tipos base para el sistema de colores independiente
 
-export type ColorMode = 'solid' | 'gradient' | 'hsl' | 'dynamic';
+export type ColorMode = 'solid' | 'gradient' | 'dynamic';
 
 export interface SolidColor {
   type: 'solid';
   value: string; // hex, rgb, hsl
+  offset?: number;
 }
 
 export interface GradientColor {
@@ -21,14 +22,17 @@ export interface HSLColor {
   speed: number;
   saturation: number;
   lightness: number;
+  hue?: number;
   offset?: number;
 }
 
 export interface DynamicColor {
   type: 'dynamic';
-  baseColor: SolidColor | GradientColor;
+  hue: number;
+  saturation: number;
+  lightness: number;
   intensityResponse: number;
-  blendMode: 'multiply' | 'overlay' | 'screen' | 'normal';
+  effect: 'hue' | 'saturation' | 'lightness'; // Propiedad a modular
 }
 
 export interface ColorStop {

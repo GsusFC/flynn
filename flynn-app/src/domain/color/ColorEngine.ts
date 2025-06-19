@@ -28,9 +28,6 @@ export class ColorEngine {
       case 'gradient':
         return this.processGradientColor(color, context);
       
-      case 'hsl':
-        return this.processHSLColor(color, context);
-      
       case 'dynamic':
         return this.processDynamicColor(color, context);
       
@@ -70,65 +67,35 @@ export class ColorEngine {
   }
 
   /**
-   * Procesa colores HSL animados
-   */
-  private processHSLColor(
-    color: HSLColor,
-    context: ColorContext
-  ): ProcessedColor {
-    const { time, vectorIndex, totalVectors } = context;
-    
-    let hue: number;
-    
-    switch (color.variant) {
-      case 'rainbow':
-        // Arcoiris basado en posición
-        hue = (vectorIndex / totalVectors) * 360;
-        break;
-        
-      case 'flow':
-        // Flujo temporal
-        hue = (time * color.speed + (vectorIndex / totalVectors) * 360) % 360;
-        break;
-        
-      case 'cycle':
-        // Ciclo temporal uniforme
-        hue = (time * color.speed + (color.offset || 0)) % 360;
-        break;
-        
-      default:
-        hue = 0;
-    }
-
-    const hslColor = `hsl(${hue}, ${color.saturation}%, ${color.lightness}%)`;
-    
-    return {
-      fill: hslColor,
-      opacity: 1
-    };
-  }
-
-  /**
    * Procesa colores dinámicos (responden a intensidad de animación)
    */
   private processDynamicColor(
     color: DynamicColor,
     context: ColorContext
   ): ProcessedColor {
-    const baseResult = this.processColor(color.baseColor, context);
     const intensity = context.animationIntensity || 0;
     
-    // Modular color basado en intensidad
-    const modulatedColor = this.modulateColorByIntensity(
-      baseResult.fill, 
-      intensity, 
-      color.intensityResponse,
-      color.blendMode
-    );
+    let { hue, saturation, lightness } = color;
+
+    const modulation = intensity * color.intensityResponse;
+
+    switch (color.effect) {
+      case 'hue':
+        hue = (hue + modulation * 360) % 360;
+        break;
+      case 'saturation':
+        saturation = Math.max(0, Math.min(100, saturation + modulation * 100));
+        break;
+      case 'lightness':
+        lightness = Math.max(0, Math.min(100, lightness + modulation * 100));
+        break;
+    }
+    
+    const hslColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     
     return {
-      ...baseResult,
-      fill: modulatedColor
+      fill: hslColor,
+      opacity: 1
     };
   }
 
@@ -149,61 +116,6 @@ export class ColorEngine {
     }
     
     return this.gradientCache.get(key)!;
-  }
-
-  /**
-   * Modula color basado en intensidad de animación
-   */
-  private modulateColorByIntensity(
-    baseColor: string,
-    intensity: number,
-    response: number,
-    blendMode: DynamicColor['blendMode']
-  ): string {
-    // Implementación básica - se puede expandir
-    const factor = 1 + (intensity * response);
-    
-    // Para colores hex, ajustar brillo
-    if (baseColor.startsWith('#')) {
-      return this.adjustColorBrightness(baseColor, factor);
-    }
-    
-    // Para HSL, ajustar lightness
-    if (baseColor.startsWith('hsl')) {
-      return this.adjustHSLBrightness(baseColor, factor);
-    }
-    
-    return baseColor;
-  }
-
-  /**
-   * Ajusta brillo de color hex
-   */
-  private adjustColorBrightness(hexColor: string, factor: number): string {
-    const hex = hexColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    
-    const newR = Math.min(255, Math.max(0, Math.floor(r * factor)));
-    const newG = Math.min(255, Math.max(0, Math.floor(g * factor)));
-    const newB = Math.min(255, Math.max(0, Math.floor(b * factor)));
-    
-    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-  }
-
-  /**
-   * Ajusta brillo de color HSL
-   */
-  private adjustHSLBrightness(hslColor: string, factor: number): string {
-    const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!match) return hslColor;
-    
-    const h = parseInt(match[1]);
-    const s = parseInt(match[2]);
-    const l = Math.min(100, Math.max(0, Math.floor(parseInt(match[3]) * factor)));
-    
-    return `hsl(${h}, ${s}%, ${l}%)`;
   }
 
   /**

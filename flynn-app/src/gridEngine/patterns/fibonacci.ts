@@ -19,9 +19,14 @@ export function generateFibonacci(opts: FibonacciOptions): Point[] {
     angleDeg = 137.5,
   } = opts;
 
+  // Debug log to see what count is being received
+  console.log('🌀 Fibonacci generator received count:', count);
+
   const cx = w / 2;
   const cy = h / 2;
-  const maxRadius = Math.min(w, h) / 2 * radiusFactor;
+  // Increase maxRadius based on count to accommodate more vectors
+  const baseRadius = Math.min(w, h) / 2 * radiusFactor;
+  const maxRadius = count > 1000 ? baseRadius * Math.sqrt(count / 1000) : baseRadius;
   const scale = Math.min(w, h) / Math.sqrt(count) / 2;
 
   const angleRad = angleDeg * Math.PI / 180;
@@ -29,7 +34,8 @@ export function generateFibonacci(opts: FibonacciOptions): Point[] {
   for (let i = 0; i < count; i++) {
     const n = i + 1;
     const r = density * Math.sqrt(n) * scale;
-    if (r > maxRadius) continue;
+    // Remove maxRadius limitation to allow all requested vectors
+    // if (r > maxRadius) continue;
     const theta = n * angleRad;
     const x = cx + Math.cos(theta) * r;
     const y = cy + Math.sin(theta) * r;

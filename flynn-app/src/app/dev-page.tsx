@@ -8,6 +8,8 @@ import { useKeyboardControls } from '@/components/features/vector-grid/hooks/use
 import { GradientEditorModal } from '@/components/ui/GradientEditorModal';
 import { useCustomGradients } from '@/lib/customGradients';
 import { GifExportModal } from '@/components/features/vector-grid/components/GifExportModal';
+import { AnimatedSvgExportModal } from '@/components/features/vector-grid/components/AnimatedSvgExportModal';
+import { WebExportModal } from '@/components/features/vector-grid/components/WebExportModal';
 import { GridPanel } from '@/components/panels/GridPanel';
 import { AnimationControlsPanel } from '@/components/sections/AnimationControlsPanel';
 import { VectorShapePanel } from '@/components/panels/VectorShapePanel';
@@ -38,6 +40,8 @@ export default function DevPage() {
     const [showLengthHelp, setShowLengthHelp] = useState(false);
     const [showGradientEditor, setShowGradientEditor] = useState(false);
     const [showGifExportModal, setShowGifExportModal] = useState(false);
+    const [showAnimatedSvgModal, setShowAnimatedSvgModal] = useState(false);
+    const [showWebExportModal, setShowWebExportModal] = useState(false);
 
     const availableAnimations = getAllAnimations();
     
@@ -105,7 +109,9 @@ export default function DevPage() {
                   isPaused={isPaused}
                   onTogglePause={handleTogglePause}
                   onExportSVG={handleExportSVG}
+                  onExportAnimatedSVG={() => setShowAnimatedSvgModal(true)}
                   onExportGIF={() => setShowGifExportModal(true)}
+                  onExportWeb={() => setShowWebExportModal(true)}
                   onShare={handleShare}
                 />
 
@@ -158,6 +164,30 @@ export default function DevPage() {
             <LengthDynamicsHelp isOpen={showLengthHelp} onClose={() => setShowLengthHelp(false)} />
             <GradientEditorModal isOpen={showGradientEditor} onClose={() => setShowGradientEditor(false)} onGradientCreated={handleGradientCreated} />
             <GifExportModal isOpen={showGifExportModal} onClose={() => setShowGifExportModal(false)} gridRef={gridRef} />
+            <AnimatedSvgExportModal isOpen={showAnimatedSvgModal} onClose={() => setShowAnimatedSvgModal(false)} gridRef={gridRef} />
+            <WebExportModal 
+                isOpen={showWebExportModal} 
+                onClose={() => setShowWebExportModal(false)} 
+                gridRef={gridRef}
+                gridConfig={{
+                    rows: useConfigStore.getState().rows || 10,
+                    cols: useConfigStore.getState().cols || 10,
+                    spacing: useConfigStore.getState().spacing || 40,
+                    margin: 20 // Default margin as it's not in the store
+                }}
+                vectorConfig={{
+                    shape: useConfigStore.getState().vectorShape || 'line',
+                    length: useConfigStore.getState().vectorLength || 20,
+                    width: useConfigStore.getState().vectorWidth || 2,
+                    color: useConfigStore.getState().primaryColor || '#10b981',
+                    strokeLinecap: useConfigStore.getState().strokeLinecap || 'round',
+                    rotationOrigin: useConfigStore.getState().rotationOrigin || 'center',
+                    opacity: 1 // Default opacity
+                }}
+                animationType={useConfigStore.getState().animationType}
+                canvasDimensions={useConfigStore.getState().canvasSize || { width: 800, height: 800 }}
+                animationProps={useConfigStore.getState().animationProps || {}}
+            />
         </div>
     );
 }

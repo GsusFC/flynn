@@ -1,77 +1,77 @@
-# Sistema de Configuraciones Guardadas - Guía de Configuración
+# Saved Configurations System - Setup Guide
 
-## Configuración de Vercel KV
+## Vercel KV Configuration
 
-Para habilitar las configuraciones públicas compartidas, necesitas configurar Vercel KV:
+To enable shared public configurations, you need to configure Vercel KV:
 
-### 1. Crear un KV Store en Vercel
+### 1. Create a KV Store in Vercel
 
-1. Ve a tu dashboard de Vercel: https://vercel.com/dashboard/stores
-2. Haz clic en "Create Database" → "KV"
-3. Dale un nombre a tu store (ej: `flynn-vector-grid-configs`)
-4. Selecciona tu región preferida
+1. Go to your Vercel dashboard: https://vercel.com/dashboard/stores
+2. Click "Create Database" → "KV"
+3. Give your store a name (e.g: `flynn-vector-grid-configs`)
+4. Select your preferred region
 
-### 2. Obtener las credenciales
+### 2. Get the credentials
 
-Una vez creado el KV store:
+Once the KV store is created:
 
-1. Ve a la pestaña "Settings" de tu KV store
-2. Copia las variables de entorno:
+1. Go to the "Settings" tab of your KV store
+2. Copy the environment variables:
    - `KV_REST_API_URL`
    - `KV_REST_API_TOKEN`
 
-### 3. Configurar variables de entorno
+### 3. Configure environment variables
 
-#### Para desarrollo local:
-1. Crea o edita `flynn-app/.env.local`
-2. Agrega las variables copiadas:
+#### For local development:
+1. Create or edit `flynn-app/.env.local`
+2. Add the copied variables:
 ```bash
 KV_REST_API_URL="https://your-kv-store.kv.vercel-storage.com"
 KV_REST_API_TOKEN="your_secret_token_here"
 ```
 
-#### Para producción:
-1. Ve a tu proyecto en Vercel dashboard
+#### For production:
+1. Go to your project in Vercel dashboard
 2. Settings → Environment Variables
-3. Agrega las dos variables de entorno
+3. Add the two environment variables
 
-### 4. Verificar la instalación
+### 4. Verify installation
 
-1. Ejecuta `cd flynn-app && npm install @vercel/kv`
-2. Reinicia tu servidor de desarrollo
-3. Prueba guardando una configuración pública
+1. Run `cd flynn-app && npm install @vercel/kv`
+2. Restart your development server
+3. Test by saving a public configuration
 
-## Funcionalidades del Sistema
+## System Features
 
-### Configuraciones Privadas
-- Se guardan en localStorage del navegador
-- Solo visibles para el usuario actual
-- No requieren configuración adicional
+### Private Configurations
+- Saved in browser localStorage
+- Only visible to current user
+- No additional configuration required
 
-### Configuraciones Públicas
-- Se guardan en Vercel KV
-- Compartibles mediante URL
-- Requieren configuración de Vercel KV
+### Public Configurations
+- Saved in Vercel KV
+- Shareable via URL
+- Require Vercel KV configuration
 
-### Características principales:
-- Guardar/cargar configuraciones completas (grid, vectores, animación, zoom)
-- Sistema de tags para organización
-- Filtros por tipo de animación
-- Búsqueda por nombre/descripción/tags
-- Contador de visualizaciones para configs públicas
-- Links compartibles para configs públicas
+### Main features:
+- Save/load complete configurations (grid, vectors, animation, zoom)
+- Tag system for organization
+- Filters by animation type
+- Search by name/description/tags
+- View counter for public configs
+- Shareable links for public configs
 
 ## API Endpoints
 
-- `POST /api/configs/save` - Guardar configuración pública
-- `GET /api/configs/public` - Listar configuraciones públicas (con filtros)
-- `GET /api/configs/[id]` - Obtener configuración específica
-- `DELETE /api/configs/[id]` - Eliminar configuración pública
-- `GET /api/configs/usage` - Estadísticas de uso
+- `POST /api/configs/save` - Save public configuration
+- `GET /api/configs/public` - List public configurations (with filters)
+- `GET /api/configs/[id]` - Get specific configuration
+- `DELETE /api/configs/[id]` - Delete public configuration
+- `GET /api/configs/usage` - Usage statistics
 
-## Próximos pasos
+## Next steps
 
-1. Configurar Vercel KV siguiendo los pasos anteriores
-2. Probar guardando una configuración privada
-3. Probar guardando una configuración pública
-4. Verificar que los filtros y búsqueda funcionen correctamente
+1. Configure Vercel KV following the steps above
+2. Test saving a private configuration
+3. Test saving a public configuration
+4. Verify that filters and search work correctly

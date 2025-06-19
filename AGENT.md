@@ -1,68 +1,68 @@
 # Flynn Vector Grid - Agent Memory
 
-## Comandos Frecuentes
-- **Dev server**: `cd flynn-app && npm run dev` (puerto 3000 o siguiente disponible)
+## Frequent Commands
+- **Dev server**: `cd flynn-app && npm run dev` (port 3000 or next available)
 - **Build**: `cd flynn-app && npm run build`
 - **Lint**: `cd flynn-app && npm run lint`
 
-## Cambios Recientes (Enero 2025)
-- **FlynVectorGrid v2 CREADO**: Nueva versión usando useFlynnHook como cerebro estable
-- **useSimpleVectorGridOptimized DEPRECADO**: Hook roto marcado como deprecated
-- **Sistema unificado**: FlynVectorGrid v2 + useFlynnHook sin loops infinitos
-- **Página v2-test**: `/v2-test` para probar nueva arquitectura
-- **Backward compatibility**: FlynVectorGrid v2 mantiene interfaz compatible
-- **Manual controls**: Solo controles manuales (rotate, pulse, reset) - no animaciones automáticas
+## Recent Changes (January 2025)
+- **FlynVectorGrid v2 CREATED**: New version using useFlynnHook as stable brain
+- **useSimpleVectorGridOptimized DEPRECATED**: Broken hook marked as deprecated
+- **Unified system**: FlynVectorGrid v2 + useFlynnHook without infinite loops
+- **v2-test page**: `/v2-test` to test new architecture
+- **Backward compatibility**: FlynVectorGrid v2 maintains compatible interface
+- **Manual controls**: Only manual controls (rotate, pulse, reset) - no automatic animations
 
-## Arquitectura del Proyecto
+## Project Architecture
 
-### Estructura Principal
-- `flynn-app/` - Aplicación Next.js principal
-- `back/` - Documentación y stores auxiliares
-- Vector grid con renderizado híbrido SVG/Canvas (>300 vectores → Canvas automático)
+### Main Structure
+- `flynn-app/` - Main Next.js application
+- `back/` - Documentation and auxiliary stores
+- Vector grid with hybrid SVG/Canvas rendering (>300 vectors → automatic Canvas)
 
-### Componentes Clave
-- `SimpleVectorGrid` - Básico, solo SVG
-- `SimpleVectorGridOptimized` - Híbrido con monitor de performance
-- Sistema de animaciones modular en `flynn-app/src/components/features/vector-grid/simple/animations/`
+### Key Components
+- `SimpleVectorGrid` - Basic, SVG only
+- `SimpleVectorGridOptimized` - Hybrid with performance monitor
+- Modular animation system in `flynn-app/src/components/features/vector-grid/simple/animations/`
 
-## Problemas Identificados y Solucionados
+## Identified and Solved Problems
 
-### Animaciones con Props Faltantes
-- **seaWaves**: Faltaba `spatialFactor` en tipos y conversión legacy
-- **geometricPattern**: Faltaba `patternIntensity` en tipos y conversión legacy
-- **Solución**: Agregar props faltantes a `simpleTypes.ts` y `page.tsx`
+### Animations with Missing Props
+- **seaWaves**: Missing `spatialFactor` in types and legacy conversion
+- **geometricPattern**: Missing `patternIntensity` in types and legacy conversion
+- **Solution**: Add missing props to `simpleTypes.ts` and `page.tsx`
 
-### Sistema de Colores HSL Problemático
-**Problema**: `hslRainbow` y `hslGradientFlow` están implementadas como animaciones cuando deberían ser opciones de color independientes.
+### Problematic HSL Color System
+**Problem**: `hslRainbow` and `hslGradientFlow` are implemented as animations when they should be independent color options.
 
-**Consecuencias**:
-- Los colores se "pegan" al cambiar de animación
-- No se pueden combinar animaciones de movimiento con efectos de color
-- Mezcla de responsabilidades (movimiento + color)
+**Consequences**:
+- Colors "stick" when changing animations
+- Cannot combine movement animations with color effects
+- Mixed responsibilities (movement + color)
 
-### Plan de Refactoring Pendiente
-**Estado**: Analizado, no implementado aún
-**Objetivo**: Separar sistema de animaciones (movimiento) del sistema de colores
-**Beneficios**: HSL picker unificado, gradientes personalizables, mejor UX
+### Pending Refactoring Plan
+**Status**: Analyzed, not implemented yet
+**Goal**: Separate animation system (movement) from color system
+**Benefits**: Unified HSL picker, customizable gradients, better UX
 
-### ⚠️ Problema Crítico - Loop de Animación Roto (Enero 2025)
-**Síntoma**: Los vectores se ven pero no se mueven automáticamente con el tiempo
-**Estado**: Detectado, no resuelto
-**Causa**: Loop de animación no funciona correctamente
-- requestAnimationFrame se ejecuta
+### ⚠️ Critical Problem - Broken Animation Loop (January 2025)
+**Symptom**: Vectors are visible but don't move automatically over time
+**Status**: Detected, not resolved
+**Cause**: Animation loop not working correctly
+- requestAnimationFrame executes
 - isPaused = false
-- Botón pause/play responde pero animaciones no corren
-- Vectores sí responden a cambios manuales de controles
-**Nota**: Revisar useSimpleVectorGridOptimized.ts líneas 270-285
+- Pause/play button responds but animations don't run
+- Vectors do respond to manual control changes
+**Note**: Check useSimpleVectorGridOptimized.ts lines 270-285
 
-## Configuración del Usuario
-- Prefiere 50x50 vectores (2500 vectores) para pruebas de alta densidad
-- Utiliza modo debug activado (`debugMode = true` en page.tsx línea 48)
-- Testea principalmente con animaciones complejas (olas, patrones geométricos)
+## User Configuration
+- Prefers 50x50 vectors (2500 vectors) for high-density testing
+- Uses debug mode enabled (`debugMode = true` in page.tsx line 48)
+- Mainly tests with complex animations (waves, geometric patterns)
 
-## Notas Técnicas
-- TypeScript estricto habilitado
-- ESLint con reglas de React
-- Tailwind CSS para estilos
-- Sistema de tipos modular para animaciones
-- Performance monitoring automático para rendering
+## Technical Notes
+- Strict TypeScript enabled
+- ESLint with React rules
+- Tailwind CSS for styling
+- Modular type system for animations
+- Automatic performance monitoring for rendering

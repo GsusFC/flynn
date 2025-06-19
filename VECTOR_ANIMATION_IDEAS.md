@@ -1,259 +1,259 @@
-# 🎨 Ideas de Animaciones de Vectores Avanzadas
+# 🎨 Advanced Vector Animation Ideas
 
-## 📚 Fuentes de Inspiración
+## 📚 Inspiration Sources
 - Flow Fields (Keith Peters - Medium)
-- Campos vectoriales de física (magnético, eléctrico)
-- Matemáticas de curvas paramétricas
-- Fractales y sistemas dinámicos
+- Physics vector fields (magnetic, electric)
+- Parametric curve mathematics
+- Fractals and dynamic systems
 
 ---
 
-## 🌀 **1. CAMPOS FÍSICOS**
+## 🌀 **1. PHYSICAL FIELDS**
 
-### **Dipolo Magnético**
+### **Magnetic Dipole**
 ```
 Bx = μ₀m/(4π) * (3xy/r⁵)
 By = μ₀m/(4π) * (3y²-r²)/r⁵
 ```
-- **Descripción**: Simula el campo magnético de un dipolo
-- **Parámetros**: Momento magnético, posición del dipolo
-- **Efecto**: Vectores forman loops cerrados alrededor del dipolo
+- **Description**: Simulates magnetic field of a dipole
+- **Parameters**: Magnetic moment, dipole position
+- **Effect**: Vectors form closed loops around the dipole
 
-### **Campo Eléctrico Radial**
+### **Radial Electric Field**
 ```
 Ex = kQ * x/r³
 Ey = kQ * y/r³
 ```
-- **Descripción**: Campo eléctrico de carga puntual
-- **Parámetros**: Carga Q, constante k
-- **Efecto**: Vectores apuntan hacia/desde la carga
+- **Description**: Electric field of point charge
+- **Parameters**: Charge Q, constant k
+- **Effect**: Vectors point towards/away from charge
 
-### **Tornados Duales**
+### **Dual Tornadoes**
 ```
 angle = atan2(y-cy, x-cx) + t*ω + A*sin(r/λ)
 ```
-- **Descripción**: Dos vórtices que interactúan
-- **Parámetros**: Posiciones, velocidades angulares, amplitud
-- **Efecto**: Patrones complejos de interferencia
+- **Description**: Two interacting vortices
+- **Parameters**: Positions, angular velocities, amplitude
+- **Effect**: Complex interference patterns
 
 ---
 
-## 📐 **2. CURVAS PARAMÉTRICAS COMO CAMPOS**
+## 📐 **2. PARAMETRIC CURVES AS FIELDS**
 
-### **Rosa de Rhodonea** 
+### **Rhodonea Rose** 
 ```
 r = a*cos(k*θ)
 angle = k*θ + phase_offset
 ```
-- **Descripción**: Vectores siguen tangentes de rosas matemáticas
-- **Parámetros**: k (número de pétalos), a (amplitud)
-- **Efecto**: Patrones florales dinámicos
+- **Description**: Vectors follow tangents of mathematical roses
+- **Parameters**: k (number of petals), a (amplitude)
+- **Effect**: Dynamic floral patterns
 
-### **Espiral de Arquímedes**
+### **Archimedean Spiral**
 ```
 r = a + b*θ
-angle = θ + π/2 (tangente)
+angle = θ + π/2 (tangent)
 ```
-- **Descripción**: Vectores tangentes a espiral
-- **Parámetros**: a (offset), b (separación)
-- **Efecto**: Espiral infinita hacia fuera
+- **Description**: Vectors tangent to spiral
+- **Parameters**: a (offset), b (separation)
+- **Effect**: Infinite spiral outward
 
-### **Cardioide Dinámica**
+### **Dynamic Cardioid**
 ```
 x = a*(2*cos(t) - cos(2*t))
 y = a*(2*sin(t) - sin(2*t))
 angle = atan2(dy/dt, dx/dt)
 ```
-- **Descripción**: Forma de corazón en movimiento
-- **Parámetros**: a (tamaño), velocidad de t
-- **Efecto**: Corazón pulsante
+- **Description**: Heart shape in motion
+- **Parameters**: a (size), t velocity
+- **Effect**: Pulsating heart
 
-### **Mariposa de Lorenz**
+### **Lorenz Butterfly**
 ```
 x = sin(t)*(e^cos(t) - 2*cos(4*t) - sin^5(t/12))
 y = cos(t)*(e^cos(t) - 2*cos(4*t) - sin^5(t/12))
 ```
-- **Descripción**: Curva mariposa transcendental
-- **Parámetros**: Velocidad, escalas
-- **Efecto**: Alas de mariposa ondulantes
+- **Description**: Transcendental butterfly curve
+- **Parameters**: Speed, scales
+- **Effect**: Undulating butterfly wings
 
 ---
 
-## 🔄 **3. SISTEMAS DINÁMICOS**
+## 🔄 **3. DYNAMIC SYSTEMS**
 
-### **Atractor de Lorenz 2D**
+### **Lorenz Attractor 2D**
 ```
 dx/dt = σ(y - x)
-dy/dt = x(ρ - z) - y  [proyectado a 2D]
+dy/dt = x(ρ - z) - y  [projected to 2D]
 ```
-- **Descripción**: Proyección 2D del famoso atractor caótico
-- **Parámetros**: σ, ρ, β
-- **Efecto**: Caos determinista
+- **Description**: 2D projection of famous chaotic attractor
+- **Parameters**: σ, ρ, β
+- **Effect**: Deterministic chaos
 
-### **Péndulo Doble**
+### **Double Pendulum**
 ```
-θ₁'' = [compleja ecuación diferencial]
-θ₂'' = [compleja ecuación diferencial]
+θ₁'' = [complex differential equation]
+θ₂'' = [complex differential equation]
 ```
-- **Descripción**: Campo vectorial del péndulo doble
-- **Parámetros**: Masas, longitudes, gravedad
-- **Efecto**: Movimiento caótico e impredecible
+- **Description**: Double pendulum vector field
+- **Parameters**: Masses, lengths, gravity
+- **Effect**: Chaotic and unpredictable movement
 
-### **Mapa de Hénon**
+### **Hénon Map**
 ```
 x₍ₙ₊₁₎ = 1 - a*x²ₙ + yₙ
 y₍ₙ₊₁₎ = b*xₙ
 ```
-- **Descripción**: Sistema dinámico discreto
-- **Parámetros**: a = 1.4, b = 0.3 (valores clásicos)
-- **Efecto**: Atractor extraño fractal
+- **Description**: Discrete dynamic system
+- **Parameters**: a = 1.4, b = 0.3 (classic values)
+- **Effect**: Strange fractal attractor
 
 ---
 
-## 🌊 **4. ONDAS COMPLEJAS**
+## 🌊 **4. COMPLEX WAVES**
 
-### **Interferencia de Ondas**
+### **Wave Interference**
 ```
 z = A₁*sin(k₁·r - ω₁*t + φ₁) + A₂*sin(k₂·r - ω₂*t + φ₂)
 angle = atan2(∂z/∂y, ∂z/∂x)
 ```
-- **Descripción**: Múltiples fuentes de ondas interfieren
-- **Parámetros**: Amplitudes, frecuencias, fases
-- **Efecto**: Patrones de interferencia complejos
+- **Description**: Multiple wave sources interfere
+- **Parameters**: Amplitudes, frequencies, phases
+- **Effect**: Complex interference patterns
 
-### **Ondas de Choque**
+### **Shock Waves**
 ```
-v = { v₁ si x < shock_position(t)
-    { v₂ si x ≥ shock_position(t)
+v = { v₁ if x < shock_position(t)
+    { v₂ if x ≥ shock_position(t)
 ```
-- **Descripción**: Discontinuidades que se propagan
-- **Parámetros**: Velocidades antes/después, posición
-- **Efecto**: Frentes de onda abruptos
+- **Description**: Propagating discontinuities
+- **Parameters**: Before/after velocities, position
+- **Effect**: Abrupt wave fronts
 
-### **Solitones**
+### **Solitons**
 ```
 u = A*sech²(√(A/12)*(x - A*t/3))
 ```
-- **Descripción**: Ondas solitarias que mantienen forma
-- **Parámetros**: Amplitud A
-- **Efecto**: Pulsos que viajan sin deformarse
+- **Description**: Solitary waves that maintain shape
+- **Parameters**: Amplitude A
+- **Effect**: Pulses that travel without deformation
 
 ---
 
-## 🎯 **5. CAMPOS GEOMÉTRICOS**
+## 🎯 **5. GEOMETRIC FIELDS**
 
-### **Teselación de Voronoi**
+### **Voronoi Tessellation**
 ```
 angle = perpendicular_to_nearest_edge
 ```
-- **Descripción**: Vectores perpendiculares a bordes de Voronoi
-- **Parámetros**: Puntos semilla, distancias
-- **Efecto**: Celulas orgánicas
+- **Description**: Vectors perpendicular to Voronoi edges
+- **Parameters**: Seed points, distances
+- **Effect**: Organic cells
 
-### **Fractales de Newton**
+### **Newton Fractals**
 ```
 z₍ₙ₊₁₎ = zₙ - f(zₙ)/f'(zₙ)
 ```
-- **Descripción**: Método de Newton en plano complejo
-- **Parámetros**: Función f, punto inicial
-- **Efecto**: Cuencas de atracción coloridas
+- **Description**: Newton's method in complex plane
+- **Parameters**: Function f, initial point
+- **Effect**: Colorful attraction basins
 
-### **Transformaciones Möbius**
+### **Möbius Transformations**
 ```
 w = (az + b)/(cz + d)
 ```
-- **Descripción**: Transformaciones conformes
-- **Parámetros**: a, b, c, d (números complejos)
-- **Efecto**: Deformaciones que preservan ángulos
+- **Description**: Conformal transformations
+- **Parameters**: a, b, c, d (complex numbers)
+- **Effect**: Angle-preserving deformations
 
 ---
 
-## ⚡ **6. CAMPOS ENERGÉTICOS**
+## ⚡ **6. ENERGY FIELDS**
 
-### **Potencial de Lennard-Jones**
+### **Lennard-Jones Potential**
 ```
 V = 4ε[(σ/r)¹² - (σ/r)⁶]
 F = -∇V
 ```
-- **Descripción**: Interacción molecular
-- **Parámetros**: ε (profundidad), σ (distancia)
-- **Efecto**: Atracción/repulsión molecular
+- **Description**: Molecular interaction
+- **Parameters**: ε (depth), σ (distance)
+- **Effect**: Molecular attraction/repulsion
 
-### **Campo Gravitacional N-Cuerpos**
+### **N-Body Gravitational Field**
 ```
 F = Σᵢ Gmᵢm/(|rᵢ-r|²) * (rᵢ-r)/|rᵢ-r|
 ```
-- **Descripción**: Múltiples masas gravitacionales
-- **Parámetros**: Masas, posiciones
-- **Efecto**: Órbitas complejas, puntos de Lagrange
+- **Description**: Multiple gravitational masses
+- **Parameters**: Masses, positions
+- **Effect**: Complex orbits, Lagrange points
 
-### **Plasma en Campo Magnético**
+### **Plasma in Magnetic Field**
 ```
-v⊥ = E×B/B²  (deriva E×B)
+v⊥ = E×B/B²  (E×B drift)
 ```
-- **Descripción**: Partículas cargadas en campos cruzados
-- **Parámetros**: E, B, carga
-- **Efecto**: Derivas y ciclotrón
+- **Description**: Charged particles in crossed fields
+- **Parameters**: E, B, charge
+- **Effect**: Drifts and cyclotron motion
 
 ---
 
-## 🎨 **7. ARTE GENERATIVO**
+## 🎨 **7. GENERATIVE ART**
 
-### **Autómatas Celulares Vectoriales**
+### **Vector Cellular Automata**
 ```
 if neighbors_count == 3: birth
 if neighbors_count ∈ {2,3}: survive
 angle = function_of_local_state
 ```
-- **Descripción**: Conway's Life pero con vectores
-- **Parámetros**: Reglas, estados
-- **Efecto**: Evolución orgánica compleja
+- **Description**: Conway's Life but with vectors
+- **Parameters**: Rules, states
+- **Effect**: Complex organic evolution
 
-### **Campos de Gradiente**
+### **Gradient Fields**
 ```
 angle = atan2(∂f/∂y, ∂f/∂x)
-f = función_artística(x,y,t)
+f = artistic_function(x,y,t)
 ```
-- **Descripción**: Gradiente de funciones artísticas
-- **Parámetros**: Función base personalizada
-- **Efecto**: Flujo siguiendo gradientes
+- **Description**: Gradient of artistic functions
+- **Parameters**: Custom base function
+- **Effect**: Flow following gradients
 
-### **Tiling Penrose Vectorial**
+### **Vector Penrose Tiling**
 ```
 angle = local_penrose_orientation + noise
 ```
-- **Descripción**: Vectores alineados con tiling aperiódico
-- **Parámetros**: Escala de tiling, ruido
-- **Efecto**: Patrones cuasi-cristalinos
+- **Description**: Vectors aligned with aperiodic tiling
+- **Parameters**: Tiling scale, noise
+- **Effect**: Quasi-crystalline patterns
 
 ---
 
-## 🔧 **PARÁMETROS GLOBALES SUGERIDOS**
+## 🔧 **SUGGESTED GLOBAL PARAMETERS**
 
-### **Factores Universales**
-- **Velocidad global**: Multiplica todas las velocidades temporales
-- **Intensidad global**: Multiplica todas las amplitudes
-- **Escala espacial**: Factor de zoom del patrón
-- **Fase temporal**: Offset de tiempo global
-- **Mezcla de ruido**: % de ruido añadido a cualquier patrón
+### **Universal Factors**
+- **Global speed**: Multiplies all temporal velocities
+- **Global intensity**: Multiplies all amplitudes
+- **Spatial scale**: Pattern zoom factor
+- **Temporal phase**: Global time offset
+- **Noise mix**: % of noise added to any pattern
 
-### **Efectos de Post-Procesamiento**
-- **Suavizado temporal**: Promedio con frames anteriores
-- **Cuantización angular**: Limitar a N direcciones discretas
-- **Modulación de longitud**: Longitud = f(posición, tiempo)
-- **Modo de color**: HSL basado en ángulo/velocidad
-
----
-
-## 🎯 **PRÓXIMAS IMPLEMENTACIONES PRIORITARIAS**
-
-1. **Rosa de Rhodonea** - Visualmente impresionante y matemáticamente elegante
-2. **Dipolo Magnético** - Comportamiento físico real
-3. **Interferencia de Ondas** - Patrones complejos pero predecibles
-4. **Mariposa de Lorenz** - Curva icónica y hermosa
-5. **Campo Gravitacional N-Cuerpos** - Simulación física realista
+### **Post-Processing Effects**
+- **Temporal smoothing**: Average with previous frames
+- **Angular quantization**: Limit to N discrete directions
+- **Length modulation**: Length = f(position, time)
+- **Color mode**: HSL based on angle/velocity
 
 ---
 
-*Documento creado: $(date)*
-*Fuentes: Medium, Wikipedia, Wolfram, investigación matemática*
+## 🎯 **PRIORITY NEXT IMPLEMENTATIONS**
+
+1. **Rhodonea Rose** - Visually stunning and mathematically elegant
+2. **Magnetic Dipole** - Real physical behavior
+3. **Wave Interference** - Complex but predictable patterns
+4. **Lorenz Butterfly** - Iconic and beautiful curve
+5. **N-Body Gravitational Field** - Realistic physics simulation
+
+---
+
+*Document created: $(date)*
+*Sources: Medium, Wikipedia, Wolfram, mathematical research*

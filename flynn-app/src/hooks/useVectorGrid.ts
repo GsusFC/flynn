@@ -10,6 +10,7 @@ import type { GridRequest, LayoutResult } from '@/gridEngine/types';
 
 // Las props que el hook necesita del componente principal
 interface UseVectorGridProps {
+  gridMode?: 'basic' | 'math';
   gridSize?: number;
   gridPattern?: 'regular' | 'hexagonal' | 'fibonacci' | 'radial' | 'staggered' | 'triangular' | 'voronoi' | 'golden' | 'polar' | 'logSpiral' | 'concentricSquares';
   rows?: number;
@@ -48,6 +49,7 @@ interface UseVectorGridProps {
 }
 
 export const useVectorGrid = ({
+  gridMode = 'math',
   gridSize = 25,
   gridPattern = 'regular',
   rows,
@@ -93,6 +95,18 @@ export const useVectorGrid = ({
     const fallbackDim = gridSize ? Math.round(Math.sqrt(gridSize)) : 0;
     
     const baseSpacing = fallbackDim > 0 ? containerSize / (fallbackDim + 1) : containerSize;
+
+    // Debug log to see what's happening with hybrid config
+    console.log('🔧 useVectorGrid hybridConfig:', {
+      gridSize,
+      hasHybridProps,
+      fallbackDim,
+      rows,
+      cols,
+      spacing,
+      canvasWidth,
+      canvasHeight
+    });
     
     if (!hasHybridProps) {
       return {
@@ -174,8 +188,8 @@ export const useVectorGrid = ({
   useEffect(() => {
     const { effectiveRows, effectiveCols, effectiveGridSize, effectiveCanvasWidth, effectiveCanvasHeight, effectiveSpacing } = hybridConfig;
     
-    const isBasicMode = !!(effectiveRows && effectiveCols && ['regular', 'staggered'].includes(gridPattern as string));
-    const isMathMode = !isBasicMode && effectiveGridSize > 0;
+    const isBasicMode = gridMode === 'basic';
+    const isMathMode = gridMode === 'math';
 
     if (!isBasicMode && !isMathMode) {
       setVectors([]);
@@ -259,7 +273,7 @@ export const useVectorGrid = ({
     setVectors(newVectors);
     setLayoutInfo(layout);
 
-  }, [hybridConfig, gridPattern, gridScale, lengthMin, lengthMax, margin, solidColor, gradientStops, fibonacciDensity, fibonacciRadius, fibonacciAngle, radialPatternBias, radialMaxRadius, polarDistribution, polarRadialBias, goldenExpansion, goldenRotation, goldenCompression, spiralTightness, spiralArms, spiralStartRadius, hexagonalSpacing, hexagonalOffset, concentricSquaresNumSquares, concentricSquaresRotation, voronoiSeed]);
+  }, [hybridConfig, gridPattern, gridScale, lengthMin, lengthMax, margin, solidColor, gradientStops, fibonacciDensity, fibonacciRadius, fibonacciAngle, radialPatternBias, radialMaxRadius, polarDistribution, polarRadialBias, goldenExpansion, goldenRotation, goldenCompression, spiralTightness, spiralArms, spiralStartRadius, hexagonalSpacing, hexagonalOffset, concentricSquaresNumSquares, concentricSquaresRotation, voronoiSeed, gridMode]);
 
   return { vectors, hybridConfig, layoutInfo };
 }; 

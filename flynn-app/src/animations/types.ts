@@ -76,6 +76,7 @@ export interface AnimationFrameData<TProps = Record<string, any>> {
     arms?: number;
     spacing?: number;
   };
+  gridChecksum?: number;
 }
 
 /**

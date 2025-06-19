@@ -1,11 +1,11 @@
 /src
-├── app/                     # (Si usas Next.js App Router) Layouts y páginas de la aplicación.
-│   └── (main)/              # Grupo de rutas para el layout principal
+├── app/                     # (If using Next.js App Router) Application layouts and pages.
+│   └── (main)/              # Route group for main layout
 │       ├── layout.tsx
-│       └── page.tsx         # Página que montaría, por ejemplo, VectorGridPlayground
+│       └── page.tsx         # Page that would mount, for example, VectorGridPlayground
 │
 ├── components/
-│   ├── ui/                  # Componentes de UI genéricos y reutilizables (de Shadcn o custom)
+│   ├── ui/                  # Generic and reusable UI components (from Shadcn or custom)
 │   │   ├── Button.tsx
 │   │   ├── Slider.tsx
 │   │   ├── Input.tsx
@@ -13,52 +13,52 @@
 │   │   ├── Label.tsx
 │   │   ├── ScrollArea.tsx
 │   │   ├── Card.tsx
-│   │   └── index.ts         # Para exportar todos los componentes de UI
+│   │   └── index.ts         # To export all UI components
 │   │
-│   └── features/            # Módulos o "features" principales de tu aplicación
-│       └── vector-grid/     # Módulo específico para toda la funcionalidad de VectorGrid
-│           ├── components/  # Componentes React específicos de VectorGrid
+│   └── features/            # Main modules or "features" of your application
+│       └── vector-grid/     # Specific module for all VectorGrid functionality
+│           ├── components/  # React components specific to VectorGrid
 │           │   ├── controls/
 │           │   │   ├── LeftControlPanel.tsx
 │           │   │   ├── RightControlPanel.tsx
-│           │   │   ├── ControlSection.tsx    # Wrapper para secciones de controles
-│           │   │   ├── SliderWithInput.tsx   # Componente especializado (ya existente)
-│           │   │   └── ButtonGroup.tsx       # Componente especializado (ya existente)
+│           │   │   ├── ControlSection.tsx    # Wrapper for control sections
+│           │   │   ├── SliderWithInput.tsx   # Specialized component (already existing)
+│           │   │   └── ButtonGroup.tsx       # Specialized component (already existing)
 │           │   ├── rendering/
-│           │   │   ├── VectorGrid.tsx        # Lógica principal de la cuadrícula y renderizado
-│           │   │   ├── VectorRenderer.tsx    # Orquesta el renderizador (SVG/Canvas)
+│           │   │   ├── VectorGrid.tsx        # Main grid logic and rendering
+│           │   │   ├── VectorRenderer.tsx    # Orchestrates the renderer (SVG/Canvas)
 │           │   │   ├── VectorSvgRenderer.tsx
-│           │   │   └── VectorCanvasRenderer.tsx # (Si se decide mantener Canvas)
-│           │   └── VectorGridPlayground.tsx  # Orquestador principal de la feature (antes examples)
+│           │   │   └── VectorCanvasRenderer.tsx # (If deciding to keep Canvas)
+│           │   └── VectorGridPlayground.tsx  # Main feature orchestrator (formerly examples)
 │           │
-│           ├── core/        # Lógica de negocio, tipos, constantes, no-React
-│           │   ├── types.ts             # Definiciones de tipos (VectorGridProps, etc.)
-│           │   ├── animations.ts        # Lógica y helpers de animación
-│           │   ├── defaults.ts          # Valores por defecto de configuración
-│           │   └── utils.ts             # Funciones de utilidad específicas
+│           ├── core/        # Business logic, types, constants, non-React
+│           │   ├── types.ts             # Type definitions (VectorGridProps, etc.)
+│           │   ├── animations.ts        # Animation logic and helpers
+│           │   ├── defaults.ts          # Default configuration values
+│           │   └── utils.ts             # Specific utility functions
 │           │
-│           ├── store/       # Gestión de estado (Zustand) para VectorGrid
-│           │   ├── vectorGridStore.ts   # Definición del store, estado, acciones
-│           │   └── selectors.ts         # (Opcional) Selectores de Zustand
+│           ├── store/       # State management (Zustand) for VectorGrid
+│           │   ├── vectorGridStore.ts   # Store definition, state, actions
+│           │   └── selectors.ts         # (Optional) Zustand selectors
 │           │
-│           ├── hooks/       # Hooks personalizados para VectorGrid
+│           ├── hooks/       # Custom hooks for VectorGrid
 │           │   ├── useGridDimensions.ts
-│           │   └── useDebouncedEffect.ts # Hook genérico útil
+│           │   └── useDebouncedEffect.ts # Useful generic hook
 │           │
-│           └── index.ts     # Punto de entrada del módulo VectorGrid (exporta componentes principales)
+│           └── index.ts     # VectorGrid module entry point (exports main components)
 │
-├── constants/               # Constantes globales de la aplicación
+├── constants/               # Global application constants
 │   └── index.ts
 │
-├── hooks/                   # Hooks globales y reutilizables en toda la aplicación
+├── hooks/                   # Global and reusable hooks throughout the application
 │   └── ...
 │
-├── lib/                     # Utilidades generales, configuraciones
-│   ├── utils.ts             # Funciones de utilidad genéricas
-│   └── cn.ts                # Para classnames (común con Shadcn)
+├── lib/                     # General utilities, configurations
+│   ├── utils.ts             # Generic utility functions
+│   └── cn.ts                # For classnames (common with Shadcn)
 │
-├── styles/                  # Estilos globales
+├── styles/                  # Global styles
 │   └── globals.css
 │
-└── types/                   # Tipos globales de la aplicación (si no son específicos de una feature)
+└── types/                   # Global application types (if not specific to a feature)
     └── index.ts

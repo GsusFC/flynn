@@ -1,7 +1,7 @@
 // Color Presets - Colores predefinidos y configuraciones comunes
 // Migración de PRESET_GRADIENTS y creación de nuevos presets
 
-import type { VectorColor, SolidColor, GradientColor, HSLColor } from './types';
+import type { VectorColor, SolidColor, GradientColor, HSLColor, DynamicColor } from './types';
 
 // ✅ Colores sólidos predefinidos
 export const SOLID_PRESETS: Record<string, SolidColor> = {
@@ -173,38 +173,99 @@ export const GRADIENT_PRESETS: Record<string, GradientColor> = {
   }
 };
 
-// ✅ HSL presets animados
+// ✅ HSL presets animados - Simplificados y directos
 export const HSL_PRESETS: Record<string, HSLColor> = {
   rainbow: {
     type: 'hsl',
     variant: 'rainbow',
-    speed: 0.001,
-    saturation: 70,
-    lightness: 60
+    speed: 0.5,
+    saturation: 80,
+    lightness: 60,
+    hue: 0
   },
   
   flow: {
     type: 'hsl',
     variant: 'flow',
-    speed: 0.002,
-    saturation: 80,
-    lightness: 55
+    speed: 0.3,
+    saturation: 70,
+    lightness: 55,
+    hue: 0
   },
   
   pulse: {
     type: 'hsl',
     variant: 'cycle',
-    speed: 0.005,
-    saturation: 90,
-    lightness: 50
+    speed: 0.8,
+    saturation: 85,
+    lightness: 50,
+    hue: 0
+  },
+
+  vibrant: {
+    type: 'hsl',
+    variant: 'rainbow',
+    speed: 1.0,
+    saturation: 95,
+    lightness: 55,
+    hue: 0
   },
   
   subtle: {
     type: 'hsl',
     variant: 'flow',
-    speed: 0.0005,
-    saturation: 40,
-    lightness: 70
+    speed: 0.1,
+    saturation: 45,
+    lightness: 65,
+    hue: 0
+  }
+};
+
+// ✅ Dynamic color presets - Colores que responden a la intensidad de animación
+export const DYNAMIC_PRESETS: Record<string, DynamicColor> = {
+  reactive: {
+    type: 'dynamic',
+    hue: 200,
+    saturation: 70,
+    lightness: 60,
+    intensityResponse: 0.8,
+    effect: 'hue'
+  },
+  
+  intense: {
+    type: 'dynamic',
+    hue: 0,
+    saturation: 90,
+    lightness: 50,
+    intensityResponse: 1.0,
+    effect: 'saturation'
+  },
+  
+  subtle: {
+    type: 'dynamic',
+    hue: 220,
+    saturation: 30,
+    lightness: 70,
+    intensityResponse: 0.3,
+    effect: 'lightness'
+  },
+  
+  pulse: {
+    type: 'dynamic',
+    hue: 300,
+    saturation: 80,
+    lightness: 55,
+    intensityResponse: 0.7,
+    effect: 'hue'
+  },
+  
+  shift: {
+    type: 'dynamic',
+    hue: 120,
+    saturation: 60,
+    lightness: 65,
+    intensityResponse: 0.5,
+    effect: 'hue'
   }
 };
 
@@ -212,7 +273,8 @@ export const HSL_PRESETS: Record<string, HSLColor> = {
 export const COLOR_CATEGORIES = {
   solid: SOLID_PRESETS,
   gradient: GRADIENT_PRESETS,
-  hsl: HSL_PRESETS
+  hsl: HSL_PRESETS,
+  dynamic: DYNAMIC_PRESETS
 } as const;
 
 // ✅ Preset por defecto
@@ -228,7 +290,8 @@ export function getAllColorPresets(): Record<string, VectorColor> {
   return {
     ...SOLID_PRESETS,
     ...GRADIENT_PRESETS,
-    ...HSL_PRESETS
+    ...HSL_PRESETS,
+    ...DYNAMIC_PRESETS
   };
 }
 

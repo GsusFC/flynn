@@ -2,13 +2,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Play, Pause, Download, Share2, Film, Check } from 'lucide-react';
+import { Play, Pause, Download, Share2, Film, Check, Sparkles, Globe } from 'lucide-react';
 
 interface ToolbarProps {
   onTogglePause: () => void;
   isPaused: boolean;
   onExportSVG: () => void;
   onExportGIF?: () => void;
+  onExportAnimatedSVG?: () => void;
+  onExportWeb?: () => void;
   onShare?: () => void;
   className?: string;
 }
@@ -18,6 +20,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   isPaused,
   onExportSVG,
   onExportGIF,
+  onExportAnimatedSVG,
+  onExportWeb,
   onShare,
   className,
 }) => {
@@ -96,12 +100,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {isPaused ? <Play size={16} /> : <Pause size={16} />}
         </button>
         <div className="w-px h-5 bg-neutral-700" />
-        <button onClick={onExportSVG} className="p-2 hover:bg-neutral-700 rounded-full text-white">
+        <button onClick={onExportSVG} className="p-2 hover:bg-neutral-700 rounded-full text-white" title="Exportar SVG estático">
             <Download size={16} />
         </button>
-        <button onClick={onExportGIF} className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled={!onExportGIF}>
+        <button onClick={onExportAnimatedSVG} className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled={!onExportAnimatedSVG} title="Exportar SVG animado">
+            <Sparkles size={16} />
+        </button>
+        <button onClick={onExportGIF} className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled={!onExportGIF} title="Exportar GIF">
             <Film size={16} />
         </button>
+        <button onClick={onExportWeb} className="p-2 hover:bg-neutral-700 rounded-full text-white" disabled={!onExportWeb} title="Exportar para Web">
+            <Globe size={16} />
+        </button>
+        <div className="w-px h-5 bg-neutral-700" />
         <button onClick={handleShareClick} className="p-2 hover:bg-neutral-700 rounded-full text-white flex items-center gap-1" disabled={!onShare}>
             {showShareConfirm ? (
                 <>

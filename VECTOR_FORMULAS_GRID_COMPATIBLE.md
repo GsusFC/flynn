@@ -1,78 +1,78 @@
-# 🎯 Fórmulas Vectoriales Compatibles con Grid
+# 🎯 Grid-Compatible Vector Formulas
 
-## 📐 **CRITERIOS DE COMPATIBILIDAD**
-- ✅ Función que tome coordenadas (x,y) y devuelva ángulo
-- ✅ Patrón visible con vectores rectos
-- ✅ Implementación directa sin trayectorias
-- ✅ Control por parámetros simples
+## 📐 **COMPATIBILITY CRITERIA**
+- ✅ Function that takes coordinates (x,y) and returns angle
+- ✅ Pattern visible with straight vectors
+- ✅ Direct implementation without trajectories
+- ✅ Control via simple parameters
 
 ---
 
-## 🌊 **1. PATRONES ONDULATORIOS**
+## 🌊 **1. WAVE PATTERNS**
 
-### **Ondas Cruzadas** ⭐⭐⭐
+### **Crossed Waves** ⭐⭐⭐
 ```javascript
 angle = sin(x * frequency1) + cos(y * frequency2) + time * speed
 ```
-- **Efecto**: Patrón de interferencia rectangular
-- **Parámetros**: frequency1, frequency2, speed
-- **Visualización**: Grid de ondas que se cruzan
+- **Effect**: Rectangular interference pattern
+- **Parameters**: frequency1, frequency2, speed
+- **Visualization**: Grid of crossing waves
 
-### **Ondas Radiales** ⭐⭐⭐
+### **Radial Waves** ⭐⭐⭐
 ```javascript
 distance = sqrt(x² + y²)
 angle = sin(distance * frequency - time * speed) * amplitude
 ```
-- **Efecto**: Ondas concéntricas desde el centro
-- **Parámetros**: frequency, speed, amplitude
-- **Visualización**: Como ondas en estanque
+- **Effect**: Concentric waves from center
+- **Parameters**: frequency, speed, amplitude
+- **Visualization**: Like waves in a pond
 
-### **Ondas Diagonales** ⭐⭐
+### **Diagonal Waves** ⭐⭐
 ```javascript
 angle = sin((x + y) * frequency - time * speed) * amplitude
 ```
-- **Efecto**: Ondas viajando diagonalmente
-- **Parámetros**: frequency, speed, amplitude
-- **Visualización**: Frentes de onda diagonales
+- **Effect**: Waves traveling diagonally
+- **Parameters**: frequency, speed, amplitude
+- **Visualization**: Diagonal wave fronts
 
 ---
 
-## ⚡ **2. PATRONES ELECTROMAGNÉTICOS**
+## ⚡ **2. ELECTROMAGNETIC PATTERNS**
 
-### **Campo Dipolo Simple** ⭐⭐⭐
+### **Simple Dipole Field** ⭐⭐⭐
 ```javascript
-// Dos cargas opuestas
+// Two opposite charges
 d1 = sqrt((x-x1)² + (y-y1)²)
 d2 = sqrt((x-x2)² + (y-y2)²)
 angle = atan2((y-y1)/d1³ - (y-y2)/d2³, (x-x1)/d1³ - (x-x2)/d2³)
 ```
-- **Efecto**: Campo eléctrico dipolo
-- **Parámetros**: posiciones x1,y1, x2,y2
-- **Visualización**: Líneas de campo clásicas
+- **Effect**: Electric dipole field
+- **Parameters**: positions x1,y1, x2,y2
+- **Visualization**: Classic field lines
 
-### **Campo Cuadrupolo** ⭐⭐
+### **Quadrupole Field** ⭐⭐
 ```javascript
-// Cuatro cargas alternadas
-angle = suma de contribuciones de 4 cargas
+// Four alternating charges
+angle = sum of contributions from 4 charges
 ```
-- **Efecto**: Patrón de 4 lóbulos
-- **Parámetros**: posiciones, intensidades
-- **Visualización**: Simetría cuádruple
+- **Effect**: 4-lobe pattern
+- **Parameters**: positions, intensities
+- **Visualization**: Quadruple symmetry
 
-### **Campo Helicoidal** ⭐⭐⭐
+### **Helical Field** ⭐⭐⭐
 ```javascript
 radius = sqrt(x² + y²)
 angle = atan2(y, x) + z_helix * pitch + time * rotation_speed
 ```
-- **Efecto**: Espiral en expansión
-- **Parámetros**: pitch, rotation_speed
-- **Visualización**: DNA desenrollándose
+- **Effect**: Expanding spiral
+- **Parameters**: pitch, rotation_speed
+- **Visualization**: DNA unwinding
 
 ---
 
-## 🌀 **3. VÓRTICES Y REMOLINOS**
+## 🌀 **3. VORTICES AND SWIRLS**
 
-### **Vórtice Múltiple** ⭐⭐⭐
+### **Multiple Vortex** ⭐⭐⭐
 ```javascript
 angle = 0
 for(vortex in vortices) {
@@ -81,152 +81,152 @@ for(vortex in vortices) {
   angle += vortex.strength * atan2(dx, -dy) // perpendicular
 }
 ```
-- **Efecto**: Múltiples remolinos interactuando
-- **Parámetros**: posiciones, fuerzas
-- **Visualización**: Remolinos que se influencian
+- **Effect**: Multiple interacting swirls
+- **Parameters**: positions, strengths
+- **Visualization**: Influencing whirlpools
 
-### **Vórtice con Deriva** ⭐⭐
+### **Drifting Vortex** ⭐⭐
 ```javascript
-// Vórtice que se mueve
+// Moving vortex
 vortex_x = center_x + drift_x * time
 vortex_y = center_y + drift_y * time
 angle = atan2(y - vortex_y, x - vortex_x) + π/2
 ```
-- **Efecto**: Remolino que viaja
-- **Parámetros**: drift_x, drift_y, velocidad
-- **Visualización**: Huracán en movimiento
+- **Effect**: Traveling swirl
+- **Parameters**: drift_x, drift_y, velocity
+- **Visualization**: Moving hurricane
 
-### **Doble Vórtice** ⭐⭐⭐
+### **Double Vortex** ⭐⭐⭐
 ```javascript
-// Dos vórtices que orbitan entre sí
+// Two vortices orbiting each other
 angle1 = atan2(y-y1, x-x1) + π/2
-angle2 = atan2(y-y2, x-x2) - π/2  // opuesto
+angle2 = atan2(y-y2, x-x2) - π/2  // opposite
 angle = (angle1 + angle2) / 2
 ```
-- **Efecto**: Par de vórtices
-- **Parámetros**: separación, velocidades
-- **Visualización**: Torbellinos gemelos
+- **Effect**: Vortex pair
+- **Parameters**: separation, velocities
+- **Visualization**: Twin whirlpools
 
 ---
 
-## 📊 **4. FUNCIONES MATEMÁTICAS PURAS**
+## 📊 **4. PURE MATHEMATICAL FUNCTIONS**
 
-### **Gradiente de Gaussiana** ⭐⭐⭐
+### **Gaussian Gradient** ⭐⭐⭐
 ```javascript
-// Campo derivado de función gaussiana
+// Field derived from gaussian function
 gaussian = exp(-((x-cx)² + (y-cy)²) / (2*σ²))
-// Gradiente apunta hacia/desde el pico
+// Gradient points towards/away from peak
 angle = atan2(2*(y-cy)*gaussian, 2*(x-cx)*gaussian)
 ```
-- **Efecto**: Montaña de vectores
-- **Parámetros**: centro cx,cy, ancho σ
-- **Visualización**: Colina de fuerza
+- **Effect**: Vector mountain
+- **Parameters**: center cx,cy, width σ
+- **Visualization**: Force hill
 
-### **Silla de Montar** ⭐⭐
+### **Saddle Point** ⭐⭐
 ```javascript
-// Función f = x² - y²
+// Function f = x² - y²
 angle = atan2(-2*y, 2*x)
 ```
-- **Efecto**: Punto silla hiperbólico
-- **Parámetros**: escalas, rotación
-- **Visualización**: Flujo hiperbólico
+- **Effect**: Hyperbolic saddle point
+- **Parameters**: scales, rotation
+- **Visualization**: Hyperbolic flow
 
-### **Roseta Trigonométrica** ⭐⭐⭐
+### **Trigonometric Rosette** ⭐⭐⭐
 ```javascript
-// Combinar múltiples frecuencias
+// Combine multiple frequencies
 angle = a*sin(n1*atan2(y,x)) + b*cos(n2*atan2(y,x)) + time*speed
 ```
-- **Efecto**: Patrones de pétalos
-- **Parámetros**: n1, n2, a, b, speed
-- **Visualización**: Flores matemáticas
+- **Effect**: Petal patterns
+- **Parameters**: n1, n2, a, b, speed
+- **Visualization**: Mathematical flowers
 
 ---
 
-## 🎲 **5. CAMPOS COMBINADOS**
+## 🎲 **5. COMBINED FIELDS**
 
-### **Suma de Senos** ⭐⭐⭐
+### **Sum of Sines** ⭐⭐⭐
 ```javascript
 angle = sin(x*f1 + t*s1) + sin(y*f2 + t*s2) + sin((x+y)*f3 + t*s3)
 ```
-- **Efecto**: Interferencia compleja
-- **Parámetros**: 3 frecuencias, 3 velocidades
-- **Visualización**: Patrones de moire dinámicos
+- **Effect**: Complex interference
+- **Parameters**: 3 frequencies, 3 velocities
+- **Visualization**: Dynamic moire patterns
 
-### **Producto de Ondas** ⭐⭐
+### **Wave Product** ⭐⭐
 ```javascript
 angle = sin(x*fx)*cos(y*fy)*amplitude + time*rotation
 ```
-- **Efecto**: Modulación cruzada
-- **Parámetros**: fx, fy, amplitude, rotation
-- **Visualización**: Grid modulado
+- **Effect**: Cross modulation
+- **Parameters**: fx, fy, amplitude, rotation
+- **Visualization**: Modulated grid
 
-### **Campo Espiral Logarítmica** ⭐⭐⭐
+### **Logarithmic Spiral Field** ⭐⭐⭐
 ```javascript
 r = sqrt(x² + y²)
 theta = atan2(y, x)
 angle = theta + a*log(r + 1) + time*speed
 ```
-- **Efecto**: Espiral que se expande
-- **Parámetros**: a (curvatura), speed
-- **Visualización**: Galaxy en rotación
+- **Effect**: Expanding spiral
+- **Parameters**: a (curvature), speed
+- **Visualization**: Rotating galaxy
 
 ---
 
-## 🔥 **6. CAMPOS DINÁMICOS**
+## 🔥 **6. DYNAMIC FIELDS**
 
-### **Respiración** ⭐⭐⭐
+### **Breathing** ⭐⭐⭐
 ```javascript
-// Campo que pulsa
+// Pulsing field
 pulse = sin(time * frequency)
 r = sqrt(x² + y²)
 angle = atan2(y, x) + pulse * sin(r * spatial_freq)
 ```
-- **Efecto**: Campo que respira
-- **Parámetros**: frequency, spatial_freq
-- **Visualización**: Pulsación orgánica
+- **Effect**: Breathing field
+- **Parameters**: frequency, spatial_freq
+- **Visualization**: Organic pulsation
 
-### **Latido Cardíaco** ⭐⭐
+### **Heartbeat** ⭐⭐
 ```javascript
-// Doble pulso como corazón
+// Double pulse like heart
 heartbeat = sin(time*f1) + 0.5*sin(time*f2 + π/4)
 angle = base_angle + heartbeat * intensity
 ```
-- **Efecto**: Ritmo de corazón
-- **Parámetros**: f1, f2, intensity
-- **Visualización**: Pulso orgánico
+- **Effect**: Heart rhythm
+- **Parameters**: f1, f2, intensity
+- **Visualization**: Organic pulse
 
-### **Onda Viajera** ⭐⭐⭐
+### **Traveling Wave** ⭐⭐⭐
 ```javascript
-// Onda que se mueve por el campo
+// Wave moving through field
 wave_position = time * wave_speed
 angle = sin((x - wave_position) * frequency) * amplitude
 ```
-- **Efecto**: Onda que cruza pantalla
-- **Parámetros**: wave_speed, frequency, amplitude
-- **Visualización**: Frente de onda móvil
+- **Effect**: Wave crossing screen
+- **Parameters**: wave_speed, frequency, amplitude
+- **Visualization**: Moving wave front
 
 ---
 
-## 🎯 **TOP 5 RECOMENDACIONES**
+## 🎯 **TOP 5 RECOMMENDATIONS**
 
-### **1. Ondas Cruzadas** ⭐⭐⭐
-**Razón**: Muy visual, fácil implementación, controles intuitivos
+### **1. Crossed Waves** ⭐⭐⭐
+**Reason**: Very visual, easy implementation, intuitive controls
 
-### **2. Campo Dipolo Simple** ⭐⭐⭐
-**Razón**: Física real, patrón reconocible, educativo
+### **2. Simple Dipole Field** ⭐⭐⭐
+**Reason**: Real physics, recognizable pattern, educational
 
-### **3. Vórtice Múltiple** ⭐⭐⭐
-**Razón**: Dramático, interactivo, escalable
+### **3. Multiple Vortex** ⭐⭐⭐
+**Reason**: Dramatic, interactive, scalable
 
-### **4. Gradiente de Gaussiana** ⭐⭐⭐
-**Razón**: Suave, elegante, configurable
+### **4. Gaussian Gradient** ⭐⭐⭐
+**Reason**: Smooth, elegant, configurable
 
-### **5. Suma de Senos** ⭐⭐⭐
-**Razón**: Infinita variabilidad, patrones complejos
+### **5. Sum of Sines** ⭐⭐⭐
+**Reason**: Infinite variability, complex patterns
 
 ---
 
-## 🔧 **PLANTILLA DE IMPLEMENTACIÓN**
+## 🔧 **IMPLEMENTATION TEMPLATE**
 
 ```javascript
 function newVectorFieldAnimation(vectors, props, context) {
@@ -234,14 +234,14 @@ function newVectorFieldAnimation(vectors, props, context) {
   const { time, canvasWidth, canvasHeight } = context;
   
   return vectors.map(vector => {
-    // Normalizar coordenadas si es necesario
+    // Normalize coordinates if needed
     const x = vector.x / canvasWidth;  // [0, 1]
     const y = vector.y / canvasHeight; // [0, 1]
     
-    // FÓRMULA AQUÍ
+    // FORMULA HERE
     const angle = your_formula(x, y, time, param1, param2, param3);
     
-    // Opcionalmente modular longitud
+    // Optionally modulate length
     const length = vector.length * length_modifier;
     
     return {
@@ -255,4 +255,4 @@ function newVectorFieldAnimation(vectors, props, context) {
 
 ---
 
-*Todas estas fórmulas están diseñadas para funcionar directamente con tu sistema de vectores rectos en grid.*
+*All these formulas are designed to work directly with your straight vector grid system.*

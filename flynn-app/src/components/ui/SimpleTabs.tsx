@@ -12,13 +12,17 @@ interface SimpleTabsProps {
   activeTab: string;
   onChange: (tabId: string) => void;
   className?: string;
+  textSize?: string;
+  buttonClassName?: string;
 }
 
 export const SimpleTabs: React.FC<SimpleTabsProps> = ({
   tabs,
   activeTab,
   onChange,
-  className = ''
+  className = '',
+  textSize = 'text-xs',
+  buttonClassName = ''
 }) => {
   return (
     <div className={`w-full ${className}`}>
@@ -28,7 +32,7 @@ export const SimpleTabs: React.FC<SimpleTabsProps> = ({
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`
-              flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+              flex-1 px-3 py-1.5 ${textSize} font-medium rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${buttonClassName}
               ${activeTab === tab.id
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'

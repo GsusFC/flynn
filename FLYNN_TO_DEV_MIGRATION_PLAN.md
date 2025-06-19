@@ -1,36 +1,36 @@
 # Flynn to /dev Migration Plan
-*Plan completo para migrar características de Flynn principal al entorno /dev*
+*Complete plan to migrate Flynn main features to /dev environment*
 
-## 🎯 OBJETIVO
-Migrar las mejores características de Flynn al entorno `/dev` manteniendo **compatibilidad total** con configuraciones actuales.
+## 🎯 OBJECTIVE
+Migrate the best Flynn features to the `/dev` environment while maintaining **full compatibility** with current configurations.
 
 ---
 
-## 📋 FASES DE MIGRACIÓN
+## 📋 MIGRATION PHASES
 
-### 🔥 **FASE 1 - GRID SYSTEM HÍBRIDO** 
-*Prioridad: CRÍTICA*
+### 🔥 **PHASE 1 - HYBRID GRID SYSTEM** 
+*Priority: CRITICAL*
 
-#### 1.1 Expandir Grid Configuration
-- [ ] **Mantener sistema actual**: `gridSize` + `gridPattern` 
-- [ ] **Agregar Advanced Grid section** (collapsible)
-- [ ] **Toggle "Manual Layout"** para activar controles avanzados
-- [ ] **Controls nuevos**:
-  - `rows: number` - Filas del grid
-  - `cols: number` - Columnas del grid  
-  - `spacing: number` - Separación entre vectores
-  - `canvasWidth: number` - Ancho del canvas
-  - `canvasHeight: number` - Alto del canvas
-  - `margin: number` - Margen desde bordes
+#### 1.1 Expand Grid Configuration
+- [ ] **Maintain current system**: `gridSize` + `gridPattern` 
+- [ ] **Add Advanced Grid section** (collapsible)
+- [ ] **"Manual Layout" toggle** to activate advanced controls
+- [ ] **New controls**:
+  - `rows: number` - Grid rows
+  - `cols: number` - Grid columns  
+  - `spacing: number` - Vector spacing
+  - `canvasWidth: number` - Canvas width
+  - `canvasHeight: number` - Canvas height
+  - `margin: number` - Margin from edges
 
-#### 1.2 Lógica Híbrida
+#### 1.2 Hybrid Logic
 ```typescript
 interface GridConfig {
-  // Sistema actual (mantener)
+  // Current system (maintain)
   gridSize: number;
   gridPattern: 'regular' | 'hexagonal' | etc;
   
-  // Sistema avanzado (nuevo)
+  // Advanced system (new)
   useManualLayout: boolean;
   rows: number;
   cols: number;
@@ -71,25 +71,25 @@ const effectiveCanvasSize = useManualLayout ? {width: canvasWidth, height: canva
 
 ---
 
-### 🎨 **FASE 2 - DARK THEME SYSTEM**
-*Prioridad: ALTA*
+### 🎨 **PHASE 2 - DARK THEME SYSTEM**
+*Priority: HIGH*
 
 #### 2.1 CSS Variables System
-- [ ] **Migrar variables CSS** de Flynn `globals.css`
+- [ ] **Migrate CSS variables** from Flynn `globals.css`
 - [ ] **Geist Mono font** integration
-- [ ] **Sidebar design system** con variables CSS
-- [ ] **Consistent dark theme** en todos los componentes
+- [ ] **Sidebar design system** with CSS variables
+- [ ] **Consistent dark theme** across all components
 
 #### 2.2 Theme Implementation
 ```css
-/* flynn-app/src/app/dev/dev.css (nuevo) */
+/* flynn-app/src/app/dev/dev.css (new) */
 :root {
   --dev-background: 0 0% 3.9216%;
   --dev-foreground: 0 0% 98.0392%;
   --dev-card: 0 0% 9.8039%;
   --dev-border: 0 0% 21.9608%;
   --dev-sidebar: 0 0% 9.0196%;
-  /* ... resto de variables Flynn */
+  /* ... rest of Flynn variables */
 }
 
 /* Override /dev specific styling */
@@ -101,31 +101,31 @@ const effectiveCanvasSize = useManualLayout ? {width: canvasWidth, height: canva
 ```
 
 #### 2.3 Component Updates
-- [ ] **Actualizar DemoVectorGrid** para usar theme variables
-- [ ] **Actualizar controles** (sliders, dropdowns, etc)
-- [ ] **Consistent spacing** usando design tokens
+- [ ] **Update DemoVectorGrid** to use theme variables
+- [ ] **Update controls** (sliders, dropdowns, etc)
+- [ ] **Consistent spacing** using design tokens
 
 ---
 
-### ⚡ **FASE 3 - ANIMATION SYSTEM EXPANSION**
-*Prioridad: MEDIA*
+### ⚡ **PHASE 3 - ANIMATION SYSTEM EXPANSION**
+*Priority: MEDIUM*
 
-#### 3.1 Migrar Animaciones Faltantes
-- [ ] **pinwheels.ts** - Molinos de viento complejos
-- [ ] **seaWaves.ts** - Olas oceánicas con spatialFactor
-- [ ] **geometricPattern.ts** - Patrones geométricos avanzados
-- [ ] **flowField.ts** - Campos de flujo complejos
-- [ ] **Todas las implementaciones** de `flynn-app/src/components/features/vector-grid/simple/animations/implementations/`
+#### 3.1 Migrate Missing Animations
+- [ ] **pinwheels.ts** - Complex windmill patterns
+- [ ] **seaWaves.ts** - Ocean waves with spatialFactor
+- [ ] **geometricPattern.ts** - Advanced geometric patterns
+- [ ] **flowField.ts** - Complex flow fields
+- [ ] **All implementations** from `flynn-app/src/components/features/vector-grid/simple/animations/implementations/`
 
 #### 3.2 Props System Integration
-- [ ] **Agregar props específicas** a cada animación en /dev
-- [ ] **UI Controls dinámicos** según la animación seleccionada
-- [ ] **Validation system** para props de animación
-- [ ] **Smart Presets actualización** para nuevas animaciones
+- [ ] **Add specific props** for each animation in /dev
+- [ ] **Dynamic UI controls** based on selected animation
+- [ ] **Validation system** for animation props
+- [ ] **Smart Presets update** for new animations
 
 #### 3.3 Animation Controls UI
 ```tsx
-{/* Controls específicos por animación */}
+{/* Animation-specific controls */}
 {animation === 'pinwheels' && (
   <div>
     <Slider label="Windmill Count" prop="windmillCount" />
@@ -145,17 +145,17 @@ const effectiveCanvasSize = useManualLayout ? {width: canvasWidth, height: canva
 
 ---
 
-### 🔧 **FASE 4 - ADVANCED CONTROLS**
-*Prioridad: MEDIA*
+### 🔧 **PHASE 4 - ADVANCED CONTROLS**
+*Priority: MEDIUM*
 
 #### 4.1 Zoom System
-- [ ] **Zoom controls** para testing high-density
+- [ ] **Zoom controls** for high-density testing
 - [ ] **Zoom level indicator** 
 - [ ] **Auto-fit zoom** button
-- [ ] **Performance warning** en zooms altos
+- [ ] **Performance warning** at high zooms
 
 #### 4.2 Keyboard Shortcuts
-- [ ] **useKeyboardControls hook** migración
+- [ ] **useKeyboardControls hook** migration
 - [ ] **Shortcuts panel** (collapsible help)
 - [ ] **Common shortcuts**:
   - `Space` - Play/Pause
@@ -171,42 +171,42 @@ const effectiveCanvasSize = useManualLayout ? {width: canvasWidth, height: canva
 
 ---
 
-### 📊 **FASE 5 - EXPORT & CONFIG MANAGEMENT**
-*Prioridad: BAJA*
+### 📊 **PHASE 5 - EXPORT & CONFIG MANAGEMENT**
+*Priority: LOW*
 
 #### 5.1 Enhanced Export
-- [ ] **Save configuration** como JSON
-- [ ] **Load configuration** desde archivo
-- [ ] **Export presets** personalizados
+- [ ] **Save configuration** as JSON
+- [ ] **Load configuration** from file
+- [ ] **Export custom presets**
 - [ ] **Share configurations** via URL
 
 #### 5.2 Configuration Presets
-- [ ] **User presets** guardados localmente
+- [ ] **User presets** saved locally
 - [ ] **Preset categories** (Performance, Art, Scientific, etc)
-- [ ] **Import/Export presets** entre usuarios
-- [ ] **Preset versioning** para compatibilidad
+- [ ] **Import/Export presets** between users
+- [ ] **Preset versioning** for compatibility
 
 ---
 
 ## 🛠️ IMPLEMENTATION STRATEGY
 
 ### **Backward Compatibility Rules**
-1. ✅ **Nunca remover** props existentes
-2. ✅ **Defaults inteligentes** para nuevas props
-3. ✅ **Graceful degradation** si faltan props nuevas
-4. ✅ **Migration helpers** para configs existentes
+1. ✅ **Never remove** existing props
+2. ✅ **Smart defaults** for new props
+3. ✅ **Graceful degradation** if new props are missing
+4. ✅ **Migration helpers** for existing configs
 
 ### **Development Approach**
-1. **Feature flags** para nuevas características
-2. **Incremental rollout** por fases
-3. **Extensive testing** en cada fase
-4. **User feedback** antes de siguiente fase
+1. **Feature flags** for new features
+2. **Incremental rollout** by phases
+3. **Extensive testing** in each phase
+4. **User feedback** before next phase
 
 ### **Testing Strategy**
-1. **Regression testing** - configs actuales siguen funcionando
-2. **Performance testing** - no degradar rendimiento actual
-3. **UI testing** - nuevos controles no rompen layout
-4. **Cross-browser testing** - especialmente Chrome/Safari
+1. **Regression testing** - current configs keep working
+2. **Performance testing** - don't degrade current performance
+3. **UI testing** - new controls don't break layout
+4. **Cross-browser testing** - especially Chrome/Safari
 
 ---
 
@@ -216,17 +216,17 @@ const effectiveCanvasSize = useManualLayout ? {width: canvasWidth, height: canva
 ```
 flynn-app/src/app/dev/
 ├── styles/
-│   ├── dev.css (nuevo - theme variables)
-│   └── advanced-grid.css (nuevo - grid controls)
+│   ├── dev.css (new - theme variables)
+│   └── advanced-grid.css (new - grid controls)
 ├── components/
-│   ├── AdvancedGridControls.tsx (nuevo)
-│   ├── KeyboardShortcuts.tsx (nuevo)
-│   └── PerformanceMonitor.tsx (nuevo)
+│   ├── AdvancedGridControls.tsx (new)
+│   ├── KeyboardShortcuts.tsx (new)
+│   └── PerformanceMonitor.tsx (new)
 ├── hooks/
-│   ├── useAdvancedGrid.ts (nuevo)
-│   └── useKeyboardControls.ts (migrado)
+│   ├── useAdvancedGrid.ts (new)
+│   └── useKeyboardControls.ts (migrated)
 └── types/
-    └── advanced-config.ts (nuevo - tipos extendidos)
+    └── advanced-config.ts (new - extended types)
 ```
 
 ### **Migration Helpers**
@@ -235,7 +235,7 @@ flynn-app/src/app/dev/
 export const migrateConfigToAdvanced = (oldConfig: PresetConfig): AdvancedPresetConfig => {
   return {
     ...oldConfig,
-    // Nuevos defaults
+    // New defaults
     useManualLayout: false,
     rows: Math.sqrt(oldConfig.gridSize),
     cols: Math.sqrt(oldConfig.gridSize),
@@ -251,13 +251,13 @@ export const migrateConfigToAdvanced = (oldConfig: PresetConfig): AdvancedPreset
 
 ## ⏱️ TIMELINE ESTIMATE
 
-- **Fase 1**: 2-3 días (Grid System)
-- **Fase 2**: 1-2 días (Dark Theme)  
-- **Fase 3**: 3-4 días (Animations)
-- **Fase 4**: 2-3 días (Advanced Controls)
-- **Fase 5**: 2-3 días (Export/Config)
+- **Phase 1**: 2-3 days (Grid System)
+- **Phase 2**: 1-2 days (Dark Theme)  
+- **Phase 3**: 3-4 days (Animations)
+- **Phase 4**: 2-3 days (Advanced Controls)
+- **Phase 5**: 2-3 days (Export/Config)
 
-**Total: ~10-15 días de desarrollo**
+**Total: ~10-15 days of development**
 
 ---
 
@@ -283,5 +283,5 @@ export const migrateConfigToAdvanced = (oldConfig: PresetConfig): AdvancedPreset
 
 ---
 
-*Plan creado: Enero 2025*  
-*Proyecto: Flynn Vector Grid /dev Enhancement*
+*Plan created: January 2025*  
+*Project: Flynn Vector Grid /dev Enhancement*

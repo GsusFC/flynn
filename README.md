@@ -1,143 +1,143 @@
 # Flynn Vector Grid
 
-> Sistema avanzado de visualización vectorial con animaciones dinámicas y renderizado híbrido optimizado para alta performance.
+> Advanced vector visualization system with dynamic animations and hybrid rendering optimized for high performance.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.2-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 
-## 🌟 Características Principales
+## 🌟 Key Features
 
-### 🎨 Sistema de Animaciones Avanzado
-- **12+ tipos de animación** predefinidos: ondas suaves, patrones geométricos, efectos de mar, vórtices, y más
-- **Sistema modular** con props configurables para cada animación
-- **Animaciones en tiempo real** con interpolación suave
-- **Efectos dinámicos** que responden a la intensidad de movimiento
+### 🎨 Advanced Animation System
+- **12+ predefined animation types**: smooth waves, geometric patterns, sea effects, vortices, and more
+- **Modular system** with configurable props for each animation
+- **Real-time animations** with smooth interpolation
+- **Dynamic effects** that respond to movement intensity
 
-### ⚡ Renderizado Híbrido Optimizado
-- **Cambio automático SVG ↔ Canvas** basado en performance
-- **Monitor de rendimiento** con métricas en tiempo real
-- **Optimización automática** para grids de alta densidad (2500+ vectores)
-- **Calidad adaptativa** según carga computacional
+### ⚡ Optimized Hybrid Rendering
+- **Automatic SVG ↔ Canvas switching** based on performance
+- **Performance monitor** with real-time metrics
+- **Automatic optimization** for high-density grids (2500+ vectors)
+- **Adaptive quality** based on computational load
 
-### 🎛️ Longitud Dinámica
-- **Vectores reactivos** que cambian tamaño según intensidad de animación
-- **Configuración avanzada**: intensidad, reactividad, suavizado
-- **Integración automática** con todas las animaciones
-- **Visual feedback** en tiempo real
+### 🎛️ Dynamic Length
+- **Reactive vectors** that change size based on animation intensity
+- **Advanced configuration**: intensity, responsiveness, smoothing
+- **Automatic integration** with all animations
+- **Real-time visual feedback**
 
-### 📤 Sistema de Exportación
-- **Exportación SVG** con vectores animados
-- **Generación de GIFs** para animaciones
-- **Metadatos incluidos** en exportaciones
-- **Configuración personalizable** de calidad y duración
+### 📤 Export System
+- **SVG export** with animated vectors
+- **GIF generation** for animations
+- **Metadata included** in exports
+- **Customizable configuration** for quality and duration
 
-## 🚀 Inicio Rápido
+## 🚀 Quick Start
 
-### Prerequisitos
+### Prerequisites
 - Node.js 18+ 
-- npm o yarn
+- npm or yarn
 
-### Instalación
+### Installation
 
 ```bash
-# Clonar repositorio
+# Clone repository
 git clone https://github.com/GsusFC/flynn.git
 cd flynn/flynn-app
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Iniciar servidor de desarrollo
+# Start development server
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:3000` (o el siguiente puerto disponible).
+The application will be available at `http://localhost:3000` (or the next available port).
 
-### Comandos Disponibles
+### Available Commands
 
 ```bash
-npm run dev      # Servidor desarrollo con Turbopack
-npm run build    # Build de producción
-npm run start    # Servidor de producción
-npm run lint     # Linting con ESLint
+npm run dev      # Development server with Turbopack
+npm run build    # Production build
+npm run start    # Production server
+npm run lint     # Linting with ESLint
 ```
 
-## 🎮 Uso Básico
+## 🎮 Basic Usage
 
-### Configuración de Grid
+### Grid Configuration
 ```typescript
 const gridConfig = {
-  rows: 12,        // Filas de vectores
-  cols: 18,        // Columnas de vectores  
-  spacing: 30,     // Espacio entre vectores
-  margin: 20       // Margen del canvas
+  rows: 12,        // Vector rows
+  cols: 18,        // Vector columns  
+  spacing: 30,     // Space between vectors
+  margin: 20       // Canvas margin
 };
 ```
 
-### Configuración de Vectores
+### Vector Configuration
 ```typescript
 const vectorConfig = {
   shape: 'line',           // 'line' | 'arrow' | 'circle' | 'triangle'
-  length: 24,              // Longitud base
-  width: 2,                // Grosor
+  length: 24,              // Base length
+  width: 2,                // Thickness
   color: '#10b981',        // Color
   rotationOrigin: 'center' // 'center' | 'start' | 'end'
 };
 ```
 
-### Animaciones
+### Animations
 ```typescript
-// Configuración de animación
+// Animation configuration
 const animationProps = {
   waveFrequency: 0.0002,
   waveAmplitude: 30,
   patternScale: 0.01
 };
 
-// Aplicar animación
+// Apply animation
 setCurrentAnimationId('smoothWaves');
 setAnimationProps(animationProps);
 ```
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
-### Estructura del Proyecto
+### Project Structure
 ```
 flynn-app/
 ├── src/
 │   ├── app/                    # App Router (Next.js 15)
 │   └── components/
 │       ├── features/
-│       │   └── vector-grid/    # Componentes principales
-│       │       ├── simple/     # Sistema simplificado
-│       │       ├── animations/ # Sistema de animaciones
-│       │       ├── renderers/  # Renderizadores híbridos
-│       │       ├── export/     # Sistema de exportación
-│       │       └── utils/      # Utilidades y helpers
-│       └── ui/                 # Componentes UI reutilizables
-├── public/                     # Assets estáticos
-└── docs/                       # Documentación
+│       │   └── vector-grid/    # Main components
+│       │       ├── simple/     # Simplified system
+│       │       ├── animations/ # Animation system
+│       │       ├── renderers/  # Hybrid renderers
+│       │       ├── export/     # Export system
+│       │       └── utils/      # Utilities and helpers
+│       └── ui/                 # Reusable UI components
+├── public/                     # Static assets
+└── docs/                       # Documentation
 ```
 
-### Componentes Clave
+### Key Components
 
 #### `SimpleVectorGridOptimized`
-Componente principal que maneja el renderizado híbrido y optimizaciones de performance.
+Main component that handles hybrid rendering and performance optimizations.
 
 #### `HybridRenderer` 
-Renderizador que alterna automáticamente entre SVG y Canvas según la carga.
+Renderer that automatically alternates between SVG and Canvas based on load.
 
 #### `useSimpleVectorGrid`
-Hook principal que gestiona estado, animaciones y lógica de vectores.
+Main hook that manages state, animations, and vector logic.
 
-### Sistema de Animaciones
+### Animation System
 
-Las animaciones están organizadas modularmente:
+Animations are organized modularly:
 
 ```typescript
-// Cada animación implementa esta interfaz
+// Each animation implements this interface
 interface AnimationImplementation {
   applyAnimation: (vectors: SimpleVector[], props: AnimationProps, time: number) => SimpleVector[];
   getDefaultProps: () => AnimationProps;
@@ -145,82 +145,82 @@ interface AnimationImplementation {
 }
 ```
 
-## 📊 Animaciones Disponibles
+## 📊 Available Animations
 
-| Animación | Descripción | Props Principales |
-|-----------|-------------|-------------------|
-| `smoothWaves` | Ondas suaves y fluidas | `waveFrequency`, `waveAmplitude` |
-| `seaWaves` | Simulación orgánica de olas | `baseFrequency`, `spatialFactor` |
-| `geometricPattern` | Patrones geométricos complejos | `patternType`, `patternIntensity` |
-| `centerPulse` | Pulsos desde el centro | `pulseDuration`, `maxAngleOffset` |
-| `vortexAnimation` | Efectos de vórtice | `strength`, `radiusFalloff` |
-| `rippleEffect` | Ondas expansivas | `rippleSpeed`, `rippleAmplitude` |
-| `pinwheels` | Patrones de molinillo | `pinwheelCount`, `rotationSpeed` |
-| `jitter` | Movimiento aleatorio | `jitterIntensity`, `jitterSpeed` |
-| `lissajous` | Curvas de Lissajous | `xFrequency`, `yFrequency` |
-| `perlinFlow` | Flujo basado en ruido Perlin | `noiseScale`, `timeEvolutionSpeed` |
+| Animation | Description | Main Props |
+|-----------|-------------|------------|
+| `smoothWaves` | Smooth and fluid waves | `waveFrequency`, `waveAmplitude` |
+| `seaWaves` | Organic wave simulation | `baseFrequency`, `spatialFactor` |
+| `geometricPattern` | Complex geometric patterns | `patternType`, `patternIntensity` |
+| `centerPulse` | Pulses from center | `pulseDuration`, `maxAngleOffset` |
+| `vortexAnimation` | Vortex effects | `strength`, `radiusFalloff` |
+| `rippleEffect` | Expanding waves | `rippleSpeed`, `rippleAmplitude` |
+| `pinwheels` | Pinwheel patterns | `pinwheelCount`, `rotationSpeed` |
+| `jitter` | Random movement | `jitterIntensity`, `jitterSpeed` |
+| `lissajous` | Lissajous curves | `xFrequency`, `yFrequency` |
+| `perlinFlow` | Perlin noise-based flow | `noiseScale`, `timeEvolutionSpeed` |
 
-## 🎛️ Configuración Avanzada
+## 🎛️ Advanced Configuration
 
-### Longitud Dinámica
+### Dynamic Length
 ```typescript
 const dynamicConfig = {
-  enableDynamicLength: true,   // Activar longitud dinámica
-  lengthMultiplier: 2.0,       // Multiplicador máximo (1.0x - 3.0x)
-  responsiveness: 0.8,         // Reactividad (10% - 100%)
-  smoothing: 0.8              // Suavizado de transiciones (10% - 100%)
+  enableDynamicLength: true,   // Enable dynamic length
+  lengthMultiplier: 2.0,       // Maximum multiplier (1.0x - 3.0x)
+  responsiveness: 0.8,         // Responsiveness (10% - 100%)
+  smoothing: 0.8              // Transition smoothing (10% - 100%)
 };
 ```
 
-### Monitor de Performance
+### Performance Monitor
 ```typescript
 const performanceConfig = {
-  targetFPS: 60,              // FPS objetivo
-  qualityThreshold: 0.7,      // Umbral de calidad
-  autoOptimize: true          // Optimización automática
+  targetFPS: 60,              // Target FPS
+  qualityThreshold: 0.7,      // Quality threshold
+  autoOptimize: true          // Automatic optimization
 };
 ```
 
 ## 🔧 Performance
 
-### Optimizaciones Implementadas
+### Implemented Optimizations
 
-#### Animaciones
-- **Caché de cálculos** costosos (distancias, ángulos)
-- **Eliminación de bucles infinitos** en normalización
-- **Pre-cálculo de constantes** fuera de loops
-- **Reducción de operaciones Math** pesadas
+#### Animations
+- **Caching of expensive calculations** (distances, angles)
+- **Elimination of infinite loops** in normalization
+- **Pre-calculation of constants** outside loops
+- **Reduction of heavy Math operations**
 
-#### Renderizado
-- **Cambio automático** SVG → Canvas para >300 vectores
-- **Path2D optimization** para Canvas con muchos vectores
-- **Memoización** de datos vectoriales
-- **Calidad adaptativa** según carga
+#### Rendering
+- **Automatic switching** SVG → Canvas for >300 vectors
+- **Path2D optimization** for Canvas with many vectors
+- **Memoization** of vector data
+- **Adaptive quality** based on load
 
-#### Memoria
-- **Gestión eficiente** de referencias
-- **Cleanup automático** de recursos
-- **Pooling de objetos** para evitar GC
+#### Memory
+- **Efficient reference management**
+- **Automatic resource cleanup**
+- **Object pooling** to avoid GC
 
-### Métricas de Performance
+### Performance Metrics
 
-El sistema incluye un monitor integrado que rastrea:
-- **FPS en tiempo real**
-- **Tiempo de renderizado**
-- **Uso de memoria**
-- **Complejidad computacional**
-- **Recomendaciones automáticas**
+The system includes an integrated monitor that tracks:
+- **Real-time FPS**
+- **Rendering time**
+- **Memory usage**
+- **Computational complexity**
+- **Automatic recommendations**
 
-## 🎨 Personalización
+## 🎨 Customization
 
-### Crear Nueva Animación
+### Create New Animation
 
-1. **Crear implementación:**
+1. **Create implementation:**
 ```typescript
-// src/components/features/vector-grid/simple/animations/implementations/miAnimacion.ts
+// src/components/features/vector-grid/simple/animations/implementations/myAnimation.ts
 import type { SimpleVector, AnimationProps } from '../simpleTypes';
 
-export const miAnimacion = {
+export const myAnimation = {
   applyAnimation: (vectors: SimpleVector[], props: AnimationProps, time: number) => {
     return vectors.map(vector => ({
       ...vector,
@@ -240,29 +240,29 @@ export const miAnimacion = {
 };
 ```
 
-2. **Registrar en animationEngine:**
+2. **Register in animationEngine:**
 ```typescript
 // src/components/features/vector-grid/simple/animations/animationEngine.ts
-import { miAnimacion } from './implementations/miAnimacion';
+import { myAnimation } from './implementations/myAnimation';
 
 export const animationRegistry = {
-  // ... otras animaciones
-  miAnimacion
+  // ... other animations
+  myAnimation
 };
 ```
 
-### Personalizar Renderizado
+### Customize Rendering
 
-El sistema permite personalizar completamente el renderizado:
+The system allows complete rendering customization:
 
 ```typescript
-// Renderer personalizado para formas custom
+// Custom renderer for custom shapes
 const customRenderer = (props: VectorRenderProps) => (
   <path d={generateCustomPath(props)} fill="none" stroke={props.color} />
 );
 ```
 
-## 📤 Exportación
+## 📤 Export
 
 ### SVG
 ```typescript
@@ -274,7 +274,7 @@ const svgString = await exportToSVG({
 });
 ```
 
-### GIF Animado
+### Animated GIF
 ```typescript
 const gifBlob = await exportToGIF({
   frames: animationFrames,
@@ -284,68 +284,68 @@ const gifBlob = await exportToGIF({
 });
 ```
 
-## 🛠️ Desarrollo
+## 🛠️ Development
 
-### Estructura de Commits
+### Commit Structure
 ```
-🎨 feat: Nueva funcionalidad
-🔧 fix: Corrección de bugs  
-⚡ perf: Mejoras de performance
-📚 docs: Documentación
+🎨 feat: New functionality
+🔧 fix: Bug fixes  
+⚡ perf: Performance improvements
+📚 docs: Documentation
 🧪 test: Tests
 🔨 refactor: Refactoring
 ```
 
 ### Debug Mode
 ```typescript
-// Activar modo debug para logs detallados
+// Enable debug mode for detailed logs
 const debugMode = true;
 ```
 
 ### Testing
 ```bash
-# Configuración de test recomendada
-npm run dev  # Terminal 1: Servidor desarrollo
-# Abrir http://localhost:3000
-# Configurar grid 50x50 (2500 vectores)
-# Probar animaciones complejas
+# Recommended test configuration
+npm run dev  # Terminal 1: Development server
+# Open http://localhost:3000
+# Configure 50x50 grid (2500 vectors)
+# Test complex animations
 ```
 
-## 🤝 Contribuir
+## 🤝 Contributing
 
-1. **Fork** el repositorio
-2. **Crear rama** para tu feature (`git checkout -b feature/AmazingFeature`)
-3. **Commit** cambios (`git commit -m '🎨 feat: Add AmazingFeature'`)
-4. **Push** a la rama (`git push origin feature/AmazingFeature`)
-5. **Abrir Pull Request**
+1. **Fork** the repository
+2. **Create branch** for your feature (`git checkout -b feature/AmazingFeature`)
+3. **Commit** changes (`git commit -m '🎨 feat: Add AmazingFeature'`)
+4. **Push** to branch (`git push origin feature/AmazingFeature`)
+5. **Open Pull Request**
 
 ## 📋 Roadmap
 
 ### v0.2.0
-- [ ] Sistema de colores HSL independiente
-- [ ] Gradientes personalizables
-- [ ] Animaciones basadas en audio
-- [ ] Editor visual de animaciones
+- [ ] Independent HSL color system
+- [ ] Customizable gradients
+- [ ] Audio-based animations
+- [ ] Visual animation editor
 
 ### v0.3.0
-- [ ] WebGL renderer para grids masivos
-- [ ] Sistema de plugins
-- [ ] Animaciones 3D
-- [ ] Exportación a video
+- [ ] WebGL renderer for massive grids
+- [ ] Plugin system
+- [ ] 3D animations
+- [ ] Video export
 
-## ⚖️ Licencia
+## ⚖️ License
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
 
-## 🙏 Reconocimientos
+## 🙏 Acknowledgments
 
-- **Next.js Team** - Framework de desarrollo
-- **Vercel** - Platform de deployment  
-- **React Team** - Librería UI
-- **Tailwind CSS** - Framework CSS
+- **Next.js Team** - Development framework
+- **Vercel** - Deployment platform  
+- **React Team** - UI library
+- **Tailwind CSS** - CSS framework
 
 ---
 
-**Desarrollado con ❤️ por [GsusFC](https://github.com/GsusFC)**
+**Developed with ❤️ by [GsusFC](https://github.com/GsusFC)**
 
-> Si encuentras útil este proyecto, ¡considera darle una ⭐ en GitHub!
+> If you find this project useful, consider giving it a ⭐ on GitHub!
